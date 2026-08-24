@@ -1,0 +1,104 @@
+# === Dependencies ===
+node_modules/
+.pnpm-store/
+.npm/
+frontend/node_modules
+
+# === Build outputs ===
+dist/
+desktop/out
+desktop/release
+desktop/dist-electron/
+desktop/dist-ssr/
+frontend/dist
+src/utils/generated-agents-doc.ts
+output/
+
+# === TypeScript / lint caches ===
+*.tsbuildinfo
+.eslintcache
+
+# === Bundler / framework caches ===
+.cache
+.vite/
+.turbo/
+.wrangler/
+
+# === Test artifacts ===
+coverage/
+playwright-report/
+test-results/
+playwright/.cache/
+.amux/test-output/
+.aumx/test-output/
+.e2e-kanban-marker*
+.e2e-marker-*
+
+# === Runtime / per-user state ===
+.amux/
+.amux-hooks/
+.amux-dev/
+.aumx/
+.aumx-hooks/
+.aumx-dev/
+.claude/
+.codex/
+.tmp
+.log/
+.archive/
+.playwright-mcp
+playwright-mcp
+
+# === Logs ===
+*.log
+.dev.vars
+
+# === Environment / secrets ===
+.env*
+!.env.example
+*.cer
+*.crt
+*.key
+*.p12
+*.p8
+*.pem
+*.mobileprovision
+
+# === Local overrides (personal, never shared) ===
+.internal-refs-patterns.json
+CLAUDE.md
+CLAUDE.local.md
+Claude.md
+AGENTS.md
+settings.local.json
+tasks/
+
+# === IDE / editor ===
+.idea
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.history/
+
+# === Editor backups / swap files ===
+*.swp
+*.swo
+*~
+.*.swp
+
+# === OS files ===
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# === Misc ===
+logs/
+mockups
+docs
+
+.superpowers/
+LOCAL_CHANGELOG.md
+Users
+coverage
+LOCAL_CHANGELOG

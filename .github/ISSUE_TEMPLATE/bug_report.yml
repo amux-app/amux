@@ -1,0 +1,57 @@
+name: Bug Report
+description: Report a reproducible problem in Amux.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the exact steps needed to reproduce the issue.
+      placeholder: |
+        1. Open Amux...
+        2. Create a pane...
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Amux version
+      placeholder: 0.1.0
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: macOS 15.0
+  - type: input
+    id: environment
+    attributes:
+      label: Runtime versions
+      placeholder: host Node 24.15.0, managed Node 24.19.0, pnpm 11.22.0, tmux 3.7b
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Add logs, terminal output, or screenshots that help explain the problem.
+      render: shell

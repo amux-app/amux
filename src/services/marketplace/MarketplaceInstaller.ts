@@ -1,0 +1,549 @@
+import os from 'os';
+import path from 'path';
+import { copyFileSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'fs';
+import { createHash } from 'crypto';
+import type { AgentName } from '../../utils/agentLaunch.js';
+import { AgentTranslator } from './AgentTranslator.js';
+import { HookTranslator } from './HookTranslator.js';
+import { McpTranslator } from './McpTranslator.js';
+import { NativeInstaller, type NativeMarketplaceConfig } from './NativeInstaller.js';
+import { SkillTranslator } from './SkillTranslator.js';
+import type {
+  AgentInstallInfo,
+  DetectedPlugin,
+  InstallResult,
+  InstallStatus,
+  JsPluginEntry,
+  MarketplaceInstallPreview,
+  MarketplacePreviewAgent,
+  MarketplacePreviewArtifact,
+  McpServerEntry,
+} from './types.js';
+
+export interface InstallSelection {
+  skills?: string[];
+  mcpServers?: string[];
+  agents?: string[];
+}
+
+export type MarketplaceInstallMode = 'full' | 'selected';
+
+export interface MarketplaceSourceSnapshot {
+  sourceUrl: string;
+  headSha: string;
+}
+
+function stableValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stableValue);
+  if (typeof value !== 'object' || value === null) return value;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, child]) => [key, stableValue(child)]),
+  );
+}
+
+function contentHash(filePath: string): string {
+  return createHash('sha256').update(readFileSync(filePath)).digest('hex');
+}
+
+interface ArtifactEntry {
+  entryType: 'directory' | 'file';
+  relativePath: string;
+  contentHash?: string;
+}
+
+function collectArtifactEntries(rootPath: string, relativePath = '.'): ArtifactEntry[] {
+  const stat = lstatSync(rootPath);
+  if (stat.isSymbolicLink()) throw new Error(`Marketplace artifact symlinks are not allowed: ${rootPath}`);
+  if (!stat.isDirectory() && !stat.isFile()) {
+    throw new Error(`Unsupported marketplace artifact type: ${rootPath}`);
+  }
+  if (!stat.isDirectory()) {
+    return [{
+      contentHash: contentHash(rootPath),
+      entryType: 'file',
+      relativePath,
+    }];
+  }
+
+  const entries: ArtifactEntry[] = [{ entryType: 'directory', relativePath }];
+  return readdirSync(rootPath, { withFileTypes: true })
+    .sort((left, right) => left.name.localeCompare(right.name))
+    .reduce(
+      (collected, entry) => collected.concat(collectArtifactEntries(
+        path.join(rootPath, entry.name),
+        relativePath === '.' ? entry.name : path.join(relativePath, entry.name),
+      )),
+      entries,
+    );
+}
+
+function assertNoSymlinks(paths: string[]): void {
+  for (const sourcePath of paths) collectArtifactEntries(sourcePath);
+}
+
+function isPathWithin(rootPath: string, candidatePath: string): boolean {
+  const relativePath = path.relative(rootPath, candidatePath);
+  return relativePath === '' || (!relativePath.startsWith(`..${path.sep}`) && relativePath !== '..' && !path.isAbsolute(relativePath));
+}
+
+function localMcpSourcePaths(server: McpServerEntry, clonePath?: string): string[] {
+  if (!clonePath || server.type === 'http' || server.type === 'sse') return [];
+
+  const rootPath = path.resolve(clonePath);
+  if (lstatSync(rootPath).isSymbolicLink()) {
+    throw new Error(`Marketplace artifact symlinks are not allowed: ${rootPath}`);
+  }
+  const references = server.args.filter((value) => (
+    path.isAbsolute(value) || /\.(?:cjs|js|mjs|py|ts)$/.test(value)
+  ));
+
+  return [...new Set(references.flatMap((reference) => {
+    const sourcePath = path.resolve(rootPath, reference);
+    if (!isPathWithin(rootPath, sourcePath)) {
+      throw new Error(`Marketplace MCP executable is outside the source clone: ${reference}`);
+    }
+    // Option-like values such as --output=result.js also end in a script
+    // extension without naming a real file — skip rather than crash.
+    if (!existsSync(sourcePath)) return [];
+
+    const relativePath = path.relative(rootPath, sourcePath);
+    let currentPath = rootPath;
+    for (const segment of relativePath.split(path.sep).filter(Boolean)) {
+      currentPath = path.join(currentPath, segment);
+      if (lstatSync(currentPath).isSymbolicLink()) {
+        throw new Error(`Marketplace artifact symlinks are not allowed: ${currentPath}`);
+      }
+    }
+    return [sourcePath];
+  }))];
+}
+
+function formatMcpEnvironmentLines(env: Record<string, string> | undefined): string[] {
+  if (!env) return [];
+  return Object.keys(env)
+    .sort()
+    .map((key) => `${key}=${JSON.stringify(env[key])}`);
+}
+
+function agentSkillsDir(agent: AgentName): string {
+  const home = os.homedir();
+  switch (agent) {
+    case 'claude': return path.join(home, '.claude', 'skills');
+    case 'codex': return path.join(home, '.codex', 'skills');
+    case 'opencode': return path.join(home, '.config', 'opencode', 'skills');
+    case 'pi': return path.join(home, '.pi', 'skills');
+  }
+}
+
+function agentDir(agent: AgentName): string {
+  const home = os.homedir();
+  switch (agent) {
+    case 'claude': return path.join(home, '.claude', 'agents');
+    case 'codex': return path.join(home, '.codex', 'agents');
+    case 'opencode': return path.join(home, '.config', 'opencode', 'agents');
+    case 'pi': return path.join(home, '.pi', 'agents');
+  }
+}
+
+function hookDestination(agent: AgentName): string {
+  const home = os.homedir();
+  switch (agent) {
+    case 'claude': return path.join(home, '.claude', 'settings.json');
+    case 'codex': return path.join(home, '.codex', 'hooks.json');
+    case 'opencode': return path.join(home, '.config', 'opencode', 'plugins');
+    case 'pi': return path.join(home, '.pi', 'hooks.json');
+  }
+}
+
+function mcpDestination(agent: AgentName): string {
+  const home = os.homedir();
+  switch (agent) {
+    case 'claude': return path.join(home, '.claude', 'settings.json');
+    case 'codex': return path.join(home, '.codex', 'config.toml');
+    case 'opencode': return path.join(home, '.config', 'opencode', 'opencode.json');
+    case 'pi': return path.join(home, '.pi', 'mcp.json');
+  }
+}
+
+function artifact(
+  name: string,
+  sourcePaths: string[],
+  destinationPaths: string[],
+  executable: boolean,
+  detail?: string,
+): MarketplacePreviewArtifact {
+  const entries = sourcePaths.flatMap((sourcePath) => collectArtifactEntries(sourcePath));
+  return {
+    contentHashes: entries.map((entry) => [
+      entry.entryType,
+      entry.relativePath,
+      entry.contentHash ?? '',
+    ].join(':')),
+    destinationPaths,
+    executable,
+    name,
+    sourcePaths,
+    ...(detail ? { detail } : {}),
+  };
+}
+
+export class MarketplaceInstaller {
+  private skillTranslator = new SkillTranslator();
+  private agentTranslator = new AgentTranslator();
+  private hookTranslator = new HookTranslator();
+  private mcpTranslator = new McpTranslator();
+  private nativeInstaller = new NativeInstaller();
+
+  preview(
+    plugin: DetectedPlugin,
+    agents: AgentName[],
+    nativeConfig?: NativeMarketplaceConfig,
+    selection?: InstallSelection,
+    source: MarketplaceSourceSnapshot = { headSha: 'unknown', sourceUrl: '' },
+    mode: MarketplaceInstallMode = selection === undefined ? 'full' : 'selected',
+  ): MarketplaceInstallPreview {
+    const effectiveSelection = mode === 'full' ? undefined : selection ?? {};
+    const previewAgents: MarketplacePreviewAgent[] = agents.map((agent) => {
+      const filtered = this.applySelection(plugin, agent, effectiveSelection);
+      const artifacts: MarketplacePreviewArtifact[] = [];
+
+      for (const skill of filtered.skills) {
+        const sourceDir = path.dirname(skill.path);
+        artifacts.push(artifact(
+          `skill:${skill.name}`,
+          [sourceDir],
+          [path.join(agentSkillsDir(agent), skill.name)],
+          false,
+        ));
+      }
+
+      for (const subagent of filtered.agents ?? []) {
+        if (agent === 'codex' || agent === 'pi') continue;
+        artifacts.push(artifact(
+          `agent:${subagent.name}`,
+          [subagent.path],
+          [path.join(agentDir(agent), `${plugin.id}__${subagent.name}.md`)],
+          true,
+        ));
+      }
+
+      if (filtered.hooks.length > 0) {
+        const hookSources = filtered.hooks.flatMap((hook) => hook.jsPath ? [hook.jsPath] : []);
+        assertNoSymlinks(hookSources);
+        artifacts.push(artifact(
+          'hooks',
+          hookSources,
+          [hookDestination(agent)],
+          true,
+          filtered.hooks.map((hook) => hook.command ?? `${hook.event}: JS hook`).join('\n'),
+        ));
+      }
+
+      for (const server of filtered.mcpServers) {
+        artifacts.push(artifact(
+          `mcp:${server.name}`,
+          localMcpSourcePaths(server, nativeConfig?.clonePath),
+          [mcpDestination(agent)],
+          true,
+          [
+            server.command ? [server.command, ...server.args].join(' ') : server.url ?? 'remote MCP server',
+            ...formatMcpEnvironmentLines(server.env),
+          ].join('\n'),
+        ));
+      }
+
+      if (agent === 'opencode') {
+        for (const jsPlugin of filtered.jsPlugins) {
+          artifacts.push(artifact(
+            `plugin:${jsPlugin.name}`,
+            [jsPlugin.path],
+            [path.join(os.homedir(), '.config', 'opencode', 'plugins', `marketplace-${plugin.id}-${jsPlugin.name}.js`)],
+            true,
+          ));
+        }
+      }
+
+      const useNative = nativeConfig
+        && this.nativeInstaller.supportsNative(agent, nativeConfig.sourceFormat)
+        && mode === 'full';
+      if (useNative) {
+        for (const destinationPath of this.nativeInstaller.getNativeConfigurationPaths(nativeConfig, agent)) {
+          artifacts.push({
+            contentHashes: [],
+            destinationPaths: [destinationPath],
+            executable: true,
+            name: `native:configuration:${path.basename(destinationPath)}`,
+            sourcePaths: [],
+            detail: 'Native installer writes and enables marketplace configuration.',
+          });
+        }
+        for (const operation of this.nativeInstaller.getNativeCopyOperations(nativeConfig, agent)) {
+          artifacts.push(artifact(
+            `native:${operation.name}`,
+            [operation.sourcePath],
+            [operation.destinationPath],
+            true,
+            'Native installer recursively copies this tree before registration.',
+          ));
+        }
+      }
+
+      return { agent, artifacts };
+    });
+
+    const environmentVariableNames = [...new Set(
+      plugin.mcpServers.flatMap((server) => Object.keys(server.env ?? {})),
+    )].sort();
+    const generatedFiles = [...new Set(
+      previewAgents.flatMap((entry) => entry.artifacts.flatMap((item) => item.destinationPaths)),
+    )].sort();
+    const introducesExecutableBehavior = previewAgents.some((entry) =>
+      entry.artifacts.some((item) => item.executable),
+    );
+    const normalized = stableValue({
+      agents: previewAgents,
+      environmentVariableNames,
+      generatedFiles,
+      introducesExecutableBehavior,
+      plugin,
+      pluginId: plugin.id,
+      selected: {
+        agents: effectiveSelection?.agents ?? null,
+        mcpServers: effectiveSelection?.mcpServers ?? null,
+        skills: effectiveSelection?.skills ?? null,
+      },
+      mode,
+      sourceHeadSha: source.headSha,
+      sourceUrl: source.sourceUrl,
+    });
+    const digest = createHash('sha256').update(JSON.stringify(normalized)).digest('hex');
+
+    return {
+      agents: previewAgents,
+      digest,
+      mode,
+      environmentVariableNames,
+      generatedFiles,
+      introducesExecutableBehavior,
+      pluginId: plugin.id,
+      sourceHeadSha: source.headSha,
+      sourceUrl: source.sourceUrl,
+    };
+  }
+
+  async install(
+    plugin: DetectedPlugin,
+    agents: AgentName[],
+    nativeConfig?: NativeMarketplaceConfig,
+    selection?: InstallSelection,
+    expectedDigest?: string,
+    source?: MarketplaceSourceSnapshot,
+    mode: MarketplaceInstallMode = selection === undefined ? 'full' : 'selected',
+  ): Promise<InstallResult> {
+    const effectiveSelection = mode === 'full' ? undefined : selection ?? {};
+    const preview = this.preview(plugin, agents, nativeConfig, effectiveSelection, source, mode);
+    if (expectedDigest && expectedDigest !== preview.digest) {
+      throw new Error('Marketplace source changed; review the installation again');
+    }
+    for (const entry of preview.agents) {
+      assertNoSymlinks(entry.artifacts.flatMap((item) => item.sourcePaths));
+    }
+    const result: InstallResult = { pluginId: plugin.id, agents: {} };
+
+    for (const agent of agents) {
+      const filtered = this.applySelection(plugin, agent, effectiveSelection);
+      // Use native registration only for full installs. Partial selections bypass native
+      // because native (Claude/Codex plugin system) is all-or-nothing — it would enable
+      // artifacts the user explicitly deselected.
+      const useNative = nativeConfig
+        && this.nativeInstaller.supportsNative(agent, nativeConfig.sourceFormat)
+        && mode === 'full';
+      if (useNative) {
+        result.agents[agent] = this.installNativeWithDirectMcp(filtered, nativeConfig!, agent);
+      } else {
+        result.agents[agent] = this.installDirect(filtered, agent);
+      }
+    }
+
+    return result;
+  }
+
+  private applySelection(plugin: DetectedPlugin, agent: AgentName, selection?: InstallSelection): DetectedPlugin {
+    const skills = Array.isArray(selection?.skills)
+      ? plugin.skills.filter((s) => selection!.skills!.includes(s.name))
+      : plugin.skills;
+
+    // Codex MCP install disabled until private-registry auth and timeouts are resolved
+    const mcpServers = agent === 'codex'
+      ? []
+      : Array.isArray(selection?.mcpServers)
+        ? plugin.mcpServers.filter((s) => selection!.mcpServers!.includes(s.name))
+        : plugin.mcpServers;
+
+    const pluginAgents = Array.isArray(selection?.agents)
+      ? plugin.agents.filter((a) => selection!.agents!.includes(a.name))
+      : plugin.agents;
+
+    return { ...plugin, skills, mcpServers, agents: pluginAgents };
+  }
+
+  async uninstall(plugin: DetectedPlugin, agents: AgentName[], nativeConfig?: NativeMarketplaceConfig, selection?: InstallSelection): Promise<void> {
+    for (const agent of agents) {
+      // Apply the same selection used at install time so we only remove what was written
+      const filtered = this.applySelection(plugin, agent, selection);
+      if (nativeConfig && this.nativeInstaller.supportsNative(agent, nativeConfig.sourceFormat)) {
+        this.nativeInstaller.uninstall(nativeConfig, agent);
+        for (const skill of filtered.skills) {
+          this.skillTranslator.uninstallForAgent(skill.name, agent);
+        }
+        for (const subagent of filtered.agents ?? []) {
+          this.agentTranslator.uninstallForAgent(subagent.name, agent, plugin.id);
+        }
+        this.hookTranslator.uninstallForAgent(plugin.id, agent);
+        for (const server of filtered.mcpServers) {
+          if (agent !== 'codex' && this.isLocalScript(server)) {
+            this.mcpTranslator.uninstallForAgent(server.name, agent);
+          }
+        }
+      } else {
+        this.uninstallDirect(filtered, agent, plugin.id);
+      }
+    }
+  }
+
+  private installNativeWithDirectMcp(plugin: DetectedPlugin, config: NativeMarketplaceConfig, agent: AgentName): AgentInstallInfo {
+    const skipped: string[] = [];
+    let installPath = '';
+
+    try {
+      installPath = this.nativeInstaller.install(config, agent);
+    } catch {
+      skipped.push('Native registration failed');
+    }
+
+    // Native marketplace handles plugin discovery but not skills, agents, hooks, or local-script MCPs —
+    // always write those directly so every agent gets full coverage.
+    for (const skill of plugin.skills) {
+      const p = this.skillTranslator.installForAgent(skill, agent);
+      if (!installPath) installPath = p;
+    }
+
+    for (const subagent of plugin.agents ?? []) {
+      const p = this.agentTranslator.installForAgent(subagent, agent, plugin.id);
+      if (!installPath) installPath = p;
+    }
+
+    for (const hookResult of this.hookTranslator.translateAllForAgent(plugin.hooks, agent, plugin.id)) {
+      if (hookResult.status === 'partial') {
+        skipped.push(...hookResult.skipped);
+      } else if (hookResult.path && !installPath) {
+        installPath = hookResult.path;
+      }
+    }
+
+    for (const server of plugin.mcpServers) {
+      if (this.isLocalScript(server)) {
+        const p = this.mcpTranslator.installForAgent(server, agent);
+        if (!installPath) installPath = p;
+      }
+    }
+
+    const status: InstallStatus = skipped.length > 0 ? 'partial' : 'full';
+    return { status, path: installPath, skipped: skipped.length > 0 ? skipped : undefined };
+  }
+
+  private isLocalScript(server: { type?: string; command?: string; args?: string[] }): boolean {
+    if (server.type === 'http' || server.type === 'sse') return false;
+    if (!server.command || server.command === 'npx' || server.command === 'uvx') return false;
+    const firstArg = server.args?.[0] ?? '';
+    return firstArg.endsWith('.js') || firstArg.endsWith('.ts') || firstArg.endsWith('.py') || firstArg.startsWith('/');
+  }
+
+  private installDirect(plugin: DetectedPlugin, agent: AgentName): AgentInstallInfo {
+    const skipped: string[] = [];
+    let installPath = '';
+
+    for (const skill of plugin.skills) {
+      const p = this.skillTranslator.installForAgent(skill, agent);
+      if (!installPath) installPath = p;
+    }
+
+    for (const subagent of plugin.agents ?? []) {
+      const p = this.agentTranslator.installForAgent(subagent, agent, plugin.id);
+      if (!installPath) installPath = p;
+    }
+
+    for (const hookResult of this.hookTranslator.translateAllForAgent(plugin.hooks, agent, plugin.id)) {
+      if (hookResult.status === 'partial') {
+        skipped.push(...hookResult.skipped);
+      } else if (hookResult.path && !installPath) {
+        installPath = hookResult.path;
+      }
+    }
+
+    for (const server of plugin.mcpServers) {
+      const p = this.mcpTranslator.installForAgent(server, agent);
+      if (!installPath) installPath = p;
+    }
+
+    if (plugin.jsPlugins.length > 0) {
+      if (agent === 'opencode') {
+        for (const jsPlugin of plugin.jsPlugins) {
+          // TypeScript plugins require a build step — skip with partial rather than copying a .ts file as .js
+          if (jsPlugin.path.endsWith('.ts')) {
+            skipped.push(`${jsPlugin.name}: TypeScript plugins must be pre-compiled to .js before install`);
+            continue;
+          }
+          const p = this.installJsPlugin(jsPlugin, plugin.id);
+          if (!installPath) installPath = p;
+        }
+      } else {
+        skipped.push('JS runtime plugins cannot be translated');
+      }
+    }
+
+    const status: InstallStatus = skipped.length > 0 ? 'partial' : 'full';
+    return { status, path: installPath, skipped: skipped.length > 0 ? skipped : undefined };
+  }
+
+  private uninstallDirect(plugin: DetectedPlugin, agent: AgentName, pluginId: string): void {
+    for (const skill of plugin.skills) {
+      this.skillTranslator.uninstallForAgent(skill.name, agent);
+    }
+    for (const subagent of plugin.agents ?? []) {
+      this.agentTranslator.uninstallForAgent(subagent.name, agent, pluginId);
+    }
+    if (agent !== 'codex') {
+      for (const server of plugin.mcpServers) {
+        this.mcpTranslator.uninstallForAgent(server.name, agent);
+      }
+    }
+    this.hookTranslator.uninstallForAgent(pluginId, agent);
+    if (agent === 'opencode') {
+      this.uninstallJsPlugins(pluginId);
+    }
+  }
+
+  private installJsPlugin(jsPlugin: JsPluginEntry, pluginId: string): string {
+    const pluginsDir = path.join(os.homedir(), '.config', 'opencode', 'plugins');
+    mkdirSync(pluginsDir, { recursive: true });
+    const targetPath = path.join(pluginsDir, `marketplace-${pluginId}-${jsPlugin.name}.js`);
+    copyFileSync(jsPlugin.path, targetPath);
+    return targetPath;
+  }
+
+  private uninstallJsPlugins(pluginId: string): void {
+    const pluginsDir = path.join(os.homedir(), '.config', 'opencode', 'plugins');
+    if (!existsSync(pluginsDir)) return;
+    const prefix = `marketplace-${pluginId}-`;
+    try {
+      for (const f of readdirSync(pluginsDir)) {
+        if (f.startsWith(prefix) && f.endsWith('.js')) {
+          rmSync(path.join(pluginsDir, f), { force: true });
+        }
+      }
+    } catch { /* ignore */ }
+  }
+}

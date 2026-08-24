@@ -1,0 +1,183 @@
+name: Publish Homebrew Cask
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Published stable tag to promote to Homebrew, e.g. v0.1.0'
+        required: true
+        type: string
+    secrets:
+      HOMEBREW_TAP_TOKEN:
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Published stable tag to promote to Homebrew, e.g. v0.1.0'
+        required: true
+        type: string
+
+concurrency:
+  group: homebrew-publish-${{ inputs.tag }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  cask-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: read
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Validate published release and credentials
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must be stable SemVer: $RELEASE_TAG"
+            exit 1
+          fi
+          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
+            echo 'HOMEBREW_TAP_TOKEN is required for binary publication.'
+            exit 1
+          fi
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json isDraft \
+            --jq '.isDraft == false' | grep -qx true
+          echo "version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ env.RELEASE_TAG }}
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Download release DMGs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p desktop/release
+          gh release download "$RELEASE_TAG" \
+            --pattern '*.dmg' \
+            --dir desktop/release
+
+      - name: Generate Homebrew cask
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          node scripts/generate-homebrew-cask.mjs \
+            --version "$RELEASE_VERSION" \
+            --arm-dmg "desktop/release/Amux-${RELEASE_VERSION}-arm64.dmg" \
+            --intel-dmg "desktop/release/Amux-${RELEASE_VERSION}-x64.dmg" \
+            --output "packaging/homebrew/Casks/amux.rb"
+
+      - name: Checkout Homebrew tap repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # This checkout must retain its dedicated, least-privilege tap token for git push.
+          persist-credentials: true
+          repository: amux-app/homebrew-amux
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Update tap with new cask
+        run: |
+          mkdir -p homebrew-tap/Casks
+          cp packaging/homebrew/Casks/amux.rb homebrew-tap/Casks/amux.rb
+          cd homebrew-tap
+          git config user.name 'amux-release-bot'
+          git config user.email 'release-bot@amux.dev'
+          if git diff --quiet -- Casks/amux.rb; then
+            echo 'Cask unchanged; nothing to commit.'
+            exit 0
+          fi
+          git add Casks/amux.rb
+          git commit -m "chore: bump amux to ${RELEASE_TAG}"
+          git push origin HEAD
+
+  cask-smoke:
+    needs: cask-publish
+    runs-on: macos-15
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      RELEASE_VERSION: ${{ needs.cask-publish.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install tmux and the published Cask
+        run: |
+          set -euo pipefail
+          brew tap amux-app/amux
+          brew install tmux
+          brew install --cask amux
+
+      - name: Verify resolved tmux meets the floor
+        run: |
+          set -euo pipefail
+          node scripts/ensure-tmux.mjs --check | tee "$GITHUB_STEP_SUMMARY"
+          node scripts/ci/tmux-command-smoke.mjs
+
+      - name: Verify Cask dependency and payload
+        run: |
+          set -euo pipefail
+          brew missing amux && echo 'no missing dependencies'
+          test -d "/Applications/Amux.app"
+
+      - name: Verify published app reaches ready state
+        run: |
+          set -euo pipefail
+          smoke_root="$(mktemp -d "$RUNNER_TEMP/amux-cask-smoke.XXXXXX")"
+          mkdir -p "$smoke_root/tmux" "$smoke_root/user-data"
+          git init -q "$smoke_root/project"
+          log_file="$HOME/Library/Logs/Amux/.log/aumx-desktop-$(date -u +%F).log"
+
+          cleanup() {
+            if [ -n "${app_pid:-}" ]; then
+              kill "$app_pid" 2>/dev/null || true
+              wait "$app_pid" 2>/dev/null || true
+            fi
+            TMUX_TMPDIR="$smoke_root/tmux" tmux kill-server 2>/dev/null || true
+            rm -rf "$smoke_root"
+          }
+          trap cleanup EXIT
+
+          cd "$smoke_root/project"
+          AUMX_USER_DATA_DIR="$smoke_root/user-data" \
+            TMUX_TMPDIR="$smoke_root/tmux" \
+            /Applications/Amux.app/Contents/MacOS/Amux >"$smoke_root/app.stdout.log" 2>&1 &
+          app_pid=$!
+
+          for _ in {1..30}; do
+            kill -0 "$app_pid"
+            if [ -f "$log_file" ] && grep -q '"msg":"AumxBridge initialized successfully"' "$log_file"; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo 'Published Amux did not report a ready boot state.'
+          test -f "$log_file" && tail -n 100 "$log_file"
+          exit 1
+
+      - name: Uninstall Cask without removing tmux
+        if: always()
+        run: |
+          set -euo pipefail
+          brew uninstall --cask amux || true
+          test -x "$(command -v tmux)"

@@ -1,0 +1,118 @@
+{
+  "name": "aumx",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Core library for Amux — the agentic IDE and mission control for a fleet of AI coding agents (Claude Code, Codex, OpenCode, Pi), each isolated in its own tmux pane and git worktree.",
+  "type": "module",
+  "author": "shimi.tal1@gmail.com",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amux-app/amux.git"
+  },
+  "bugs": {
+    "url": "https://github.com/amux-app/amux/issues"
+  },
+  "homepage": "https://github.com/amux-app/amux#readme",
+  "keywords": [
+    "agent",
+    "agentic",
+    "ai",
+    "claude",
+    "claude-code",
+    "codex",
+    "coding-agent",
+    "development",
+    "electron",
+    "git",
+    "ide",
+    "multi-agent",
+    "opencode",
+    "pi-coding-agent",
+    "orchestration",
+    "terminal",
+    "tmux",
+    "worktree"
+  ],
+  "engines": {
+    "node": ">=24.19.0",
+    "pnpm": "11.22.0"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.19.0",
+      "onFail": "download"
+    }
+  },
+  "main": "./dist/core.js",
+  "exports": {
+    "./core": {
+      "import": "./dist/core.js",
+      "types": "./dist/core.d.ts"
+    },
+    "./pane-name": {
+      "import": "./dist/utils/paneName.js",
+      "types": "./dist/utils/paneName.d.ts"
+    },
+    "./pane-terminal-profile": {
+      "import": "./dist/utils/paneTerminalProfile.js",
+      "types": "./dist/utils/paneTerminalProfile.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "config/system-requirements.json",
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "!dist/**/*.d.ts.map"
+  ],
+  "scripts": {
+    "build": "pnpm run generate:hooks-docs && tsc",
+    "check:versions": "node scripts/check-package-versions.mjs",
+    "desktop:release:verify": "pnpm --filter aumx-desktop release:verify",
+    "generate:hooks-docs": "node scripts/generate-hooks-docs.js",
+    "clean": "rm -rf dist src/utils/generated-agents-doc.ts",
+    "lint": "eslint --config eslint.config.js .",
+    "lint:ci": "eslint --config eslint.config.js --max-warnings 0 .",
+    "postinstall": "node scripts/ensure-node-pty-helper.mjs",
+    "internal-refs-gate": "node scripts/internal-refs-gate.mjs",
+    "knip": "knip --no-config-hints",
+    "audit:all": "pnpm audit --audit-level moderate",
+    "verify": "pnpm run verify:static && pnpm run test && pnpm run desktop:release:verify",
+    "verify:ci": "pnpm run verify:static && pnpm run test",
+    "verify:static": "pnpm run internal-refs-gate && pnpm run check:versions && pnpm run typecheck && pnpm run lint:ci && pnpm run knip",
+    "release:verify": "pnpm run audit:all && pnpm run verify",
+    "release:verify:live": "pnpm run release:verify && pnpm --filter aumx-desktop test:e2e:live",
+    "typecheck": "pnpm run generate:hooks-docs && tsc --noEmit",
+    "test": "vitest --run",
+    "pretest": "pnpm run generate:hooks-docs",
+    "test:coverage": "vitest --run --coverage",
+    "prerelease": "run-s clean build typecheck",
+    "release:legacy": "bumpp --commit --push --tag",
+    "release:legacy:minor": "bumpp minor --commit --push --tag",
+    "release:legacy:major": "bumpp major --commit --push --tag"
+  },
+  "dependencies": {
+    "chalk": "^6.0.0",
+    "chokidar": "^5.0.0"
+  },
+  "devDependencies": {
+    "@electron/asar": "^4.2.1",
+    "@eslint/js": "^9.18.0",
+    "@types/node": "^24.13.3",
+    "@vitest/coverage-v8": "^3.2.6",
+    "bumpp": "^10.2.3",
+    "eslint": "^9.18.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.7.0",
+    "knip": "^6.31.0",
+    "npm-run-all2": "^9.0.2",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.62.0",
+    "vitest": "^3.2.6",
+    "yaml": "^2.9.0"
+  },
+  "packageManager": "pnpm@11.22.0"
+}

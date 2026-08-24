@@ -1,0 +1,347 @@
+name: Publish Release
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Draft tag to publish, e.g. v0.1.0'
+        required: true
+        type: string
+    secrets:
+      APPLE_APP_SPECIFIC_PASSWORD:
+        required: true
+      APPLE_CERTIFICATE_BASE64:
+        required: true
+      APPLE_CERTIFICATE_PASSWORD:
+        required: true
+      APPLE_ID:
+        required: true
+      APPLE_KEYCHAIN_PASSWORD:
+        required: true
+      APPLE_NOTARY_PROFILE:
+        required: false
+      APPLE_SIGN_IDENTITY:
+        required: true
+      APPLE_TEAM_ID:
+        required: true
+      HOMEBREW_TAP_TOKEN:
+        required: true
+      INTERNAL_REF_PATTERNS:
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Draft tag to publish, e.g. v0.1.0'
+        required: true
+        type: string
+
+concurrency:
+  group: publish-release-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: macos-15
+    timeout-minutes: 120
+    environment: release
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+    env:
+      AUMX_REQUIRE_NOTARIZATION: '1'
+      DEBUG: 'electron-notarize*'
+      RELEASE_TAG: ${{ inputs.tag || github.event.inputs.tag }}
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.tag || github.event.inputs.tag }}
+
+      - name: Validate canonical empty draft
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REPOSITORY" != "amux-app/amux" ]; then
+            echo "Refusing to publish outside the canonical repository: $GITHUB_REPOSITORY"
+            exit 1
+          fi
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must be stable SemVer: $RELEASE_TAG"
+            exit 1
+          fi
+          test "$(git rev-parse HEAD)" = "$(git rev-list -n 1 "$RELEASE_TAG")"
+
+          release_json="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
+          repository_json="$(gh api "repos/$GITHUB_REPOSITORY")"
+          jq -e '.private == false' <<<"$repository_json" >/dev/null || {
+            echo 'Refusing to publish while the canonical repository is private.'
+            exit 1
+          }
+          jq -e --arg tag "$RELEASE_TAG" \
+            '.tag_name == $tag and .draft == true and .prerelease == false' \
+            <<<"$release_json" >/dev/null
+          jq -e '.assets | length == 0' <<<"$release_json" >/dev/null || {
+            echo 'Draft already contains assets. Delete and recreate it before retrying.'
+            exit 1
+          }
+
+      - name: Resolve release version
+        id: version
+        run: |
+          echo "tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate repository release metadata
+        run: node scripts/check-release-tag.mjs "$RELEASE_TAG"
+
+      - name: Internal-refs gate
+        run: node scripts/internal-refs-gate.mjs
+        env:
+          AUMX_PRIVATE_REF_PATTERNS: ${{ secrets.INTERNAL_REF_PATTERNS }}
+          AUMX_REQUIRE_PRIVATE_REFS: '1'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - name: Install system dependencies
+        run: brew install tmux
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Configure isolated tmux server
+        run: |
+          socket_dir="$RUNNER_TEMP/aumx-tmux-release/socket"
+          mkdir -p "$socket_dir"
+          echo "TMUX_TMPDIR=$socket_dir" >> "$GITHUB_ENV"
+
+      - name: Start isolated tmux server
+        run: tmux -f /dev/null new-session -d -s tmux-prewarm
+
+      - name: Enforce minimum tmux version
+        run: node scripts/ensure-tmux.mjs --check | tee "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify release candidate
+        run: pnpm release:verify
+        env:
+          AUMX_REQUIRE_NOTARIZATION: '0'
+          APPLE_APP_SPECIFIC_PASSWORD: ''
+          APPLE_ID: ''
+          APPLE_NOTARY_PROFILE: ''
+          APPLE_TEAM_ID: ''
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          CSC_NAME: ''
+
+      - name: Tear down isolated tmux server
+        if: always()
+        run: tmux kill-server 2>/dev/null || true
+
+      - name: Import Apple signing certificate
+        shell: bash
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_KEYCHAIN_PASSWORD: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
+          CERT_PATH: ${{ runner.temp }}/amux-signing-cert.p12
+        run: |
+          set -euo pipefail
+          if [ -z "$APPLE_CERTIFICATE_BASE64" ] || [ -z "$APPLE_CERTIFICATE_PASSWORD" ] || [ -z "$APPLE_KEYCHAIN_PASSWORD" ]; then
+            echo 'Missing Apple certificate provisioning secrets.'
+            exit 1
+          fi
+          KEYCHAIN_PATH="$RUNNER_TEMP/amux-signing.keychain-db"
+          python3 -c "import base64, os, pathlib; pathlib.Path(os.environ['CERT_PATH']).write_bytes(base64.b64decode(os.environ['APPLE_CERTIFICATE_BASE64']))"
+          security create-keychain -p "$APPLE_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$APPLE_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH"
+          security default-keychain -d user -s "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$APPLE_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+      - name: Configure notarytool profile
+        shell: bash
+        env:
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_NOTARY_PROFILE: ${{ secrets.APPLE_NOTARY_PROFILE }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "$APPLE_ID" ] || [ -z "$APPLE_APP_SPECIFIC_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ]; then
+            echo 'Missing Apple notarization credentials.'
+            exit 1
+          fi
+          PROFILE_NAME="${APPLE_NOTARY_PROFILE:-amux-notary}"
+          xcrun notarytool store-credentials "$PROFILE_NAME" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID"
+          echo "APPLE_NOTARY_PROFILE=$PROFILE_NAME" >> "$GITHUB_ENV"
+
+      - name: Build signed and notarized artifacts
+        run: pnpm --dir desktop run dist:release
+        env:
+          CSC_NAME: ${{ secrets.APPLE_SIGN_IDENTITY }}
+
+      - name: Generate CycloneDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: desktop/release
+          format: cyclonedx-json
+          output-file: desktop/release/amux-sbom.cdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Prepare exact asset allowlist and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          release_dir='desktop/release'
+          asset_list="$RUNNER_TEMP/amux-release-assets.txt"
+          checksum_inputs=(
+            "$release_dir/Amux-$version-arm64.dmg"
+            "$release_dir/Amux-$version-x64.dmg"
+            "$release_dir/Amux-$version-arm64.zip"
+            "$release_dir/Amux-$version-x64.zip"
+            "$release_dir/latest-mac.yml"
+            "$release_dir/amux-sbom.cdx.json"
+          )
+          for artifact in "${checksum_inputs[@]}"; do
+            test -s "$artifact"
+          done
+
+          for blockmap in "$release_dir"/*.blockmap; do
+            [ -e "$blockmap" ] || continue
+            case "$(basename "$blockmap")" in
+              "Amux-$version-arm64.dmg.blockmap"|"Amux-$version-x64.dmg.blockmap"|\
+              "Amux-$version-arm64.zip.blockmap"|"Amux-$version-x64.zip.blockmap")
+                checksum_inputs+=("$blockmap")
+                ;;
+              *)
+                echo "Unexpected blockmap: $blockmap"
+                exit 1
+                ;;
+            esac
+          done
+
+          checksum_names=()
+          for artifact in "${checksum_inputs[@]}"; do
+            checksum_names+=("$(basename "$artifact")")
+          done
+          (
+            cd "$release_dir"
+            shasum -a 256 "${checksum_names[@]}" > SHA256SUMS
+          )
+          printf '%s\n' "${checksum_inputs[@]}" "$release_dir/SHA256SUMS" > "$asset_list"
+          cat "$release_dir/SHA256SUMS"
+
+      - name: Verify signed and notarized artifacts
+        run: |
+          node scripts/verify-macos-release.mjs \
+            --release-dir desktop/release \
+            --version "${RELEASE_TAG#v}"
+
+      - name: Attest binary provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            desktop/release/Amux-${{ steps.version.outputs.version }}-arm64.dmg
+            desktop/release/Amux-${{ steps.version.outputs.version }}-x64.dmg
+            desktop/release/Amux-${{ steps.version.outputs.version }}-arm64.zip
+            desktop/release/Amux-${{ steps.version.outputs.version }}-x64.zip
+
+      - name: Attest release SBOM
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            desktop/release/Amux-${{ steps.version.outputs.version }}-arm64.dmg
+            desktop/release/Amux-${{ steps.version.outputs.version }}-x64.dmg
+            desktop/release/Amux-${{ steps.version.outputs.version }}-arm64.zip
+            desktop/release/Amux-${{ steps.version.outputs.version }}-x64.zip
+          sbom-path: desktop/release/amux-sbom.cdx.json
+
+      - name: Attest SBOM document provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: desktop/release/amux-sbom.cdx.json
+
+      - name: Upload exact asset set to draft
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          assets=()
+          while IFS= read -r asset; do
+            assets+=("$asset")
+          done < "$RUNNER_TEMP/amux-release-assets.txt"
+          gh release upload "$RELEASE_TAG" "${assets[@]}"
+
+      - name: Audit uploaded draft
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          release_json="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
+          jq -e '.draft == true and .prerelease == false' <<<"$release_json" >/dev/null
+          jq -e 'all(.assets[]; .size > 0)' <<<"$release_json" >/dev/null
+
+          while IFS= read -r asset; do basename "$asset"; done \
+            < "$RUNNER_TEMP/amux-release-assets.txt" | LC_ALL=C sort > "$RUNNER_TEMP/local-assets.txt"
+          jq -r '.assets[].name' <<<"$release_json" | LC_ALL=C sort > "$RUNNER_TEMP/remote-assets.txt"
+          diff -u "$RUNNER_TEMP/local-assets.txt" "$RUNNER_TEMP/remote-assets.txt"
+
+          remote_dir="$RUNNER_TEMP/amux-remote-release"
+          mkdir -p "$remote_dir"
+          gh release download "$RELEASE_TAG" --dir "$remote_dir"
+          while IFS= read -r asset; do
+            remote_asset="$remote_dir/$(basename "$asset")"
+            test -s "$remote_asset"
+            test "$(shasum -a 256 "$asset" | cut -d ' ' -f 1)" = \
+              "$(shasum -a 256 "$remote_asset" | cut -d ' ' -f 1)"
+          done < "$RUNNER_TEMP/amux-release-assets.txt"
+          (cd "$remote_dir" && shasum -a 256 -c SHA256SUMS)
+
+          gh attestation verify "$remote_dir/Amux-${RELEASE_TAG#v}-arm64.dmg" --repo "$GITHUB_REPOSITORY"
+          gh attestation verify "$remote_dir/Amux-${RELEASE_TAG#v}-x64.dmg" --repo "$GITHUB_REPOSITORY"
+          gh attestation verify "$remote_dir/Amux-${RELEASE_TAG#v}-arm64.zip" --repo "$GITHUB_REPOSITORY"
+          gh attestation verify "$remote_dir/Amux-${RELEASE_TAG#v}-x64.zip" --repo "$GITHUB_REPOSITORY"
+          gh attestation verify "$remote_dir/amux-sbom.cdx.json" --repo "$GITHUB_REPOSITORY"
+
+      - name: Publish verified draft
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft == true' | grep -qx true
+          gh release edit "$RELEASE_TAG" --draft=false --latest
+          gh release view "$RELEASE_TAG" --json isDraft,isLatest \
+            --jq '(.isDraft == false) and (.isLatest == true)' | grep -qx true
+
+  homebrew-publish:
+    needs: publish
+    permissions:
+      contents: read
+    uses: ./.github/workflows/homebrew-publish.yml
+    with:
+      tag: ${{ needs.publish.outputs.tag }}
+    secrets:
+      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}

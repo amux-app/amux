@@ -1,0 +1,99 @@
+name: tmux compatibility
+
+on:
+  pull_request:
+    paths:
+      - 'config/system-requirements.json'
+      - 'src/utils/tmux*'
+      - 'src/utils/systemCheck.ts'
+      - 'scripts/ensure-tmux.mjs'
+      - 'scripts/ci/tmux-command-smoke.mjs'
+      - 'scripts/ci/provision-tmux-floor.mjs'
+      - 'desktop/src/main/services/TerminalManager.ts'
+      - '.github/workflows/tmux-compat.yml'
+  schedule:
+    - cron: '23 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tmux-compat-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  exact-floor:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-14, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install tmux build dependencies
+        run: brew install libevent pkg-config
+
+      - name: Build exact-floor tmux from verified source
+        id: floor
+        run: node scripts/ci/provision-tmux-floor.mjs | tee "$GITHUB_STEP_SUMMARY"
+
+      - name: Run terminal contract tests against exact floor
+        env:
+          AUMX_TMUX_BIN: ${{ steps.floor.outputs.tmux-bin }}
+          AUMX_TMUX_BIN_DIR: ${{ steps.floor.outputs.bin-dir }}
+        run: |
+          export PATH="$AUMX_TMUX_BIN_DIR:$PATH"
+          node scripts/ci/tmux-command-smoke.mjs --tmux-bin "$AUMX_TMUX_BIN"
+          pnpm --filter aumx-desktop test -- __tests__/services/terminal-manager.test.ts
+
+      - name: Build application for exact-floor terminal E2E
+        env:
+          AUMX_TMUX_BIN_DIR: ${{ steps.floor.outputs.bin-dir }}
+        run: |
+          export PATH="$AUMX_TMUX_BIN_DIR:$PATH"
+          pnpm build
+          pnpm --dir desktop build
+
+      - name: Start exact-floor isolated tmux server
+        env:
+          AUMX_TMUX_BIN: ${{ steps.floor.outputs.tmux-bin }}
+          AUMX_TMUX_BIN_DIR: ${{ steps.floor.outputs.bin-dir }}
+        run: |
+          "$AUMX_TMUX_BIN" -f /dev/null new-session -d -s tmux-prewarm
+          export PATH="$AUMX_TMUX_BIN_DIR:$PATH"
+          node scripts/ensure-tmux.mjs --check | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Exact-floor terminal resilience E2E
+        env:
+          AUMX_E2E_EXPECT_TMUX_VERSION: ${{ steps.floor.outputs.tmux-version }}
+          AUMX_TMUX_BIN_DIR: ${{ steps.floor.outputs.bin-dir }}
+          SHELL: /bin/sh
+        run: |
+          export PATH="$AUMX_TMUX_BIN_DIR:$PATH"
+          AUMX_E2E=1 AUMX_E2E_ALLOW_STORE_COERCE=1 \
+            pnpm --dir desktop exec vitest run --config vitest.config.ts --no-file-parallelism \
+            __tests__/e2e/terminal-resilience.e2e.test.ts
+
+      - name: Tear down isolated tmux server
+        if: always()
+        env:
+          AUMX_TMUX_BIN: ${{ steps.floor.outputs.tmux-bin }}
+        run: |
+          TMUX_TMPDIR="$TMUX_TMPDIR" "$AUMX_TMUX_BIN" kill-server 2>/dev/null || true

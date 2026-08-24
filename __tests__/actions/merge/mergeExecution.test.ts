@@ -1,0 +1,396 @@
+/**
+ * Tests for merge execution - focusing on actual bugs
+ * These tests verify the INTENDED behavior, not just the current implementation
+ */
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { executeMerge } from '../../../src/actions/merge/mergeExecution.js';
+import type { AumxPane } from '../../../src/types.js';
+import type { ActionContext } from '../../../src/actions/types.js';
+
+// Mock child_process to prevent actual tmux commands
+vi.mock('child_process', () => ({
+  execSync: vi.fn(() => Buffer.from('')),
+}));
+
+// Mock utilities
+vi.mock('../../../src/utils/gitMergeOps.ts', () => ({
+  mergeMainIntoWorktree: vi.fn(() => ({ success: true })),
+  mergeWorktreeIntoMain: vi.fn(() => ({ success: true })),
+  cleanupAfterMerge: vi.fn(() => ({ success: true })),
+  completeMerge: vi.fn(() => ({ success: true })),
+  abortMerge: vi.fn(), // Add abortMerge mock
+}));
+
+vi.mock('../../../src/utils/hooks.js', () => ({
+  triggerHook: vi.fn(() => Promise.resolve()),
+}));
+
+// Create a mock StateManager that can be configured per test
+const mockGetPanes = vi.fn(() => []);
+vi.mock('../../../src/shared/StateManager.js', () => ({
+  StateManager: {
+    getInstance: vi.fn(() => ({
+      getPanes: mockGetPanes,
+    })),
+  },
+}));
+
+vi.mock('../../../src/actions/implementations/closeAction.js', () => ({
+  closePane: vi.fn(() =>
+    Promise.resolve({
+      type: 'choice',
+      title: 'Close Pane',
+      options: [{ id: 'kill_only', label: 'Kill only' }],
+      onSelect: vi.fn(() => Promise.resolve({ type: 'success', message: 'Closed', dismissable: true })),
+      dismissable: true,
+    })
+  ),
+}));
+
+vi.mock('../../../src/actions/merge/conflictResolution.js', () => ({
+  createConflictResolutionPaneForMerge: vi.fn(() =>
+    Promise.resolve({
+      type: 'navigation',
+      title: 'Conflict Resolution Pane Created',
+      message: 'AI agent will help resolve conflicts',
+      targetPaneId: 'conflict-pane-1',
+    })
+  ),
+}));
+
+vi.mock('../../../src/utils/conflictMergePreparation.js', () => ({
+  prepareConflictMerge: vi.fn(async () => ({
+    repoPath: '/test/main/.aumx/worktrees/test-branch',
+    sourceCommit: 'source-commit',
+    targetCommit: 'target-commit',
+  })),
+}));
+
+vi.mock('../../../src/utils/conflictMergeTransaction.js', () => ({
+  clearConflictMergeTransaction: vi.fn(),
+  getConflictMergeTransaction: vi.fn(() => undefined),
+  markConflictMergeResolved: vi.fn(async () => false),
+  registerConflictMergeTransaction: vi.fn((transaction: object) => transaction),
+  verifyPreparedConflictMerge: vi.fn(async () => ({
+    status: 'conflicted',
+    unmergedFiles: ['test.txt'],
+  })),
+  verifyResolvedConflictMerge: vi.fn(async () => true),
+}));
+
+describe('Merge Execution - Bug Fixes', () => {
+  const mockPane: AumxPane = {
+    id: 'test-1',
+    slug: 'test-branch',
+    prompt: 'test prompt',
+    paneId: '%1',
+    worktreePath: '/test/main/.aumx/worktrees/test-branch',
+  };
+
+  const mockContext: ActionContext = {
+    projectName: 'test-project',
+    panes: [mockPane],
+    savePanes: vi.fn(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('BUG #1: 2-Phase Merge Missing', () => {
+    it('should merge main into worktree BEFORE merging worktree into main', async () => {
+      const { mergeMainIntoWorktree, mergeWorktreeIntoMain } = await import(
+        '../../../src/utils/gitMergeOps.ts'
+      );
+
+      await executeMerge(mockPane, mockContext, 'main', '/test/main');
+
+      // CRITICAL: Must call mergeMainIntoWorktree FIRST
+      expect(mergeMainIntoWorktree).toHaveBeenCalledWith('/test/main/.aumx/worktrees/test-branch', 'main');
+
+      // THEN call mergeWorktreeIntoMain
+      expect(mergeWorktreeIntoMain).toHaveBeenCalledWith('/test/main', 'test-branch');
+
+      // Verify order: mergeMainIntoWorktree must be called BEFORE mergeWorktreeIntoMain
+      const mainIntoWorktreeCall = vi.mocked(mergeMainIntoWorktree).mock.invocationCallOrder[0];
+      const worktreeIntoMainCall = vi.mocked(mergeWorktreeIntoMain).mock.invocationCallOrder[0];
+
+      expect(mainIntoWorktreeCall).toBeLessThan(worktreeIntoMainCall);
+    });
+
+    it('should handle errors from mergeMainIntoWorktree', async () => {
+      const { mergeMainIntoWorktree } = await import('../../../src/utils/gitMergeOps.ts');
+
+      vi.mocked(mergeMainIntoWorktree).mockReturnValue({
+        success: false,
+        error: 'Failed to merge main into worktree',
+      });
+
+      const result = await executeMerge(mockPane, mockContext, 'main', '/test/main');
+
+      expect(result.type).toBe('error');
+      expect(result.message).toContain('Failed to merge main into worktree');
+    });
+
+    it('should not proceed to step 2 if step 1 fails', async () => {
+      const { mergeMainIntoWorktree, mergeWorktreeIntoMain } = await import(
+        '../../../src/utils/gitMergeOps.ts'
+      );
+
+      vi.mocked(mergeMainIntoWorktree).mockReturnValue({
+        success: false,
+        error: 'Step 1 failed',
+      });
+
+      await executeMerge(mockPane, mockContext, 'main', '/test/main');
+
+      // Should NOT call step 2 if step 1 fails
+      expect(mergeWorktreeIntoMain).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('BUG #2: Cleanup Flow', () => {
+    beforeEach(() => {
+      // Configure StateManager to return the test pane
+      mockGetPanes.mockReturnValue([mockPane]);
+    });
+
+    it('should return close options from closePane after successful merge', async () => {
+      const { mergeMainIntoWorktree, mergeWorktreeIntoMain } = await import(
+        '../../../src/utils/gitMergeOps.ts'
+      );
+      const { closePane } = await import(
+        '../../../src/actions/implementations/closeAction.js'
+      );
+
+      // Ensure both merge steps succeed
+      vi.mocked(mergeMainIntoWorktree).mockReturnValue({ success: true });
+      vi.mocked(mergeWorktreeIntoMain).mockReturnValue({ success: true });
+
+      const result = await executeMerge(mockPane, mockContext, 'main', '/test/main');
+
+      expect(result.type).toBe('choice');
+      expect(result.title).toBe('Close Pane');
+      expect(closePane).toHaveBeenCalledWith(mockPane, mockContext);
+    });
+
+    it('should not directly mutate panes during merge execution', async () => {
+      const { mergeMainIntoWorktree, mergeWorktreeIntoMain } = await import(
+        '../../../src/utils/gitMergeOps.ts'
+      );
+
+      // Ensure all operations succeed
+      vi.mocked(mergeMainIntoWorktree).mockReturnValue({ success: true });
+      vi.mocked(mergeWorktreeIntoMain).mockReturnValue({ success: true });
+
+      await executeMerge(mockPane, mockContext, 'main', '/test/main');
+      expect(mockContext.savePanes).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('BUG #4: Runtime Conflict Detection', () => {
+    it('should detect conflicts during Step 1 and offer resolution options', async () => {
+      const { mergeMainIntoWorktree } = await import('../../../src/utils/gitMergeOps.ts');
+
+      // Simulate a conflict occurring during actual merge (not caught by pre-validation)
+      vi.mocked(mergeMainIntoWorktree).mockReturnValue({
+        success: false,
+        error: 'Merge conflicts detected',
+        conflictFiles: ['pnpm-lock.yaml'],
+        needsManualResolution: true,
+      });
+
+      const result = await executeMerge(mockPane, mockContext, 'main', '/test/main');
+
+      // Should offer AI/manual conflict resolution, not just show error
+      expect(result.type).toBe('choice');
+      expect(result.title).toContain('Conflict');
+      expect(result.options?.map(o => o.id)).toContain('ai_merge');
+      expect(result.options?.map(o => o.id)).toContain('manual_merge');
+    });
+
+    it('should show which files have conflicts', async () => {
+      const { mergeMainIntoWorktree } = await import('../../../src/utils/gitMergeOps.ts');
+
+      vi.mocked(mergeMainIntoWorktree).mockReturnValue({
+        success: false,
+        error: 'Merge conflicts detected',
+        conflictFiles: ['pnpm-lock.yaml', 'package.json'],
+        needsManualResolution: true,
+      });
+
+      const result = await executeMerge(mockPane, mockContext, 'main', '/test/main');
+
+      expect(result.type).toBe('choice');
+      if (result.type === 'choice') {
+        expect(result.message).toContain('pnpm-lock.yaml');
+        expect(result.message).toContain('package.json');
+      }
+    });
+
+    it('should still show error for non-conflict merge failures', async () => {
+      const { mergeMainIntoWorktree } = await import('../../../src/utils/gitMergeOps.ts');
+
+      // Different kind of error (not a conflict)
+      vi.mocked(mergeMainIntoWorktree).mockReturnValue({
+        success: false,
+        error: 'Git command failed: permission denied',
+        needsManualResolution: false,
+      });
+
+      const result = await executeMerge(mockPane, mockContext, 'main', '/test/main');
+
+      // Should show error for non-conflict failures
+      expect(result.type).toBe('error');
+      expect(result.message).toContain('permission denied');
+    });
+
+    it('should offer abort option for conflicts', async () => {
+      const { mergeMainIntoWorktree } = await import('../../../src/utils/gitMergeOps.ts');
+
+      vi.mocked(mergeMainIntoWorktree).mockReturnValue({
+        success: false,
+        error: 'Merge conflicts detected',
+        conflictFiles: ['test.txt'],
+        needsManualResolution: true,
+      });
+
+      const result = await executeMerge(mockPane, mockContext, 'main', '/test/main');
+
+      expect(result.type).toBe('choice');
+      if (result.type === 'choice') {
+        expect(result.options?.map(o => o.id)).toContain('abort');
+      }
+    });
+
+    it('should abort merge and clean up when abort option selected', async () => {
+      const { mergeMainIntoWorktree, abortMerge } = await import('../../../src/utils/gitMergeOps.ts');
+
+      vi.mocked(mergeMainIntoWorktree).mockReturnValue({
+        success: false,
+        error: 'Merge conflicts detected',
+        conflictFiles: ['test.txt'],
+        needsManualResolution: true,
+      });
+
+      const result = await executeMerge(mockPane, mockContext, 'main', '/test/main');
+
+      if (result.type === 'choice' && result.onSelect) {
+        const abortResult = await result.onSelect('abort');
+
+        expect(abortMerge).toHaveBeenCalledWith(mockPane.worktreePath);
+        expect(abortResult.type).toBe('info');
+        expect(abortResult.message).toContain('aborted');
+      }
+    });
+
+    it('should navigate to pane for manual resolution', async () => {
+      const { mergeMainIntoWorktree } = await import('../../../src/utils/gitMergeOps.ts');
+
+      vi.mocked(mergeMainIntoWorktree).mockReturnValue({
+        success: false,
+        error: 'Merge conflicts detected',
+        conflictFiles: ['test.txt'],
+        needsManualResolution: true,
+      });
+
+      const result = await executeMerge(mockPane, mockContext, 'main', '/test/main');
+
+      if (result.type === 'choice' && result.onSelect) {
+        const manualResult = await result.onSelect('manual_merge');
+
+        expect(manualResult.type).toBe('navigation');
+        expect(manualResult.targetPaneId).toBe(mockPane.id);
+        if (manualResult.type === 'navigation') {
+          expect(manualResult.message).toContain('test.txt');
+        }
+      }
+    });
+
+    it('should create AI conflict resolution pane when AI merge selected', async () => {
+      const { mergeMainIntoWorktree } = await import('../../../src/utils/gitMergeOps.ts');
+      const { createConflictResolutionPaneForMerge } = await import(
+        '../../../src/actions/merge/conflictResolution.js'
+      );
+
+      vi.mocked(mergeMainIntoWorktree).mockReturnValue({
+        success: false,
+        error: 'Merge conflicts detected',
+        conflictFiles: ['test.txt'],
+        needsManualResolution: true,
+      });
+
+      const result = await executeMerge(mockPane, mockContext, 'main', '/test/main');
+
+      if (result.type === 'choice' && result.onSelect) {
+        const aiResult = await result.onSelect('ai_merge');
+
+        expect(createConflictResolutionPaneForMerge).toHaveBeenCalledWith(
+          mockPane,
+          mockContext,
+          'main',
+          '/test/main'
+        );
+        expect(aiResult.type).toBe('navigation');
+        expect(aiResult.targetPaneId).toBe('conflict-pane-1');
+      }
+    });
+
+    it('should truncate long conflict file lists in message', async () => {
+      const { mergeMainIntoWorktree } = await import('../../../src/utils/gitMergeOps.ts');
+
+      const manyFiles = Array.from({ length: 10 }, (_, i) => `file${i}.txt`);
+
+      vi.mocked(mergeMainIntoWorktree).mockReturnValue({
+        success: false,
+        error: 'Merge conflicts detected',
+        conflictFiles: manyFiles,
+        needsManualResolution: true,
+      });
+
+      const result = await executeMerge(mockPane, mockContext, 'main', '/test/main');
+
+      if (result.type === 'choice') {
+        // Should show first 5 files + "..."
+        expect(result.message).toContain('file0.txt');
+        expect(result.message).toContain('file4.txt');
+        expect(result.message).toContain('...');
+        expect(result.message).not.toContain('file9.txt');
+      }
+    });
+  });
+
+  describe('Post-merge hooks', () => {
+    it('should trigger post_merge hook after successful merge', async () => {
+      const { mergeMainIntoWorktree, mergeWorktreeIntoMain } = await import(
+        '../../../src/utils/gitMergeOps.ts'
+      );
+      const { triggerHook } = await import('../../../src/utils/hooks.js');
+
+      // Ensure both merge steps succeed
+      vi.mocked(mergeMainIntoWorktree).mockReturnValue({ success: true });
+      vi.mocked(mergeWorktreeIntoMain).mockReturnValue({ success: true });
+
+      await executeMerge(mockPane, mockContext, 'main', '/test/main');
+
+      expect(triggerHook).toHaveBeenCalledWith('post_merge', '/test/main', mockPane, {
+        AUMX_TARGET_BRANCH: 'main',
+      });
+    });
+
+    it('should NOT trigger post_merge hook if merge fails', async () => {
+      const { mergeWorktreeIntoMain } = await import('../../../src/utils/gitMergeOps.ts');
+      const { triggerHook } = await import('../../../src/utils/hooks.js');
+
+      vi.mocked(mergeWorktreeIntoMain).mockReturnValue({
+        success: false,
+        error: 'Merge failed',
+      });
+
+      await executeMerge(mockPane, mockContext, 'main', '/test/main');
+
+      expect(triggerHook).not.toHaveBeenCalled();
+    });
+  });
+});

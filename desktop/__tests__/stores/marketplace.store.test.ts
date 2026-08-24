@@ -1,0 +1,101 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useMarketplaceStore } from '../../src/renderer/stores/marketplace.store';
+import * as marketplaceApi from '../../src/renderer/api/marketplace.api';
+
+vi.mock('../../src/renderer/api/marketplace.api', () => ({
+  installPlugin: vi.fn(),
+  listInstalled: vi.fn(),
+  listSources: vi.fn(),
+  previewPlugin: vi.fn(),
+  removeSource: vi.fn(),
+  addSource: vi.fn(),
+  browseSource: vi.fn(),
+  uninstallPlugin: vi.fn(),
+  updateSource: vi.fn(),
+}));
+
+describe('marketplace store preview/install coordination', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useMarketplaceStore.setState({
+      sources: [],
+      installedPlugins: [],
+      browsedPlugins: {},
+      isLoading: false,
+      installingPlugin: null,
+      error: null,
+    });
+    vi.mocked(marketplaceApi.listInstalled).mockResolvedValue([]);
+  });
+
+  it('passes the reviewed digest to the install request', async () => {
+    vi.mocked(marketplaceApi.installPlugin).mockResolvedValue({ success: true, result: {} as never });
+
+    await expect(useMarketplaceStore.getState().installPlugin(
+      'plugin',
+      'https://example.test/source.git',
+      'selected',
+      ['skill'],
+      [],
+      ['agent'],
+      'digest-1',
+    )).resolves.toBe(true);
+
+    expect(marketplaceApi.installPlugin).toHaveBeenCalledWith(
+      'plugin',
+      'https://example.test/source.git',
+      'selected',
+      ['skill'],
+      [],
+      ['agent'],
+      'digest-1',
+    );
+  });
+
+  it('surfaces a preview failure without attempting install', async () => {
+    vi.mocked(marketplaceApi.previewPlugin).mockResolvedValue({ success: false, error: 'source changed' });
+
+    const response = await useMarketplaceStore.getState().previewPlugin('plugin', 'https://example.test/source.git');
+
+    expect(response).toEqual({ success: false, error: 'source changed' });
+    expect(marketplaceApi.installPlugin).not.toHaveBeenCalled();
+  });
+
+  it('keeps registry state and the source when uninstall fails', async () => {
+    const sourceUrl = 'https://example.test/source.git';
+    useMarketplaceStore.setState({
+      installedPlugins: [{ pluginId: 'plugin', sourceUrl, installedAt: 'now', agents: {} }],
+      sources: [{ url: sourceUrl, name: 'source', clonePath: '/tmp/source', detectedFormat: null, headSha: null, lastUpdated: null }],
+    });
+    vi.mocked(marketplaceApi.uninstallPlugin).mockResolvedValue({
+      success: false,
+      error: 'Ownership could not be verified',
+      errorCode: 'ARTIFACT_MODIFIED',
+    });
+
+    await useMarketplaceStore.getState().uninstallPlugin('plugin', sourceUrl);
+
+    expect(useMarketplaceStore.getState().error).toBe('Ownership could not be verified');
+    expect(marketplaceApi.listInstalled).not.toHaveBeenCalled();
+    expect(marketplaceApi.removeSource).not.toHaveBeenCalled();
+  });
+
+  it('reports preserved artifacts and keeps their marketplace source', async () => {
+    const sourceUrl = 'https://example.test/source.git';
+    const preservedPath = '/tmp/home/.claude/settings.json';
+    useMarketplaceStore.setState({
+      installedPlugins: [{ pluginId: 'plugin', sourceUrl, installedAt: 'now', agents: {} }],
+      sources: [{ url: sourceUrl, name: 'source', clonePath: '/tmp/source', detectedFormat: null, headSha: null, lastUpdated: null }],
+    });
+    vi.mocked(marketplaceApi.uninstallPlugin).mockResolvedValue({
+      success: true,
+      preservedArtifacts: [preservedPath],
+    });
+
+    await useMarketplaceStore.getState().uninstallPlugin('plugin', sourceUrl);
+
+    expect(useMarketplaceStore.getState().error).toContain(preservedPath);
+    expect(marketplaceApi.listInstalled).toHaveBeenCalledOnce();
+    expect(marketplaceApi.removeSource).not.toHaveBeenCalled();
+  });
+});

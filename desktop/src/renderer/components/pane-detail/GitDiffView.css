@@ -1,0 +1,103 @@
+.git-diff-view-wrapper {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+}
+
+.aumx-resize-handle--git-diff[aria-orientation="vertical"] {
+  width: 9px;
+}
+
+.aumx-resize-handle--git-diff[aria-orientation="vertical"]::before {
+  left: 4px;
+  opacity: 0.72;
+}
+
+.aumx-resize-handle--git-diff[aria-orientation="vertical"]:hover::before,
+.aumx-resize-handle--git-diff[aria-orientation="vertical"][data-separator="hover"]::before,
+.aumx-resize-handle--git-diff[aria-orientation="vertical"][data-separator="active"]::before {
+  left: 3.5px;
+}
+
+.aumx-resize-handle--git-diff::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 28px;
+  pointer-events: none;
+  border-radius: 999px;
+  background: var(--text-muted);
+  opacity: 0.42;
+  transform: translate(-50%, -50%);
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.aumx-resize-handle--git-diff:hover::after,
+.aumx-resize-handle--git-diff[data-separator="hover"]::after {
+  opacity: 0.78;
+}
+
+.aumx-resize-handle--git-diff:focus-visible {
+  outline: none;
+}
+
+.aumx-resize-handle--git-diff:focus-visible::after {
+  background: color-mix(in srgb, var(--accent) 35%, var(--text-muted));
+  box-shadow: 0 0 0 1px var(--focus-ring);
+  opacity: 1;
+}
+
+.aumx-resize-handle--git-diff[data-separator="active"]::after {
+  background: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+  opacity: 1;
+  transition: none;
+}
+
+/* Dark theme: map app design tokens to library CSS variables */
+.git-diff-view-wrapper .diff-tailwindcss-wrapper[data-theme="dark"] .diff-style-root {
+  --diff-border--: var(--border);
+  --diff-plain-content--: var(--surface);
+  --diff-plain-lineNumber--: var(--surface-raised);
+  --diff-plain-lineNumber-color--: var(--text-muted);
+  --diff-expand-content--: var(--surface-raised);
+  --diff-expand-lineNumber--: var(--surface-raised);
+  --diff-expand-lineNumber-color--: var(--text-muted);
+  --diff-empty-content--: var(--surface-raised);
+  --diff-hunk-content--: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  --diff-hunk-lineNumber--: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  --diff-hunk-lineNumber-hover--: var(--accent);
+  --diff-hunk-content-color--: var(--text-secondary);
+  --diff-add-content--: rgba(63, 185, 80, 0.1);
+  --diff-add-lineNumber--: rgba(63, 185, 80, 0.18);
+  --diff-add-content-highlight--: rgba(63, 185, 80, 0.28);
+  --diff-del-content--: rgba(248, 81, 73, 0.1);
+  --diff-del-lineNumber--: rgba(248, 81, 73, 0.18);
+  --diff-del-content-highlight--: rgba(248, 81, 73, 0.28);
+}
+
+/* Light theme: map app design tokens to library CSS variables */
+.git-diff-view-wrapper .diff-tailwindcss-wrapper[data-theme="light"] .diff-style-root {
+  --diff-border--: var(--border);
+  --diff-plain-content--: var(--surface);
+  --diff-plain-lineNumber--: var(--surface-raised);
+  --diff-plain-lineNumber-color--: var(--text-muted);
+  --diff-expand-content--: var(--surface-raised);
+  --diff-expand-lineNumber--: var(--surface-raised);
+  --diff-expand-lineNumber-color--: var(--text-muted);
+  --diff-empty-content--: var(--surface-raised);
+  --diff-hunk-content--: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  --diff-hunk-lineNumber--: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  --diff-hunk-lineNumber-hover--: var(--accent);
+  --diff-hunk-content-color--: var(--text-secondary);
+  --diff-add-content--: rgba(63, 185, 80, 0.12);
+  --diff-add-lineNumber--: rgba(63, 185, 80, 0.22);
+  --diff-add-content-highlight--: rgba(63, 185, 80, 0.32);
+  --diff-del-content--: rgba(248, 81, 73, 0.12);
+  --diff-del-lineNumber--: rgba(248, 81, 73, 0.22);
+  --diff-del-content-highlight--: rgba(248, 81, 73, 0.32);
+}

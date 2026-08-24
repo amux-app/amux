@@ -1,0 +1,26 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "include": ["files", "exports", "types"],
+  "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/*.{js,mjs,cjs,ts}"
+      ],
+      "project": [
+        "src/**/*.{ts,tsx}",
+        "scripts/*.{js,mjs,cjs,ts}"
+      ]
+    },
+    "desktop": {
+      "entry": [
+        "scripts/*.{js,mjs,cjs,ts}",
+        "__tests__/e2e/fixtures/mcp-server.js"
+      ],
+      "project": [
+        "src/**/*.{ts,tsx}",
+        "scripts/*.{js,mjs,cjs,ts}",
+        "__tests__/**/*.{js,ts,tsx}"
+      ]
+    }
+  }
+}

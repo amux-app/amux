@@ -1,0 +1,77 @@
+appId: app.amux.desktop
+productName: Amux
+artifactName: ${productName}-${version}-${arch}.${ext}
+forceCodeSigning: true
+electronUpdaterCompatibility: ">=6.8.9"
+detectUpdateChannel: false
+generateUpdatesFilesForAllChannels: false
+npmRebuild: true
+asarUnpack:
+  - node_modules/node-pty/build/Release/*.node
+  - node_modules/node-pty/build/Release/spawn-helper
+extraResources:
+  - from: node_modules/@typescript/typescript-darwin-${arch}
+    to: typescript
+afterSign: scripts/notarize.cjs
+publish:
+  provider: github
+  owner: amux-app
+  repo: amux
+  releaseType: release
+  channel: latest
+  private: false
+
+directories:
+  output: release
+
+files:
+  - out/main/**/*
+  - out/preload/**/*
+  - out/renderer/**/*
+  - package.json
+  - node_modules/**/*
+  - "!node_modules/minisearch/src/**/*"
+  - "!node_modules/zod/src/**/*"
+  - "!node_modules/node-pty/src/**/*"
+  - "!node_modules/node-pty/deps/winpty/**/*"
+  - "!node_modules/node-pty/prebuilds/**/*"
+  - "!node_modules/node-pty/lib/*.test.js"
+  - "!node_modules/aumx/**/*"
+  - "!node_modules/@typescript/**/*"
+  - "!node_modules/typescript-7/**/*"
+  - node_modules/aumx/dist/**/*
+  - node_modules/aumx/config/**/*
+  - node_modules/aumx/package.json
+  - "!**/*.map"
+
+mac:
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: resources/entitlements.mac.plist
+  entitlementsInherit: resources/entitlements.mac.inherit.plist
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+    - target: zip
+      arch:
+        - arm64
+        - x64
+  icon: resources/icon.icns
+  category: public.app-category.developer-tools
+  minimumSystemVersion: "13.0"
+
+dmg:
+  title: Amux
+  # Squirrel.Mac installs ZIP payloads; keep DMGs as drag-to-install assets
+  # without advertising them as updater candidates in latest-mac.yml.
+  writeUpdateInfo: false
+  contents:
+    - x: 130
+      y: 220
+      type: file
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications

@@ -1,0 +1,114 @@
+.prose-markdown.markdown-body {
+  --bgColor-attention-muted: color-mix(in srgb, var(--prose-warning) 14%, transparent);
+  --bgColor-danger-muted: color-mix(in srgb, var(--prose-danger) 14%, transparent);
+  --bgColor-default: transparent;
+  --bgColor-muted: var(--prose-pre-bg);
+  --bgColor-neutral-muted: var(--prose-code-bg);
+  --bgColor-success-muted: color-mix(in srgb, var(--prose-success) 14%, transparent);
+  --borderColor-accent-emphasis: var(--prose-accent);
+  --borderColor-attention-emphasis: var(--prose-warning);
+  --borderColor-danger-emphasis: var(--prose-danger);
+  --borderColor-default: var(--border);
+  --borderColor-done-emphasis: var(--prose-accent);
+  --borderColor-muted: var(--divider);
+  --borderColor-neutral-muted: var(--divider);
+  --borderColor-success-emphasis: var(--prose-success);
+  --color-prettylights-syntax-brackethighlighter-angle: var(--prose-muted);
+  --color-prettylights-syntax-brackethighlighter-unmatched: var(--prose-danger);
+  --color-prettylights-syntax-carriage-return-bg: color-mix(in srgb, var(--prose-danger) 24%, transparent);
+  --color-prettylights-syntax-carriage-return-text: var(--prose-body);
+  --color-prettylights-syntax-comment: var(--prose-muted);
+  --color-prettylights-syntax-constant: var(--prose-link);
+  --color-prettylights-syntax-constant-other-reference-link: var(--prose-link);
+  --color-prettylights-syntax-entity: var(--prose-accent);
+  --color-prettylights-syntax-entity-tag: var(--prose-success);
+  --color-prettylights-syntax-invalid-illegal-bg: color-mix(in srgb, var(--prose-danger) 18%, transparent);
+  --color-prettylights-syntax-invalid-illegal-text: var(--prose-danger);
+  --color-prettylights-syntax-keyword: var(--prose-danger);
+  --color-prettylights-syntax-markup-bold: var(--prose-body);
+  --color-prettylights-syntax-markup-changed-bg: color-mix(in srgb, var(--prose-warning) 18%, transparent);
+  --color-prettylights-syntax-markup-changed-text: var(--prose-warning);
+  --color-prettylights-syntax-markup-deleted-bg: color-mix(in srgb, var(--prose-danger) 18%, transparent);
+  --color-prettylights-syntax-markup-deleted-text: var(--prose-danger);
+  --color-prettylights-syntax-markup-heading: var(--prose-link);
+  --color-prettylights-syntax-markup-ignored-bg: color-mix(in srgb, var(--prose-accent) 18%, transparent);
+  --color-prettylights-syntax-markup-ignored-text: var(--prose-body);
+  --color-prettylights-syntax-markup-inserted-bg: color-mix(in srgb, var(--prose-success) 18%, transparent);
+  --color-prettylights-syntax-markup-inserted-text: var(--prose-success);
+  --color-prettylights-syntax-markup-italic: var(--prose-body);
+  --color-prettylights-syntax-markup-list: var(--prose-warning);
+  --color-prettylights-syntax-meta-diff-range: var(--prose-accent);
+  --color-prettylights-syntax-storage-modifier-import: var(--prose-body);
+  --color-prettylights-syntax-string: var(--prose-success);
+  --color-prettylights-syntax-string-regexp: var(--prose-success);
+  --color-prettylights-syntax-sublimelinter-gutter-mark: var(--border);
+  --color-prettylights-syntax-variable: var(--prose-warning);
+  --fgColor-accent: var(--prose-link);
+  --fgColor-attention: var(--prose-warning);
+  --fgColor-danger: var(--prose-danger);
+  --fgColor-default: var(--prose-body);
+  --fgColor-done: var(--prose-accent);
+  --fgColor-muted: var(--prose-muted);
+  --fgColor-success: var(--prose-success);
+  --focus-outlineColor: var(--prose-accent);
+  background: transparent;
+  color-scheme: inherit;
+  padding: 0;
+}
+
+.prose-markdown-chat.markdown-body {
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.prose-markdown.markdown-body code,
+.prose-markdown.markdown-body pre,
+.prose-markdown.markdown-body kbd,
+.prose-markdown.markdown-body samp {
+  font-family: var(--font-mono, 'Google Sans Code', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+}
+
+.prose-markdown.markdown-body img {
+  background: transparent;
+}
+
+.prose-markdown.markdown-body a {
+  cursor: pointer;
+}
+
+.prose-markdown.markdown-body .prose-markdown-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-block: 8px;
+}
+
+.prose-markdown.markdown-body .prose-markdown-table-scroll {
+  max-width: 100%;
+  margin-block: 0 16px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
+.prose-markdown.markdown-body .prose-markdown-table-scroll:last-child {
+  margin-bottom: 0;
+}
+
+.prose-markdown.markdown-body .prose-markdown-table-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.prose-markdown.markdown-body .prose-markdown-responsive-table {
+  display: table;
+  width: max-content;
+  max-width: none;
+  min-width: 100%;
+  margin-block: 0;
+  overflow: visible;
+}

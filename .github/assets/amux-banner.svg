@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 220" width="880" height="220">
+  <defs>
+    <linearGradient id="icon-bg" x1=".5" y1="0" x2=".5" y2="1">
+      <stop offset="0%" stop-color="#1A1E28"/>
+      <stop offset="100%" stop-color="#10131A"/>
+    </linearGradient>
+    <linearGradient id="prompt-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#64D2FF"/>
+      <stop offset="100%" stop-color="#3B9EFF"/>
+    </linearGradient>
+    <linearGradient id="s1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#5AC8F5" stop-opacity=".75"/>
+      <stop offset="100%" stop-color="#3B9EFF" stop-opacity=".05"/>
+    </linearGradient>
+    <linearGradient id="s2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4DB8E8" stop-opacity=".6"/>
+      <stop offset="100%" stop-color="#2E8AE6" stop-opacity=".04"/>
+    </linearGradient>
+    <linearGradient id="s3" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#40A8D8" stop-opacity=".5"/>
+      <stop offset="100%" stop-color="#2080D0" stop-opacity=".03"/>
+    </linearGradient>
+    <linearGradient id="border-grad" x1=".5" y1="0" x2=".5" y2="1">
+      <stop offset="0%" stop-color="#C8CED6"/>
+      <stop offset="25%" stop-color="#8890A0"/>
+      <stop offset="60%" stop-color="#484E5A"/>
+      <stop offset="100%" stop-color="#262A32"/>
+    </linearGradient>
+    <linearGradient id="tagline-grad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7A8BAA"/>
+      <stop offset="100%" stop-color="#5C6D8C"/>
+    </linearGradient>
+
+    <filter id="glow-prompt" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="b0"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="b1"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="b2"/>
+      <feMerge>
+        <feMergeNode in="b2"/>
+        <feMergeNode in="b1"/>
+        <feMergeNode in="b0"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow-stream" x="-30%" y="-80%" width="160%" height="260%">
+      <feGaussianBlur stdDeviation="1.5" result="b1"/>
+      <feGaussianBlur stdDeviation="3" result="b2"/>
+      <feMerge>
+        <feMergeNode in="b2"/>
+        <feMergeNode in="b1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow-dot" x="-150%" y="-150%" width="400%" height="400%">
+      <feGaussianBlur stdDeviation="1.8" result="b1"/>
+      <feGaussianBlur stdDeviation="3.5" result="b2"/>
+      <feMerge>
+        <feMergeNode in="b2"/>
+        <feMergeNode in="b1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="text-glow" x="-5%" y="-20%" width="110%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur"/>
+      <feColorMatrix in="blur" type="matrix"
+        values="0 0 0 0 0.22  0 0 0 0 0.55  0 0 0 0 1  0 0 0 0.28 0" result="col"/>
+      <feMerge>
+        <feMergeNode in="col"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <radialGradient id="vignette" cx="50%" cy="50%" r="62%">
+      <stop offset="0%" stop-color="#000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000" stop-opacity=".28"/>
+    </radialGradient>
+
+    <clipPath id="icon-clip">
+      <rect x="30" y="20" width="180" height="180" rx="40" ry="40"/>
+    </clipPath>
+  </defs>
+
+  <!-- ── Icon (180×180, left side of banner) ── -->
+  <rect x="30" y="20" width="180" height="180" rx="40" ry="40" fill="url(#border-grad)"/>
+  <g clip-path="url(#icon-clip)">
+    <!-- BG -->
+    <rect x="33.5" y="23.5" width="173" height="173" rx="37" ry="37" fill="url(#icon-bg)"/>
+    <!-- Fine grid -->
+    <g opacity=".025" stroke="#4DB8F0" stroke-width=".9">
+      <line x1="30" y1="57" x2="210" y2="57"/>
+      <line x1="30" y1="91" x2="210" y2="91"/>
+      <line x1="30" y1="110" x2="210" y2="110"/>
+      <line x1="30" y1="129" x2="210" y2="129"/>
+      <line x1="30" y1="163" x2="210" y2="163"/>
+      <line x1="57" y1="20" x2="57" y2="200"/>
+      <line x1="91" y1="20" x2="91" y2="200"/>
+      <line x1="110" y1="20" x2="110" y2="200"/>
+      <line x1="129" y1="20" x2="129" y2="200"/>
+      <line x1="163" y1="20" x2="163" y2="200"/>
+    </g>
+    <!-- Streams -->
+    <g filter="url(#glow-stream)">
+      <path d="M116 94C132 94,139 75,162 69" fill="none" stroke="url(#s1)" stroke-width="1.2" stroke-linecap="round"/>
+      <path d="M116 110C134 110,144 110,164 110" fill="none" stroke="url(#s2)" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M116 126C132 126,139 145,162 151" fill="none" stroke="url(#s3)" stroke-width="1" stroke-linecap="round"/>
+    </g>
+    <!-- Endpoint dots -->
+    <g filter="url(#glow-dot)">
+      <circle cx="163" cy="68"  r="1.9" fill="#5AC8F5" opacity=".9"/>
+      <circle cx="165" cy="110" r="1.7" fill="#4BB8E8" opacity=".75"/>
+      <circle cx="163" cy="152" r="1.6" fill="#3BA8DA" opacity=".65"/>
+    </g>
+    <!-- Prompt > -->
+    <g filter="url(#glow-prompt)">
+      <path d="M60 85L85 110L60 135"
+        fill="none" stroke="url(#prompt-fill)"
+        stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <!-- Cursor _ -->
+    <g filter="url(#glow-prompt)">
+      <rect x="92" y="127" width="24" height="3" rx="1.5" fill="url(#prompt-fill)"/>
+    </g>
+    <!-- Vignette -->
+    <rect x="30" y="20" width="180" height="180" fill="url(#vignette)"/>
+  </g>
+
+  <!-- ── Wordmark ── -->
+  <text
+    x="240" y="130"
+    font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif"
+    font-size="96"
+    font-weight="700"
+    letter-spacing="-4"
+    fill="white"
+    filter="url(#text-glow)"
+  >Amux</text>
+
+  <!-- ── Tagline ── -->
+  <text
+    x="243" y="163"
+    font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif"
+    font-size="19.5"
+    font-weight="400"
+    letter-spacing=".25"
+    fill="url(#tagline-grad)"
+  >The control plane for your AI agents</text>
+</svg>

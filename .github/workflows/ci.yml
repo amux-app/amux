@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tmux xvfb
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Static verification
+        run: pnpm run verify:static
+        env:
+          AUMX_PRIVATE_REF_PATTERNS: ${{ secrets.INTERNAL_REF_PATTERNS }}
+          AUMX_REQUIRE_PRIVATE_REFS: '0'
+
+      - name: Desktop type check
+        run: pnpm --filter aumx-desktop typecheck
+
+      - name: Core coverage
+        run: pnpm test:coverage
+
+      - name: Desktop coverage
+        run: xvfb-run -a pnpm --filter aumx-desktop test:coverage
+
+  desktop-smoke:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - name: Install system dependencies
+        run: brew install tmux
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure isolated tmux server
+        run: |
+          socket_dir="$RUNNER_TEMP/aumx-tmux-ci/socket"
+          mkdir -p "$socket_dir"
+          echo "TMUX_TMPDIR=$socket_dir" >> "$GITHUB_ENV"
+
+      - name: Start isolated tmux server
+        run: tmux -f /dev/null new-session -d -s tmux-prewarm
+
+      - name: Enforce minimum tmux version
+        run: node scripts/ensure-tmux.mjs --check | tee "$GITHUB_STEP_SUMMARY"
+
+      - name: Build desktop application
+        run: |
+          pnpm build
+          pnpm --dir desktop build
+
+      - name: Desktop smoke test
+        run: pnpm --filter aumx-desktop test:smoke
+
+      - name: Tear down isolated tmux server
+        if: always()
+        run: tmux kill-server 2>/dev/null || true

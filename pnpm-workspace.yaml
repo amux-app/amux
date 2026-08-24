@@ -1,0 +1,47 @@
+packages:
+  - desktop
+
+# Validate dependency engines against the pnpm-managed, lockfile-pinned runtime.
+# https://pnpm.io/settings/cli#nodeversion
+nodeVersion: 24.19.0
+
+# GHSA-mh99-v99m-4gvg (brace-expansion DoS) is dev-only: all 65 paths come from eslint,
+# vitest/glob and electron-builder, never from a shipped artifact — audit:prod stays strict
+# and reports zero. The advisory is patched only in >=5.0.8, which cannot be forced globally
+# because brace-expansion v5 exports an object while minimatch 3/5/9 require() it as a
+# function. Revisit once those minimatch lines migrate to brace-expansion v5.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-mh99-v99m-4gvg
+
+allowBuilds:
+  electron: true
+  electron-winstaller: true
+  esbuild: true
+  node-pty: true
+  sharp: true
+  workerd: true
+
+overrides:
+  '@babel/core': 7.29.7
+  '@lezer/common': 1.5.2
+  ajv>fast-uri: 3.1.5
+  brace-expansion@1: 1.1.18
+  brace-expansion@2: 2.1.4
+  electron-publish>form-data: 4.0.6
+  js-yaml: 4.3.1
+  miniflare>sharp: 0.35.3
+  minimatch@10>brace-expansion: 5.0.9
+  nanoid: 3.3.18
+  postcss: 8.5.23
+  shell-quote: 1.10.0
+  tar: 7.5.22
+  tmp-promise>tmp: 0.2.7
+  undici@6: 6.28.0
+  undici@7: 7.29.0
+  vite: 6.4.3
+
+# Electron 43.4.1 is the reviewed upstream release; permit this exact version
+# through pnpm's release-age safeguard while keeping the exception narrow.
+minimumReleaseAgeExclude:
+  - electron@43.4.1

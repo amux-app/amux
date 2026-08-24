@@ -1,0 +1,37 @@
+# Gitleaks configuration.
+#
+# The only allowlist below covers fake credential fixtures that are asserted as
+# literal expected values by the support-bundle redaction unit tests. They are
+# invented strings, never issued by any provider, and exist so the tests can
+# prove the redactor rewrites them.
+#
+# The allowlist is scoped by rule AND path AND the exact fixture value, so a real
+# secret committed into these same two test files is still reported: only these
+# specific known-fake strings are suppressed, and only in these two files.
+#
+# The fixtures appear across many historical commits and the repository's
+# published release evidence forbids rewriting git history, so editing the
+# fixtures cannot clear the historical findings. Allowlisting is the fix.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Fake credential fixtures asserted by the support-bundle redaction unit tests"
+condition = "AND"
+targetRules = ["generic-api-key", "gitlab-pat", "jwt", "private-key", "stripe-access-token"]
+paths = [
+  '''^desktop/__tests__/main/support-bundle-redaction\.test\.ts$''',
+  '''^desktop/__tests__/main/support-bundle-service\.test\.ts$''',
+]
+regexTarget = "secret"
+regexes = [
+  '''MIIEvQIBADANBgkqhkiG9w0BAQEF''',
+  '''MIIEpAIBAAKCAQEAabc123def456''',
+  '''MIIFHDBOBgkqhkiG9w0BBQ0wQTApBgkqhkiG''',
+  '''abcdefghij123456''',
+  '''abcd1234efgh5678''',
+  '''sk_live_0123456789abcdefABCDEF''',
+  '''glpat-abcdefghij0123456789''',
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJzdWIiOiIxMjM0NTY3ODkwIn0\.''',
+]

@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1=".5" y1="0" x2=".5" y2="1">
+      <stop offset="0%" stop-color="#1A1E28"/>
+      <stop offset="100%" stop-color="#10131A"/>
+    </linearGradient>
+
+    <linearGradient id="prompt-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#64D2FF"/>
+      <stop offset="100%" stop-color="#3B9EFF"/>
+    </linearGradient>
+
+    <linearGradient id="s1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#5AC8F5" stop-opacity=".75"/>
+      <stop offset="100%" stop-color="#3B9EFF" stop-opacity=".08"/>
+    </linearGradient>
+    <linearGradient id="s2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4DB8E8" stop-opacity=".6"/>
+      <stop offset="100%" stop-color="#2E8AE6" stop-opacity=".06"/>
+    </linearGradient>
+    <linearGradient id="s3" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#40A8D8" stop-opacity=".5"/>
+      <stop offset="100%" stop-color="#2080D0" stop-opacity=".05"/>
+    </linearGradient>
+
+    <radialGradient id="ambient" cx=".40" cy=".50" r=".40">
+      <stop offset="0%" stop-color="#4DB8F0" stop-opacity=".08"/>
+      <stop offset="100%" stop-color="#4DB8F0" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="vignette" cx="50%" cy="50%" r="62%">
+      <stop offset="0%" stop-color="#000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000" stop-opacity=".35"/>
+    </radialGradient>
+
+    <!-- Border: top-lit bevel — bright top, dark bottom like Terminal.app -->
+    <linearGradient id="border-grad" x1=".5" y1="0" x2=".5" y2="1">
+      <stop offset="0%" stop-color="#C8CED6"/>
+      <stop offset="25%" stop-color="#8890A0"/>
+      <stop offset="60%" stop-color="#484E5A"/>
+      <stop offset="100%" stop-color="#262A32"/>
+    </linearGradient>
+
+    <filter id="glow-prompt" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b0"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="b1"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="28" result="b2"/>
+      <feMerge>
+        <feMergeNode in="b2"/>
+        <feMergeNode in="b1"/>
+        <feMergeNode in="b0"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="glow-stream" x="-30%" y="-80%" width="160%" height="260%">
+      <feGaussianBlur stdDeviation="5" result="b1"/>
+      <feGaussianBlur stdDeviation="10" result="b2"/>
+      <feMerge>
+        <feMergeNode in="b2"/>
+        <feMergeNode in="b1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="glow-dot" x="-150%" y="-150%" width="400%" height="400%">
+      <feGaussianBlur stdDeviation="6" result="b1"/>
+      <feGaussianBlur stdDeviation="14" result="b2"/>
+      <feMerge>
+        <feMergeNode in="b2"/>
+        <feMergeNode in="b1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <clipPath id="icon-clip">
+      <rect x="80" y="80" width="864" height="864" rx="190" ry="190"/>
+    </clipPath>
+  </defs>
+
+  <!-- Everything inside 24px margin -->
+  <g>
+    <!-- Border ring: outer rounded rect -->
+    <rect x="80" y="80" width="864" height="864" rx="190" ry="190" fill="url(#border-grad)"/>
+
+    <!-- Inset fill: 3.5px border thickness -->
+    <g clip-path="url(#icon-clip)">
+      <rect x="96" y="96" width="832" height="832" rx="178" ry="178" fill="url(#bg)"/>
+
+      <!-- Fine grid -->
+      <g opacity=".025" stroke="#4DB8F0" stroke-width=".8">
+        <line x1="24" y1="194" x2="1000" y2="194"/>
+        <line x1="24" y1="366" x2="1000" y2="366"/>
+        <line x1="24" y1="512" x2="1000" y2="512"/>
+        <line x1="24" y1="658" x2="1000" y2="658"/>
+        <line x1="24" y1="830" x2="1000" y2="830"/>
+        <line x1="194" y1="24" x2="194" y2="1000"/>
+        <line x1="366" y1="24" x2="366" y2="1000"/>
+        <line x1="512" y1="24" x2="512" y2="1000"/>
+        <line x1="658" y1="24" x2="658" y2="1000"/>
+        <line x1="830" y1="24" x2="830" y2="1000"/>
+      </g>
+
+      <!-- Ambient glow -->
+      <rect x="24" y="24" width="976" height="976" fill="url(#ambient)"/>
+
+      <!-- Streams -->
+      <g filter="url(#glow-stream)">
+        <path d="M530 445C595 445,625 365,730 340" fill="none" stroke="url(#s1)" stroke-width="5" stroke-linecap="round"/>
+        <path d="M530 494C600 494,640 494,740 494" fill="none" stroke="url(#s2)" stroke-width="4.5" stroke-linecap="round"/>
+        <path d="M530 543C595 543,625 625,730 650" fill="none" stroke="url(#s3)" stroke-width="4" stroke-linecap="round"/>
+      </g>
+
+      <!-- Endpoint dots -->
+      <g filter="url(#glow-dot)">
+        <circle cx="736" cy="337" r="8" fill="#5AC8F5" opacity=".9"/>
+        <circle cx="746" cy="494" r="7" fill="#4BB8E8" opacity=".75"/>
+        <circle cx="736" cy="653" r="6.5" fill="#3BA8DA" opacity=".65"/>
+      </g>
+
+      <!-- Prompt > -->
+      <g filter="url(#glow-prompt)">
+        <path d="M275 393L383 494L275 595" fill="none" stroke="url(#prompt-fill)" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+
+      <!-- Cursor _ -->
+      <g filter="url(#glow-prompt)">
+        <rect x="416" y="568" width="104" height="13" rx="6.5" fill="url(#prompt-fill)"/>
+      </g>
+
+      <!-- Vignette -->
+      <rect x="24" y="24" width="976" height="976" fill="url(#vignette)"/>
+    </g>
+  </g>
+</svg>

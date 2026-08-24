@@ -1,0 +1,95 @@
+/* Sidebar surface. Only what Tailwind utilities cannot express: the name metric,
+   the scrollbar, and motion. Pixels follow .tmp/left_side/mock.html §6. */
+
+.sidebar-focus:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.sidebar-ui-font {
+  font-family: var(--sidebar-ui-font);
+}
+
+.sidebar-agent-name {
+  font-family: var(--sidebar-ui-font);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.sidebar-width-motion {
+  transition: width 200ms ease;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 9px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.14);
+  background-clip: padding-box;
+}
+
+[data-theme="colorful"] .sidebar-scroll::-webkit-scrollbar-thumb,
+[data-theme="light"] .sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  background-clip: padding-box;
+}
+
+/* Collapse animates the column; a pointer drag must track the handle exactly, so
+   the transition is suppressed for the duration of the drag. Programmatic
+   re-asserts (window resize, zoom, collapse/expand) get the same suppression —
+   otherwise the animated panel and the instantly-written --sidebar-live-width
+   desync for the transition's duration. */
+.sidebar-panel {
+  transition: flex-basis 200ms ease, flex-grow 200ms ease;
+}
+
+[data-sidebar-dragging="true"] .sidebar-panel,
+[data-sidebar-dragging="true"] .sidebar-width-motion,
+[data-sidebar-programmatic="true"] .sidebar-panel,
+[data-sidebar-programmatic="true"] .sidebar-width-motion {
+  transition: none;
+}
+
+/* The sidebar edge carries no resting divider — separation is the surface colour.
+   The handle only draws itself once it is hovered or dragged. */
+.aumx-resize-handle--sidebar::before {
+  opacity: 0;
+}
+
+.aumx-resize-handle--sidebar:hover::before,
+.aumx-resize-handle--sidebar[data-separator="hover"]::before,
+.aumx-resize-handle--sidebar[data-separator="active"]::before {
+  opacity: 1;
+}
+
+/* Keyboard users get the same affordance the pointer gets, in the focus colour. */
+.aumx-resize-handle--sidebar:focus-visible::before,
+.aumx-resize-handle--sidebar[data-separator="focus"]::before {
+  opacity: 1;
+  width: 2px;
+  left: 1.5px;
+  background: var(--focus-ring);
+}
+
+.sidebar-menu-surface {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="colorful"] .sidebar-menu-surface,
+[data-theme="light"] .sidebar-menu-surface {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-width-motion,
+  .sidebar-panel {
+    transition: none;
+  }
+}

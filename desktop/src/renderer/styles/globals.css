@@ -1,0 +1,492 @@
+@import "tailwindcss";
+
+.hljs {
+  background: var(--bg) !important;
+  padding: 0 !important;
+}
+
+/* xterm ships a hardcoded black viewport and IME popup that the runtime theme
+   never repaints. Selectors mirror the vendor specificity so source order wins. */
+.xterm .xterm-viewport {
+  background-color: transparent;
+}
+
+.xterm .composition-view {
+  background: var(--bg);
+  color: var(--text);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Compact Mode tightens Tailwind's spacing scale at the root, so every
+   padding/margin/gap utility shrinks proportionally without per-component edits. */
+html[data-compact="true"] {
+  --spacing: 0.2rem;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.aumx-file-editor.cm-editor {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.aumx-file-editor .cm-scroller {
+  overflow: auto;
+  font-family: 'SFMono-Regular', SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.aumx-file-editor .cm-content,
+.aumx-file-editor .cm-gutter {
+  min-height: 100%;
+  padding-block: 0;
+}
+
+.aumx-file-editor .cm-line {
+  padding: 0 16px;
+}
+
+.aumx-file-editor .cm-gutters {
+  background: var(--surface);
+  color: color-mix(in srgb, var(--text-muted) 80%, transparent);
+  border-right: 1px solid var(--border);
+}
+
+.aumx-file-editor .cm-gutterElement {
+  min-width: 3ch;
+  padding: 0 12px 0 8px;
+  opacity: 0.72;
+}
+
+.aumx-file-editor .cm-activeLine {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.aumx-file-editor .cm-activeLineGutter {
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  color: var(--text-secondary);
+}
+
+.aumx-file-editor.cm-focused {
+  outline: none;
+}
+
+.aumx-file-editor .cm-cursor,
+.aumx-file-editor .cm-dropCursor {
+  border-left-color: var(--text);
+}
+
+.aumx-file-editor .cm-selectionBackground,
+.aumx-file-editor.cm-focused .cm-selectionBackground,
+.aumx-file-editor ::selection {
+  background: color-mix(in srgb, var(--accent) 28%, transparent) !important;
+}
+
+.aumx-file-editor .cm-tooltip {
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.7);
+}
+
+.aumx-file-editor .cm-tooltip-autocomplete {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.aumx-file-editor .cm-tooltip-autocomplete > ul {
+  padding: 6px;
+}
+
+.aumx-file-editor .cm-tooltip-autocomplete > ul > li {
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.aumx-file-editor .cm-tooltip-autocomplete > ul > li[aria-selected] {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-raised));
+  color: var(--text);
+}
+
+.aumx-file-editor .cm-tooltip-autocomplete ul li .cm-completionDetail {
+  color: var(--text-muted);
+}
+
+.aumx-file-editor .cm-panels {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+.aumx-file-editor .cm-panels-top {
+  border-bottom: 1px solid var(--border);
+}
+
+.aumx-file-editor .cm-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  font-size: 11px;
+}
+
+.aumx-file-editor .cm-search input {
+  min-width: 120px;
+  max-width: 180px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 3px 7px;
+  line-height: 1.2;
+  font: inherit;
+}
+
+.aumx-file-editor .cm-search input:focus {
+  outline: 1px solid var(--focus-ring);
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+}
+
+.aumx-file-editor .cm-search button {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  padding: 3px 7px;
+  line-height: 1.1;
+  font: inherit;
+  cursor: pointer;
+}
+
+.aumx-file-editor .cm-search button:hover {
+  color: var(--text);
+}
+
+.aumx-file-editor .cm-search button[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  color: var(--accent);
+}
+
+.aumx-file-editor .cm-search label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.aumx-file-editor .cm-search input[type='checkbox'] {
+  width: 12px;
+  height: 12px;
+  margin: 0;
+}
+
+.aumx-file-editor-search-match {
+  background: color-mix(in srgb, var(--success) 32%, transparent);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+.aumx-resize-handle {
+  background: transparent;
+  position: relative;
+  touch-action: none;
+}
+
+.aumx-resize-handle::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  background: var(--divider-strong);
+}
+
+.aumx-resize-handle:hover::before,
+.aumx-resize-handle[data-separator="hover"]::before {
+  background: var(--text-muted);
+  opacity: 1;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.aumx-resize-handle[data-separator="active"]::before {
+  background: var(--accent);
+  opacity: 1;
+  transition: none;
+}
+
+.aumx-resize-handle[data-separator="disabled"] {
+  cursor: default;
+}
+
+.aumx-resize-handle[data-separator="disabled"]::before {
+  opacity: 0;
+}
+
+.aumx-resize-handle[aria-orientation="vertical"] {
+  width: 5px;
+  cursor: col-resize;
+}
+
+.aumx-resize-handle[aria-orientation="vertical"]::before {
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 1px;
+}
+
+.aumx-resize-handle[aria-orientation="vertical"]:hover::before,
+.aumx-resize-handle[aria-orientation="vertical"][data-separator="hover"]::before {
+  width: 2px;
+  left: 1.5px;
+}
+
+.aumx-resize-handle[aria-orientation="vertical"][data-separator="active"]::before {
+  width: 2px;
+  left: 1.5px;
+}
+
+.aumx-resize-handle--file-browser::before {
+  opacity: 0.72;
+}
+
+.aumx-resize-handle--file-browser::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, width 0.18s ease, height 0.18s ease;
+}
+
+.aumx-resize-handle--file-browser[aria-orientation="vertical"] {
+  width: 11px;
+}
+
+.aumx-resize-handle--file-browser[aria-orientation="vertical"]::before {
+  left: 5px;
+}
+
+.aumx-resize-handle--file-browser[aria-orientation="vertical"]:hover::before,
+.aumx-resize-handle--file-browser[aria-orientation="vertical"][data-separator="hover"]::before,
+.aumx-resize-handle--file-browser[aria-orientation="vertical"][data-separator="active"]::before {
+  left: 4.5px;
+}
+
+.aumx-resize-handle--file-browser[aria-orientation="vertical"]::after {
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 34px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, white 12%, var(--surface-raised)) 0%,
+    color-mix(in srgb, var(--surface-raised) 92%, var(--accent) 8%) 48%,
+    color-mix(in srgb, black 10%, var(--surface-raised)) 100%
+  );
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 90%, transparent);
+}
+
+.aumx-resize-handle--file-browser:hover::after,
+.aumx-resize-handle--file-browser[data-separator="hover"]::after {
+  opacity: 1;
+}
+
+.aumx-resize-handle--file-browser:focus-visible::after {
+  opacity: 1;
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-raised));
+  box-shadow: 0 0 0 1px var(--focus-ring);
+}
+
+.aumx-resize-handle--file-browser[data-separator="active"]::after {
+  opacity: 1;
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface-raised));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.aumx-resize-handle--file-browser[data-separator="disabled"]::after {
+  opacity: 0;
+}
+
+.aumx-resize-handle--file-browser-crowded::before {
+  opacity: 0.96;
+  background: color-mix(in srgb, var(--accent) 24%, var(--border));
+}
+
+.aumx-resize-handle--file-browser-crowded::after {
+  opacity: 0.92;
+  width: 6px;
+  height: 42px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, white 16%, var(--surface-raised)) 0%,
+    color-mix(in srgb, var(--accent) 18%, var(--surface-raised)) 52%,
+    color-mix(in srgb, black 12%, var(--surface-raised)) 100%
+  );
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 34%, var(--border)),
+    0 14px 24px -20px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.aumx-resize-handle--file-browser-viewer.aumx-resize-handle--file-browser-crowded[aria-orientation="vertical"]::after {
+  transform: translate(calc(-50% - 3px), -50%);
+}
+
+.aumx-resize-handle--file-browser-shell.aumx-resize-handle--file-browser-crowded[aria-orientation="vertical"]::after {
+  transform: translate(calc(-50% + 3px), -50%);
+}
+
+.aumx-file-viewer--crowded {
+  position: relative;
+}
+
+.aumx-file-viewer--crowded::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow:
+    inset 1px 0 0 color-mix(in srgb, var(--accent) 34%, var(--border)),
+    inset -1px 0 0 color-mix(in srgb, var(--accent) 34%, var(--border)),
+    inset 14px 0 22px -22px color-mix(in srgb, var(--accent) 72%, transparent),
+    inset -14px 0 22px -22px color-mix(in srgb, var(--accent) 72%, transparent);
+  opacity: 0.95;
+}
+
+.aumx-file-viewer--crowded::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--surface-raised) 24%, transparent) 0%,
+    transparent 14%,
+    transparent 86%,
+    color-mix(in srgb, var(--surface-raised) 24%, transparent) 100%
+  );
+  opacity: 0.7;
+}
+
+.aumx-resize-handle[aria-orientation="horizontal"] {
+  height: 5px;
+  cursor: row-resize;
+}
+
+.aumx-resize-handle[aria-orientation="horizontal"]::before {
+  left: 0;
+  right: 0;
+  top: 2px;
+  height: 1px;
+}
+
+.aumx-resize-handle[aria-orientation="horizontal"]:hover::before,
+.aumx-resize-handle[aria-orientation="horizontal"][data-separator="hover"]::before {
+  height: 2px;
+  top: 1.5px;
+}
+
+.aumx-resize-handle[aria-orientation="horizontal"][data-separator="active"]::before {
+  height: 2px;
+  top: 1.5px;
+}
+
+@keyframes pulse-dot {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes orb-float {
+
+  0%,
+  100% {
+    transform: translate(-50%, -52%) scale(1);
+    opacity: 0.035;
+  }
+
+  50% {
+    transform: translate(-50%, -48%) scale(1.08);
+    opacity: 0.05;
+  }
+}
+
+@keyframes boot-shimmer {
+  0% { transform: translateX(-200%); }
+  100% { transform: translateX(400%); }
+}
+
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes app-update-attention {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.08); }
+}
+
+.app-update-attention {
+  animation: app-update-attention 700ms ease-out 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-update-attention {
+    animation: none;
+  }
+}
