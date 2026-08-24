@@ -1,6 +1,6 @@
 {
   "name": "aumx",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "description": "Core library for Amux — the agentic IDE and mission control for a fleet of AI coding agents (Claude Code, Codex, OpenCode, Pi), each isolated in its own tmux pane and git worktree.",
   "type": "module",
