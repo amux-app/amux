@@ -100,4 +100,93 @@ describe('ensureTmuxSession', () => {
       { silent: true },
     );
   });
+
+  it('allocates a suffix when the desired session belongs to another project', async () => {
+    let listCalls = 0;
+    execAsyncMock.mockImplementation((command: string) => {
+      if (command.includes('list-sessions')) {
+        listCalls += 1;
+        return Promise.resolve(listCalls === 1 ? 'aumx-example-rag\n' : 'aumx-example-rag\naumx-example-rag_01\n');
+      }
+      if (command.includes('@aumx_project_root')) return Promise.resolve('@aumx_project_root /other/project');
+      if (command.includes('has-session')) return Promise.resolve('');
+      if (command.includes('new-session')) return Promise.resolve('%2\n');
+      return Promise.resolve('');
+    });
+
+    await expect(ensureTmuxSession('aumx-example-rag', '/repo', 'repo')).resolves.toEqual({
+      created: true,
+      paneId: '%2',
+      sessionName: 'aumx-example-rag_02',
+    });
+  });
+
+  it('recreates a project-owned session that has no panes', async () => {
+    execAsyncMock.mockImplementation((command: string) => {
+      if (command.includes('list-sessions')) return Promise.resolve('aumx-example-rag\n');
+      if (command.includes('@aumx_project_root')) return Promise.resolve('@aumx_project_root /repo');
+      if (command.includes('list-panes')) return Promise.resolve('');
+      if (command.includes('new-session')) return Promise.resolve('%8\n');
+      return Promise.resolve('');
+    });
+
+    await expect(ensureTmuxSession('aumx-example-rag', '/repo', 'repo')).resolves.toMatchObject({
+      created: true,
+      paneId: '%8',
+      sessionName: 'aumx-example-rag',
+    });
+    expect(execAsyncMock).toHaveBeenCalledWith("tmux kill-session -t 'aumx-example-rag'", { silent: true });
+  });
+
+  it('still creates a session when session listing is unavailable', async () => {
+    execAsyncMock.mockImplementation((command: string) => {
+      if (command.includes('list-sessions') || command.includes('has-session')) {
+        return Promise.reject(new Error('tmux unavailable'));
+      }
+      if (command.includes('new-session')) return Promise.resolve('%3\n');
+      return Promise.resolve('');
+    });
+
+    await expect(ensureTmuxSession('aumx-new', '/repo', 'repo')).resolves.toEqual({
+      created: true,
+      paneId: '%3',
+      sessionName: 'aumx-new',
+    });
+  });
+
+  it('fails clearly after exhausting all suffixes', async () => {
+    let listCalls = 0;
+    execAsyncMock.mockImplementation((command: string) => {
+      if (command.includes('list-sessions')) {
+        listCalls += 1;
+        const sessions = [
+          'aumx-full',
+          ...Array.from({ length: 99 }, (_, index) => `aumx-full_${String(index + 1).padStart(2, '0')}`),
+        ];
+        return Promise.resolve(sessions.join('\n'));
+      }
+      if (command.includes('@aumx_project_root')) return Promise.resolve('@aumx_project_root /other');
+      if (command.includes('has-session')) return Promise.resolve('');
+      return Promise.resolve('');
+    });
+
+    await expect(ensureTmuxSession('aumx-full', '/repo', 'repo'))
+      .rejects.toThrow("No available session name for 'aumx-full'");
+    expect(listCalls).toBe(2);
+  });
+
+  it('does not hide a created session when metadata or environment setup fails', async () => {
+    execAsyncMock.mockImplementation((command: string) => {
+      if (command.includes('list-sessions') || command.includes('has-session'))
+        return Promise.reject(new Error('not available'));
+      if (command.includes('new-session')) return Promise.resolve('%4\n');
+      return Promise.reject(new Error('metadata failed'));
+    });
+
+    await expect(ensureTmuxSession('aumx-created', '/repo', 'repo')).resolves.toEqual({
+      created: true,
+      paneId: '%4',
+      sessionName: 'aumx-created',
+    });
+  });
 });

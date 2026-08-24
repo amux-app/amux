@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { AumxPane } from 'aumx/core';
 import React from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
-import { KanbanCardPreview } from '../../src/renderer/components/kanban/KanbanCard';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { KanbanCard, KanbanCardPreview } from '../../src/renderer/components/kanban/KanbanCard';
 import type { KanbanColumnItem } from '../../src/renderer/hooks/useKanbanColumns';
 import { usePaneActivityStore } from '../../src/renderer/stores/pane-activity.store';
+import { useWorktreeStatusStore } from '../../src/renderer/stores/worktree-status.store';
 import { makeActivity as activity } from '../helpers/pane-activity-fixtures';
 
 function pane(overrides: Partial<AumxPane> = {}): AumxPane {
@@ -25,6 +26,7 @@ function paneItem(data: AumxPane): KanbanColumnItem {
 afterEach(() => {
   cleanup();
   usePaneActivityStore.getState().reset();
+  useWorktreeStatusStore.setState({ statuses: {} });
 });
 
 describe('KanbanCard status precedence', () => {
@@ -74,5 +76,105 @@ describe('KanbanCard status precedence', () => {
     expect(screen.queryByText('Working')).toBeNull();
     const card = container.querySelector('[data-card-id]');
     expect(card?.className).not.toContain('shadow-[0_0_0_1px_rgba(59,130,246,0.14)_inset,0_0_24px_rgba(56,189,248,0.07)]');
+  });
+});
+
+describe('KanbanCard states and actions', () => {
+  it('renders backlog, launching, and done cards with their state-specific labels', () => {
+    render(
+      <KanbanCardPreview
+        item={{
+          type: 'backlog',
+          data: {
+            complexity: 'L',
+            createdAt: Date.now(),
+            id: 'backlog-1',
+            prompt: 'build it',
+            title: 'Build it',
+            useWorktree: false,
+          },
+        }}
+      />,
+    );
+    expect(screen.getByText('Large')).toBeTruthy();
+    cleanup();
+
+    render(
+      <KanbanCardPreview
+        item={{
+          type: 'launching',
+          data: {
+            complexity: 'M',
+            createdAt: Date.now(),
+            id: 'launching-1',
+            prompt: 'launch it',
+            title: 'Launching task',
+          },
+        }}
+      />,
+    );
+    expect(screen.getByText('Launching...')).toBeTruthy();
+    cleanup();
+
+    render(
+      <KanbanCardPreview
+        item={{
+          type: 'done',
+          data: {
+            id: 'done-1',
+            mergedAt: Date.now(),
+            prompt: 'done prompt',
+            slug: 'done-task',
+          },
+        }}
+      />,
+    );
+    expect(screen.getByText(/merged/)).toBeTruthy();
+  });
+
+  it('dispatches user-selected backlog context actions', () => {
+    const onAction = vi.fn();
+    render(
+      <KanbanCard
+        draggable={false}
+        isSelected={false}
+        item={{
+          type: 'backlog',
+          data: {
+            complexity: 'S',
+            createdAt: Date.now(),
+            id: 'backlog-1',
+            prompt: 'build it',
+            title: 'Build it',
+          },
+        }}
+        onAction={onAction}
+        onClick={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByTitle('Launch agent'));
+    fireEvent.click(screen.getByTitle('Edit task'));
+    fireEvent.click(screen.getByTitle('Remove'));
+    expect(onAction.mock.calls.map(([action]) => action)).toEqual(['launch', 'edit', 'remove']);
+  });
+
+  it('renders Git ahead, changed-file, and dirty indicators from the real status store', () => {
+    useWorktreeStatusStore.setState({
+      statuses: {
+        p1: {
+          commitsAhead: 2,
+          deletions: 1,
+          filesChanged: 3,
+          hasChanges: true,
+          insertions: 4,
+          isDirty: true,
+        },
+      },
+    });
+    render(<KanbanCardPreview item={paneItem(pane({ branchName: 'feature', worktreePath: '/repo/wt' }))} />);
+    expect(screen.getByText('feature')).toBeTruthy();
+    expect(screen.getByText('3 files')).toBeTruthy();
+    expect(screen.getByText('2 ahead')).toBeTruthy();
+    expect(screen.getByTitle('Uncommitted changes')).toBeTruthy();
   });
 });

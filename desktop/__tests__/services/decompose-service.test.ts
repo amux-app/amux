@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { gatherContext, validateTasks } from '../../src/main/services/DecomposeService';
 
 function makeTask(overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> {
@@ -222,5 +222,87 @@ describe('DecomposeService gatherContext', () => {
     ]);
     expect(context).toContain('## Changed Files');
     expect(context).toContain('## Diff');
+  });
+});
+
+describe('DecomposeService network fallbacks', () => {
+  const request = {
+    includeDiff: false,
+    paneId: 'pane-1',
+    projectRoot: '/definitely-not-a-project',
+    prompt: 'split this task',
+  };
+  const validContent = JSON.stringify({
+    tasks: [makeTask(), makeTask(), makeTask()],
+  });
+
+  afterEach(() => {
+    delete process.env.OPENROUTER_API_KEY;
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it('returns a stable failure when no OpenRouter key is configured', async () => {
+    delete process.env.OPENROUTER_API_KEY;
+    await expect((await import('../../src/main/services/DecomposeService')).decompose(request)).resolves.toEqual({
+      error: 'OPENROUTER_API_KEY not set',
+      success: false,
+      tasks: [],
+    });
+  });
+
+  it('moves from a non-OK model response to the next model', async () => {
+    process.env.OPENROUTER_API_KEY = 'test-key';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 503 })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: validContent } }],
+        }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect((await import('../../src/main/services/DecomposeService')).decompose(request)).resolves.toMatchObject({
+      success: true,
+      tasks: expect.any(Array),
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries malformed model content before returning a safe failure', async () => {
+    process.env.OPENROUTER_API_KEY = 'test-key';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: '{bad-json' } }] }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect((await import('../../src/main/services/DecomposeService')).decompose(request)).resolves.toEqual({
+      error: 'All models failed to generate valid tasks',
+      success: false,
+      tasks: [],
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('aborts a timed-out request and continues through the model fallback', async () => {
+    process.env.OPENROUTER_API_KEY = 'test-key';
+    const fetchMock = vi.fn(
+      (_url: string, options: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          options.signal?.dispatchEvent(new Event('abort'));
+          reject(new DOMException('aborted', 'AbortError'));
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const promise = (await import('../../src/main/services/DecomposeService')).decompose(request);
+    await expect(promise).resolves.toEqual({
+      error: 'All models failed to generate valid tasks',
+      success: false,
+      tasks: [],
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 });

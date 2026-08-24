@@ -48,8 +48,13 @@ describe('terminal IPC handlers', () => {
     });
     getTerminalManagerMock.mockReset().mockReturnValue({
       attach: attachMock,
+      detach: vi.fn(),
+      expandSelection: vi.fn(),
       resize: resizeMock,
+      scroll: vi.fn(),
       setWindow: setWindowMock,
+      unlockStdin: vi.fn(),
+      write: vi.fn(),
     });
     resizeMock.mockReset().mockResolvedValue(undefined);
     getLogDirMock.mockReset().mockReturnValue('/project/.log');
@@ -300,5 +305,88 @@ describe('terminal IPC handlers', () => {
       error: 'tmux geometry mismatch',
       success: false,
     });
+  });
+
+  it('forwards detach, scroll, selection expansion, write, and unlock operations', async () => {
+    const manager = {
+      detach: vi.fn(),
+      expandSelection: vi.fn().mockResolvedValue({ status: 'expanded', text: 'history' }),
+      scroll: vi.fn().mockResolvedValue({ mode: 'classic', scrolled: true }),
+      unlockStdin: vi.fn(),
+      write: vi.fn().mockResolvedValue(undefined),
+    };
+    getTerminalManagerMock.mockReturnValue(manager);
+    registerTerminalHandlers({
+      getPanes: () => [{ id: 'pane-1', paneId: '%1' }],
+    } as never);
+
+    expect(getHandler(IPC.TERMINAL_DETACH)(undefined, { paneId: 'pane-1' })).toEqual({ success: true });
+    await expect(
+      getHandler(IPC.TERMINAL_SCROLL)(undefined, {
+        alternateScreenMode: true,
+        direction: 'up',
+        lines: 4,
+        paneId: 'pane-1',
+      }),
+    ).resolves.toEqual({ mode: 'classic', scrolled: true });
+    await expect(
+      getHandler(IPC.TERMINAL_SELECTION_EXPAND)(undefined, {
+        anchorText: 'a',
+        currentText: 'b',
+        direction: 'down',
+        paneId: 'pane-1',
+      }),
+    ).resolves.toEqual({ status: 'expanded', text: 'history' });
+    await expect(
+      getHandler(IPC.TERMINAL_WRITE)(undefined, {
+        data: 'input',
+        paneId: 'pane-1',
+      }),
+    ).resolves.toEqual({ success: true });
+    expect(getHandler(IPC.TERMINAL_UNLOCK_STDIN)(undefined, { paneId: 'pane-1' })).toEqual({ success: true });
+
+    expect(manager.detach).toHaveBeenCalledWith('pane-1');
+    expect(manager.scroll).toHaveBeenCalledWith('pane-1', 'up', 4, true);
+    expect(manager.expandSelection).toHaveBeenCalledWith('pane-1', 'a', 'b', 'down');
+    expect(manager.write).toHaveBeenCalledWith('pane-1', 'input', true);
+    expect(manager.unlockStdin).toHaveBeenCalledWith('pane-1');
+  });
+
+  it('returns stable failures for detach, selection, and write errors', async () => {
+    const manager = {
+      detach: vi.fn(() => {
+        throw new Error('detach failed');
+      }),
+      expandSelection: vi.fn().mockRejectedValue(new Error('history failed')),
+      write: vi.fn().mockRejectedValue(new Error('stdin locked')),
+    };
+    getTerminalManagerMock.mockReturnValue(manager);
+    registerTerminalHandlers({
+      getPanes: () => [{ id: 'pane-1', paneId: '%1' }],
+    } as never);
+
+    expect(getHandler(IPC.TERMINAL_DETACH)(undefined, { paneId: 'pane-1' })).toEqual({ error: 'detach failed' });
+    await expect(
+      getHandler(IPC.TERMINAL_SELECTION_EXPAND)(undefined, {
+        anchorText: 'a',
+        currentText: 'b',
+        direction: 'up',
+        paneId: 'pane-1',
+      }),
+    ).resolves.toEqual({ status: 'history-unavailable' });
+    await expect(
+      getHandler(IPC.TERMINAL_WRITE)(undefined, {
+        data: 'input',
+        paneId: 'pane-1',
+      }),
+    ).resolves.toEqual({ error: 'stdin locked' });
+    await expect(
+      getHandler(IPC.TERMINAL_SELECTION_EXPAND)(undefined, {
+        anchorText: 'a',
+        currentText: 'b',
+        direction: 'up',
+        paneId: 'missing',
+      }),
+    ).resolves.toEqual({ status: 'history-unavailable' });
   });
 });

@@ -1,9 +1,17 @@
 import type { AumxPane } from 'aumx/core';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { EventEmitter } from 'node:events';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   __test__,
   ProjectSearchService,
 } from '../../src/main/services/ProjectSearchService';
+import { fallbackTextSearch, gitGrep } from '../../src/main/services/project-search/ProjectTextSearch';
+
+const spawnMock = vi.hoisted(() => vi.fn());
+vi.mock('node:child_process', () => ({ spawn: spawnMock }));
 
 function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
   return {
@@ -98,6 +106,85 @@ describe('ProjectSearchService helpers', () => {
       path: 'src/renderer/components/file-browser/FileViewer.tsx',
       filename: 'FileViewer.tsx',
     });
+  });
+});
+
+function fakeSearchProcess() {
+  const child = new EventEmitter() as EventEmitter & {
+    stdout: EventEmitter & { setEncoding: (encoding: string) => void };
+    stderr: EventEmitter & { setEncoding: (encoding: string) => void };
+    kill: ReturnType<typeof vi.fn>;
+  };
+  child.stdout = Object.assign(new EventEmitter(), { setEncoding: vi.fn() });
+  child.stderr = Object.assign(new EventEmitter(), { setEncoding: vi.fn() });
+  child.kill = vi.fn();
+  return child;
+}
+
+describe('ProjectTextSearch boundaries', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('falls back when git grep cannot spawn or exits unsuccessfully', async () => {
+    const spawnError = fakeSearchProcess();
+    spawnMock.mockReturnValueOnce(spawnError);
+    const failedToSpawn = gitGrep('/repo', 'needle', vi.fn(), vi.fn());
+    spawnError.emit('error', new Error('git missing'));
+    await expect(failedToSpawn).resolves.toBeNull();
+
+    const nonZero = fakeSearchProcess();
+    spawnMock.mockReturnValueOnce(nonZero);
+    const failed = gitGrep('/repo', 'needle', vi.fn(), vi.fn());
+    nonZero.stderr.emit('data', 'fatal: not a repository');
+    nonZero.emit('close', 128, null);
+    await expect(failed).resolves.toBeNull();
+  });
+
+  it('parses only complete null-delimited records and caps result count', async () => {
+    const child = fakeSearchProcess();
+    spawnMock.mockReturnValue(child);
+    const pending = gitGrep('/repo', 'needle', vi.fn(), vi.fn());
+    child.stdout.emit('data', 'src/a.ts\x002\x00 needle here\nsrc/b.ts\x00bad\x00ignored\ntruncated');
+    child.emit('close', 0, null);
+    await expect(pending).resolves.toEqual([expect.objectContaining({ lineNumber: 2, path: 'src/a.ts' })]);
+  });
+
+  it('skips binary, oversized, and unreadable files during fallback scanning', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'aumx-project-search-'));
+    try {
+      await writeFile(join(root, 'text.ts'), 'needle first\nneedle second\nneedle third\nneedle fourth');
+      await writeFile(join(root, 'image.png'), Buffer.from([0, 1, 2, 3]));
+      await writeFile(join(root, 'binary.ts'), Buffer.from('needle\0hidden'));
+      const entries = [
+        { filename: 'text.ts', isDirectory: false, path: 'text.ts' },
+        { filename: 'image.png', isDirectory: false, path: 'image.png' },
+        { filename: 'binary.ts', isDirectory: false, path: 'binary.ts' },
+        { filename: 'missing.ts', isDirectory: false, path: 'missing.ts' },
+      ];
+      await expect(fallbackTextSearch(root, entries, 'needle')).resolves.toEqual([
+        expect.objectContaining({ lineNumber: 1, path: 'text.ts' }),
+        expect.objectContaining({ lineNumber: 2, path: 'text.ts' }),
+        expect.objectContaining({ lineNumber: 3, path: 'text.ts' }),
+      ]);
+    } finally {
+      await rm(root, { force: true, recursive: true });
+    }
+  });
+
+  it('enforces the global fallback result limit', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'aumx-project-search-cap-'));
+    try {
+      const entries = [];
+      for (let index = 0; index < 30; index += 1) {
+        const path = `file-${index}.ts`;
+        entries.push({ filename: path, isDirectory: false, path });
+        await writeFile(join(root, path), 'needle\nneedle\nneedle');
+      }
+      const results = await fallbackTextSearch(root, entries, 'needle');
+      expect(results).toHaveLength(50);
+      expect(results.every((result) => result.lineContent === 'needle')).toBe(true);
+    } finally {
+      await rm(root, { force: true, recursive: true });
+    }
   });
 });
 

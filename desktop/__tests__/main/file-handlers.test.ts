@@ -352,4 +352,111 @@ describe('file IPC handlers', () => {
 
     expect((await readdir(rootPath)).filter((name) => name.endsWith('.tmp'))).toEqual([]);
   });
+
+  it('lists authorized entries, omits .git, and rejects an unauthorized root', async () => {
+    await mkdir(join(rootPath, 'src'), { recursive: true });
+    await writeFile(join(rootPath, 'README.md'), 'readme', 'utf8');
+    await mkdir(join(rootPath, '.git'), { recursive: true });
+    const list = getHandler(IPC.FILE_LIST);
+
+    await expect(list(undefined, { dirPath: '', rootPath })).resolves.toEqual({
+      entries: [
+        { isDirectory: true, name: 'src', path: 'src' },
+        { isDirectory: false, name: 'README.md', path: 'README.md' },
+      ],
+    });
+    await expect(
+      list(undefined, {
+        dirPath: '',
+        rootPath: join(rootPath, '..', 'outside'),
+      }),
+    ).resolves.toMatchObject({ entries: [], error: expect.any(String) });
+  });
+
+  it('enforces binary size limits and returns MIME-aware binary content', async () => {
+    const binary = getHandler(IPC.FILE_READ_BINARY);
+    await writeFile(join(rootPath, 'icon.png'), Buffer.from([1, 2, 3]));
+    await expect(binary(undefined, { relativePath: 'icon.png', rootPath })).resolves.toMatchObject({
+      data: Buffer.from([1, 2, 3]).toString('base64'),
+      mimeType: 'image/png',
+    });
+
+    await writeFile(join(rootPath, 'huge.bin'), Buffer.alloc(5 * 1024 * 1024 + 1));
+    await expect(binary(undefined, { relativePath: 'huge.bin', rootPath })).resolves.toEqual({
+      data: '',
+      error: 'File too large',
+      mimeType: 'application/octet-stream',
+    });
+  });
+
+  it('performs create, directory, copy, rename, and trash-backed delete operations', async () => {
+    const createDir = getHandler(IPC.FILE_CREATE_DIR);
+    const create = getHandler(IPC.FILE_CREATE);
+    const copy = getHandler(IPC.FILE_COPY);
+    const rename = getHandler(IPC.FILE_RENAME);
+    const remove = getHandler(IPC.FILE_DELETE);
+
+    await expect(createDir(undefined, { relativePath: 'nested/dir', rootPath })).resolves.toEqual({ success: true });
+    await expect(create(undefined, { relativePath: 'nested/dir/file.ts', rootPath })).resolves.toEqual({
+      success: true,
+    });
+    await writeFile(join(rootPath, 'source.ts'), 'source', 'utf8');
+    await expect(
+      copy(undefined, {
+        destDir: 'nested/dir',
+        destRootPath: rootPath,
+        sourcePath: 'source.ts',
+        sourceRootPath: rootPath,
+      }),
+    ).resolves.toEqual({ success: true });
+    await expect(
+      rename(undefined, {
+        newPath: 'renamed.ts',
+        oldPath: 'source.ts',
+        rootPath,
+      }),
+    ).resolves.toEqual({ success: true });
+    await expect(
+      rename(undefined, {
+        newPath: 'nested/dir/file.ts',
+        oldPath: 'renamed.ts',
+        rootPath,
+      }),
+    ).resolves.toEqual({
+      error: 'A file with that name already exists',
+      success: false,
+    });
+    await expect(remove(undefined, { relativePath: 'nested/dir/file.ts', rootPath })).resolves.toEqual({
+      success: true,
+    });
+  });
+
+  it('rejects mutation paths outside the authorized project root before touching disk', async () => {
+    const outside = join(rootPath, '..', 'not-authorized.ts');
+    const requests = [
+      [IPC.FILE_CREATE, { relativePath: outside, rootPath }],
+      [IPC.FILE_CREATE_DIR, { relativePath: outside, rootPath }],
+      [IPC.FILE_DELETE, { relativePath: outside, rootPath }],
+      [IPC.FILE_RENAME, { newPath: outside, oldPath: 'safe.ts', rootPath }],
+      [
+        IPC.FILE_COPY,
+        {
+          destDir: outside,
+          destRootPath: rootPath,
+          sourcePath: 'safe.ts',
+          sourceRootPath: rootPath,
+        },
+      ],
+      [IPC.FILE_MOVE, { destDir: outside, mode: 'move', rootPath, sourcePaths: ['safe.ts'] }],
+    ] as const;
+    for (const [channel, request] of requests) {
+      const result = await getHandler(channel)(undefined, request);
+      if (channel === IPC.FILE_MOVE) {
+        expect(result).toMatchObject({ code: 'INVALID' });
+      } else {
+        expect(result).toMatchObject({ success: false });
+      }
+    }
+    await expect(lstat(outside)).rejects.toMatchObject({ code: 'ENOENT' });
+  });
 });

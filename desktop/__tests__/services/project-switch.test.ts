@@ -256,6 +256,8 @@ interface BridgeInternals {
     savePanes: (panes: Array<{ id: string; paneId: string; prompt: string; slug: string }>) => Promise<void>;
   };
   callbackRegistry: ActionCallbackRegistry;
+  configBridge: unknown | null;
+  agentSessionService: unknown | null;
   handlePaneActivityChanged: (event: PaneActivityChangedEvent) => void;
   otlpReceiver: { getPort: () => number | null } | null;
   worktreeMutationPaths: Set<string>;
@@ -264,6 +266,7 @@ interface BridgeInternals {
   maybeRequestExperimentalPaneTitle: (paneId: string, sourceText: string) => Promise<void>;
   paneStreamStatusWatchers: Map<string, unknown>;
   paneActivityService: PaneActivityService | null;
+  paneSummaryService: unknown | null;
   rolloverOversizedTranscripts: () => Promise<void>;
   savePaneToConfig: (pane: {
     agent: AgentName;
@@ -444,6 +447,39 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
     await expect(bridge.switchProject('/tmp/project-a')).resolves.toBeUndefined();
     expect(bridge.getProjectRoot()).toBe('/tmp/project-a');
+  });
+
+  it('does not send renderer events after the window has been destroyed', () => {
+    const send = vi.fn();
+    const bridge = AumxBridge.getInstance();
+    bridge.setWindow({
+      isDestroyed: () => true,
+      webContents: { send },
+    } as unknown as BrowserWindow);
+
+    bridge.sendToast('must not send', 'error');
+
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('shutdown clears every owned project service and runtime tracking collection', async () => {
+    const bridge = AumxBridge.getInstance();
+    await bridge.switchProject('/tmp/project-a');
+    const internals = asInternals(bridge);
+    internals.worktreeMutationPaths.add('/tmp/project-a/wt');
+    internals.untrackablePanes.add('pane-1');
+
+    await bridge.shutdown();
+
+    expect(internals.paneWatcher).toBeNull();
+    expect(internals.configBridge).toBeNull();
+    expect(internals.agentSessionService).toBeNull();
+    expect(internals.paneSummaryService).toBeNull();
+    expect(internals.worktreeMutationPaths.size).toBe(0);
+    expect(internals.untrackablePanes.size).toBe(0);
+    expect(paneMonitorSpies.stop).toHaveBeenCalled();
+    expect(agentSessionSpies.shutdown).toHaveBeenCalled();
+    expect(fileBrowserWatchSpies.stop).toHaveBeenCalled();
   });
 
   it('resolves a pane working directory as tmux arguments rather than a shell string', async () => {
