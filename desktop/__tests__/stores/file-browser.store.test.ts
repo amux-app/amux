@@ -254,4 +254,98 @@ describe('useFileBrowserStore', () => {
     await expect(flush).resolves.toBe(false);
     vi.useRealTimers();
   });
+
+  it('refreshes the root and every expanded directory', async () => {
+    fileApi.listFiles.mockResolvedValue({ entries: [] });
+    useFileBrowserStore.setState({
+      expandedDirs: { '/repo': new Set(['src', 'tests']) },
+    });
+    await useFileBrowserStore.getState().refresh('/repo');
+    expect(fileApi.listFiles).toHaveBeenCalledTimes(3);
+    expect(fileApi.listFiles).toHaveBeenCalledWith({
+      dirPath: '',
+      rootPath: '/repo',
+    });
+    expect(fileApi.listFiles).toHaveBeenCalledWith({
+      dirPath: 'src',
+      rootPath: '/repo',
+    });
+    expect(fileApi.listFiles).toHaveBeenCalledWith({
+      dirPath: 'tests',
+      rootPath: '/repo',
+    });
+  });
+
+  it('clears only the selected root tree and expanded directories', () => {
+    useFileBrowserStore.setState({
+      expandedDirs: { '/one': new Set(['src']), '/two': new Set(['src']) },
+      trees: {
+        '/one': [file('one')],
+        '/one::src': [file('nested')],
+        '/two': [file('two')],
+      },
+    });
+    useFileBrowserStore.getState().clearTree('/one');
+    expect(useFileBrowserStore.getState().trees).toEqual({
+      '/two': [file('two')],
+    });
+    expect(useFileBrowserStore.getState().expandedDirs).toEqual({
+      '/two': new Set(['src']),
+    });
+  });
+
+  it('updates an already-open file at a line without reading it again', async () => {
+    useFileBrowserStore.setState({
+      viewingFile: {
+        content: 'content',
+        loading: false,
+        relativePath: 'src/app.ts',
+        rootPath: '/repo',
+      },
+    });
+    await useFileBrowserStore.getState().openFileAtLine('/repo', 'src/app.ts', 12, 'needle');
+    expect(fileApi.readFileContent).not.toHaveBeenCalled();
+    expect(useFileBrowserStore.getState().viewingFile).toMatchObject({
+      highlightQuery: 'needle',
+      scrollToLine: 12,
+    });
+  });
+
+  it('loads a different file with the requested line and query', async () => {
+    fileApi.readFileContent.mockResolvedValue(editableText('new file'));
+    useFileBrowserStore.setState({
+      viewingFile: {
+        content: 'old',
+        loading: false,
+        relativePath: 'src/old.ts',
+        rootPath: '/repo',
+      },
+    });
+    await useFileBrowserStore.getState().openFileAtLine('/repo', 'src/new.ts', 8, 'match');
+    expect(fileApi.readFileContent).toHaveBeenCalledWith({
+      relativePath: 'src/new.ts',
+      rootPath: '/repo',
+    });
+    expect(useFileBrowserStore.getState().viewingFile).toMatchObject({
+      content: 'new file',
+      highlightQuery: 'match',
+      relativePath: 'src/new.ts',
+      scrollToLine: 8,
+    });
+  });
+
+  it('does not change the open file when a pending save is refused', async () => {
+    useFileBrowserStore.setState({
+      pendingFileSaveHandler: vi.fn().mockResolvedValue(false),
+      viewingFile: {
+        content: 'draft',
+        loading: false,
+        relativePath: 'src/open.ts',
+        rootPath: '/repo',
+      },
+    });
+    await useFileBrowserStore.getState().openFile('/repo', 'src/other.ts');
+    expect(fileApi.readFileContent).not.toHaveBeenCalled();
+    expect(useFileBrowserStore.getState().viewingFile?.relativePath).toBe('src/open.ts');
+  });
 });

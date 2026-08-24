@@ -129,4 +129,139 @@ describe('Kanban IPC handlers', () => {
     expect(result).toEqual({ error: 'Unauthorized project root', success: false });
     expect(serviceMock.removeBacklogItems).not.toHaveBeenCalled();
   });
+
+  it('covers CRUD result shapes and emits only after persistence succeeds', async () => {
+    const item = makeItem('new');
+    serviceMock.getAll.mockReturnValue({ backlog: [item], done: [] });
+    serviceMock.getBacklog.mockReturnValue([makeItem('old')]);
+    serviceMock.addBacklogItems.mockImplementation((_root: string, items: BacklogItem[]) => items);
+    serviceMock.addDoneItem.mockReturnValue([item]);
+    registerKanbanHandlers(makeBridge() as never);
+
+    await expect(getHandler(IPC.KANBAN_GET)(undefined, { projectRoot: '/project' })).resolves.toEqual({
+      backlog: [item],
+      done: [],
+    });
+    const add = await getHandler(IPC.KANBAN_BACKLOG_ADD)(undefined, {
+      items: [{ prompt: 'prompt', title: 'new', projectRoot: '/project' }],
+      projectRoot: '/project',
+    });
+    expect(add).toMatchObject({
+      success: true,
+      items: [{ order: 1, title: 'new' }],
+    });
+    await expect(
+      getHandler(IPC.KANBAN_BACKLOG_REMOVE)(undefined, {
+        itemIds: ['new'],
+        projectRoot: '/project',
+      }),
+    ).resolves.toEqual({ success: true });
+    await expect(
+      getHandler(IPC.KANBAN_DONE_ADD)(undefined, {
+        item,
+        projectRoot: '/project',
+      }),
+    ).resolves.toMatchObject({ success: true });
+    await expect(getHandler(IPC.KANBAN_DONE_CLEAR)(undefined, { projectRoot: '/project' })).resolves.toEqual({
+      success: true,
+    });
+    expect(serviceMock.clearDone).toHaveBeenCalledWith('/project');
+  });
+
+  it('uses an available fallback agent when an automatic launch needs a choice', async () => {
+    const item = makeItem('auto');
+    serviceMock.getBacklog.mockReturnValue([item]);
+    const createPane = vi
+      .fn()
+      .mockResolvedValueOnce({
+        availableAgents: ['codex'],
+        needsAgentChoice: true,
+        success: false,
+      })
+      .mockResolvedValueOnce({ pane: { id: 'pane-auto' }, success: true });
+    registerKanbanHandlers(
+      makeBridge({
+        createPane,
+        getAvailableAgents: vi.fn().mockResolvedValue(['codex']),
+      }) as never,
+    );
+
+    await expect(
+      getHandler(IPC.KANBAN_BATCH_LAUNCH)(undefined, {
+        itemIds: ['auto'],
+        projectRoot: '/project',
+      }),
+    ).resolves.toEqual({
+      errors: [],
+      launched: 1,
+      launchedPaneIds: ['pane-auto'],
+      success: true,
+    });
+    expect(createPane).toHaveBeenNthCalledWith(
+      2,
+      'auto',
+      'codex',
+      expect.objectContaining({ sourceBacklogId: 'auto' }),
+    );
+  });
+
+  it('reports no-agent and thrown-launch failures without losing other batch items', async () => {
+    const items = [makeItem('missing-agent'), makeItem('throws')];
+    serviceMock.getBacklog.mockReturnValue(items);
+    const createPane = vi
+      .fn()
+      .mockResolvedValueOnce({ needsAgentChoice: true, success: false })
+      .mockRejectedValueOnce(new Error('launch exploded'));
+    registerKanbanHandlers(
+      makeBridge({
+        createPane,
+        getAvailableAgents: vi.fn().mockResolvedValue([]),
+      }) as never,
+    );
+
+    await expect(
+      getHandler(IPC.KANBAN_BATCH_LAUNCH)(undefined, {
+        itemIds: ['missing-agent', 'throws', 'unknown'],
+        projectRoot: '/project',
+      }),
+    ).resolves.toEqual({
+      errors: ['missing-agent: no agent available to launch task', 'throws: launch exploded', 'Item unknown not found'],
+      launched: 0,
+      launchedPaneIds: [],
+      success: false,
+    });
+  });
+
+  it('suppresses duplicate concurrent launches for the same backlog item', async () => {
+    const item = makeItem('duplicate');
+    serviceMock.getBacklog.mockReturnValue([item]);
+    let release!: (value: { pane: { id: string }; success: true }) => void;
+    const createPane = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    );
+    registerKanbanHandlers(makeBridge({ createPane }) as never);
+
+    const first = getHandler(IPC.KANBAN_BATCH_LAUNCH)(undefined, {
+      itemIds: ['duplicate'],
+      projectRoot: '/project',
+    });
+    await vi.waitFor(() => expect(createPane).toHaveBeenCalledOnce());
+    const second = getHandler(IPC.KANBAN_BATCH_LAUNCH)(undefined, {
+      itemIds: ['duplicate'],
+      projectRoot: '/project',
+    });
+    await vi.waitFor(() => expect(createPane).toHaveBeenCalledOnce());
+    release({ pane: { id: 'pane-duplicate' }, success: true });
+
+    await expect(first).resolves.toMatchObject({ launched: 1, success: true });
+    await expect(second).resolves.toEqual({
+      errors: [],
+      launched: 0,
+      launchedPaneIds: [],
+      success: true,
+    });
+  });
 });

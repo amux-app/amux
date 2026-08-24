@@ -8,12 +8,105 @@ import {
   sanitizeFileWriteResponse,
   sanitizeFormatDocumentResponse,
   sanitizePaneList,
+  sanitizePaneActivityChangedEvent,
+  sanitizePaneActivitySnapshot,
   sanitizePaneTopicsList,
   sanitizePaneTopicsUpdatedEvent,
   sanitizeProjectTextSearchResults,
 } from '../src/renderer/lib/runtimeValidation';
 
 describe('runtimeValidation', () => {
+  const activity = {
+    activityRevision: 3,
+    adapterCapabilities: ['turnIds', 'backgroundEntities'],
+    adapterHealth: 'healthy',
+    adapterSupport: 'full',
+    adapterVersion: '1.0.0',
+    certainty: 'confirmed',
+    liveness: 'running',
+    openBackgroundWork: [{ entityId: 'task-1', kind: 'task', mutating: false, sinceWallMs: 10 }],
+    origin: 'adapter',
+    paneIncarnationId: 'incarnation-1',
+    sessionId: 'session-1',
+    sinceWallMs: 10,
+    state: 'idle',
+    turnId: 'turn-1',
+    waitReason: undefined,
+  };
+
+  it('validates pane activity snapshots and changed events with revision metadata', () => {
+    const snapshot = sanitizePaneActivitySnapshot({
+      epochId: 'epoch-1',
+      panes: { 'pane-1': activity },
+      revision: 4,
+    });
+
+    expect(snapshot).toEqual({
+      epochId: 'epoch-1',
+      panes: { 'pane-1': activity },
+      revision: 4,
+    });
+    expect(
+      sanitizePaneActivityChangedEvent({
+        changes: [{ activity, paneId: 'pane-1' }],
+        epochId: 'epoch-1',
+        removedPaneIds: ['pane-old'],
+        revision: 5,
+      }),
+    ).toEqual({
+      changes: [{ activity, paneId: 'pane-1' }],
+      epochId: 'epoch-1',
+      removedPaneIds: ['pane-old'],
+      revision: 5,
+    });
+  });
+
+  it.each([
+    ['invalid snapshot epoch', { epochId: 42, panes: {}, revision: 1 }],
+    ['negative snapshot revision', { epochId: 'epoch', panes: {}, revision: -1 }],
+    [
+      'invalid activity state',
+      {
+        epochId: 'epoch',
+        panes: { pane: { ...activity, state: 'busy' } },
+        revision: 1,
+      },
+    ],
+    [
+      'invalid background work',
+      {
+        epochId: 'epoch',
+        panes: {
+          pane: {
+            ...activity,
+            openBackgroundWork: [{ ...activity.openBackgroundWork[0], mutating: 'yes' }],
+          },
+        },
+        revision: 1,
+      },
+    ],
+  ])('rejects %s', (_name, payload) => {
+    expect(sanitizePaneActivitySnapshot(payload)).toBeNull();
+  });
+
+  it('rejects malformed changed events rather than partially applying them', () => {
+    expect(
+      sanitizePaneActivityChangedEvent({
+        changes: [{ activity, paneId: 42 }],
+        epochId: 'epoch-1',
+        revision: 1,
+      }),
+    ).toBeNull();
+    expect(
+      sanitizePaneActivityChangedEvent({
+        changes: [],
+        epochId: 'epoch-1',
+        removedPaneIds: ['pane-1', 2],
+        revision: 1,
+      }),
+    ).toBeNull();
+  });
+
   it('keeps only valid panes from a pane list payload', () => {
     const panes = sanitizePaneList([
       {

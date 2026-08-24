@@ -98,4 +98,75 @@ describe('marketplace store preview/install coordination', () => {
     expect(marketplaceApi.listInstalled).toHaveBeenCalledOnce();
     expect(marketplaceApi.removeSource).not.toHaveBeenCalled();
   });
+
+  it('keeps source state consistent across add, remove, update, and failure paths', async () => {
+    const source = {
+      clonePath: '/tmp/source',
+      detectedFormat: null,
+      headSha: null,
+      lastUpdated: null,
+      name: 'source',
+      url: 'url',
+    };
+    vi.mocked(marketplaceApi.addSource).mockResolvedValue({
+      source,
+      success: true,
+    });
+    await expect(useMarketplaceStore.getState().addSource('url')).resolves.toBe(true);
+    expect(useMarketplaceStore.getState().sources).toEqual([source]);
+
+    vi.mocked(marketplaceApi.updateSource).mockResolvedValue({
+      error: undefined,
+      success: true,
+    });
+    vi.mocked(marketplaceApi.listSources).mockResolvedValue([source]);
+    await useMarketplaceStore.getState().updateSource('url');
+    expect(marketplaceApi.listSources).toHaveBeenCalledOnce();
+
+    vi.mocked(marketplaceApi.removeSource).mockResolvedValue({
+      error: 'busy',
+      success: false,
+    });
+    await useMarketplaceStore.getState().removeSource('url');
+    expect(useMarketplaceStore.getState().sources).toEqual([source]);
+    expect(useMarketplaceStore.getState().error).toBe('busy');
+  });
+
+  it('marks a failed browse as loaded with an empty result', async () => {
+    vi.mocked(marketplaceApi.browseSource).mockRejectedValue(new Error('source unavailable'));
+    await useMarketplaceStore.getState().browseSource('url');
+    expect(useMarketplaceStore.getState().browsedPlugins.url).toEqual([]);
+    expect(useMarketplaceStore.getState().error).toBe('source unavailable');
+  });
+
+  it('exposes install in-flight state and clears it after a rejected install', async () => {
+    let release!: (value: { error: string; success: false }) => void;
+    vi.mocked(marketplaceApi.installPlugin).mockReturnValue(
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+    );
+    const promise = useMarketplaceStore.getState().installPlugin('plugin', 'url');
+    expect(useMarketplaceStore.getState().installingPlugin).toBe('plugin');
+    release({ error: 'install failed', success: false });
+    await expect(promise).resolves.toBe(false);
+    expect(useMarketplaceStore.getState().installingPlugin).toBeNull();
+    expect(useMarketplaceStore.getState().error).toBe('install failed');
+  });
+
+  it('preserves the installed registry view when install fails', async () => {
+    const installed = {
+      agents: {},
+      installedAt: 'now',
+      pluginId: 'plugin',
+      sourceUrl: 'url',
+    };
+    useMarketplaceStore.setState({ installedPlugins: [installed] });
+    vi.mocked(marketplaceApi.installPlugin).mockResolvedValue({
+      error: 'conflict',
+      success: false,
+    });
+    await expect(useMarketplaceStore.getState().installPlugin('plugin', 'url')).resolves.toBe(false);
+    expect(useMarketplaceStore.getState().installedPlugins).toEqual([installed]);
+  });
 });

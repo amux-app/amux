@@ -140,4 +140,141 @@ describe('PaneSummaryService', () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+
+  it('hydrates persisted summaries into the cache and avoids an unnecessary refresh', async () => {
+    const root = await makeRoot();
+    try {
+      const persistence = new PaneSummaryPersistence(root);
+      await persistence.save({
+        agent: 'claude',
+        branch: 'main',
+        generatedAt: Date.now(),
+        gitActivity: null,
+        paneId: 'pane-1',
+        paneName: 'Persisted',
+        recap: 'already summarized',
+        recapGeneratedAt: Date.now(),
+        recapStatus: 'ready',
+        startedAt: 1,
+        status: 'fresh',
+        worktreePath: null,
+      });
+      const service = new PaneSummaryService({
+        bridge: makeBridge(),
+        emit: vi.fn(),
+        projectRoot: root,
+      });
+      await expect(service.loadAll()).resolves.toHaveLength(1);
+      await expect(service.refreshOne('pane-1', false)).resolves.toMatchObject({
+        recap: 'already summarized',
+      });
+      expect(execAsyncMock).not.toHaveBeenCalled();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('returns an error summary after persistence failure and clears the refresh lock', async () => {
+    const root = await makeRoot();
+    const save = vi.spyOn(PaneSummaryPersistence.prototype, 'save').mockRejectedValueOnce(new Error('disk full'));
+    try {
+      const service = new PaneSummaryService({
+        bridge: makeBridge(),
+        emit: vi.fn(),
+        projectRoot: root,
+      });
+      await expect(service.refreshOne('pane-1', true)).resolves.toMatchObject({
+        status: 'error',
+        errorMessage: 'Error: disk full',
+      });
+      save.mockResolvedValue(undefined);
+      await expect(service.refreshOne('pane-1', true)).resolves.toMatchObject({
+        status: 'fresh',
+      });
+    } finally {
+      save.mockRestore();
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('filters missing panes from batch refreshes and uses fresh recap cache entries', async () => {
+    const root = await makeRoot();
+    try {
+      const service = new PaneSummaryService({
+        bridge: makeBridge(),
+        emit: vi.fn(),
+        projectRoot: root,
+      });
+      await expect(service.refreshMany(['pane-1', 'missing'], true)).resolves.toHaveLength(1);
+      await service.generateRecapOne('pane-1', true);
+      generateRecapMock.mockClear();
+      await expect(service.generateRecapOne('pane-1', false)).resolves.toMatchObject({ recapStatus: 'ready' });
+      expect(generateRecapMock).not.toHaveBeenCalled();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('falls back safely when the activity snapshot is unavailable', async () => {
+    const root = await makeRoot();
+    try {
+      const bridge = makeBridge();
+      bridge.getPaneActivitySnapshot = () => {
+        throw new Error('activity offline');
+      };
+      const service = new PaneSummaryService({
+        bridge,
+        emit: vi.fn(),
+        projectRoot: root,
+      });
+      await expect(service.refreshOne('pane-1', true)).resolves.toMatchObject({
+        paneId: 'pane-1',
+        status: 'fresh',
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('retains the newest recap fields when refresh and recap overlap', async () => {
+    const root = await makeRoot();
+    try {
+      const service = new PaneSummaryService({
+        bridge: makeBridge(),
+        emit: vi.fn(),
+        projectRoot: root,
+      });
+      await service.refreshOne('pane-1', true);
+      let releaseRecap!: (value: { summary: string }) => void;
+      generateRecapMock.mockReturnValueOnce(
+        new Promise((resolve) => {
+          releaseRecap = resolve;
+        }),
+      );
+      const recap = service.generateRecapOne('pane-1', true);
+      await vi.waitFor(() => expect(generateRecapMock).toHaveBeenCalledOnce());
+      const gitResolvers: Array<(value: string) => void> = [];
+      execAsyncMock.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            gitResolvers.push(resolve);
+          }),
+      );
+      const refresh = service.refreshOne('pane-1', true);
+      releaseRecap({ summary: 'newest recap' });
+      await expect(recap).resolves.toMatchObject({
+        recap: 'newest recap',
+        recapStatus: 'ready',
+      });
+      await vi.waitFor(() => expect(gitResolvers).toHaveLength(3));
+      for (const resolve of gitResolvers) resolve('');
+      await refresh;
+      await expect(service.refreshOne('pane-1', false)).resolves.toMatchObject({
+        recap: 'newest recap',
+        recapStatus: 'ready',
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 });
