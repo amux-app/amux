@@ -1,7 +1,7 @@
 {
   "name": "aumx-desktop",
   "productName": "Amux",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Amux — the agentic IDE and mission control for a fleet of AI coding agents. Run Claude Code, Codex, OpenCode, and Pi in parallel, each in its own git worktree and tmux pane.",
   "author": "Amux contributors",
   "license": "MIT",
