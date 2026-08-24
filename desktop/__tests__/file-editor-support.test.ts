@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 import {
   getFileEditorBaseExtensions,
   createFileKeywordCompletionSource,
+  getFileEditorCompletionExtension,
+  getFileEditorCompletionSources,
   getFileEditorLanguageKind,
   loadFileEditorLanguageExtension,
   getJsonDiagnostics,
@@ -26,6 +28,9 @@ describe('fileEditorSupport', () => {
     expect(getFileEditorLanguageKind('.env.local')).toBe('properties');
     expect(getFileEditorLanguageKind('env.example')).toBe('properties');
     expect(getFileEditorLanguageKind('icon.svg')).toBe('xml');
+    expect(getFileEditorLanguageKind('.gitignore')).toBe('gitignore');
+    expect(getFileEditorLanguageKind('desktop/.dockerignore')).toBe('gitignore');
+    expect(getFileEditorLanguageKind('config.ignore')).toBe('plaintext');
     expect(getFileEditorLanguageKind('config.unknown')).toBe('plaintext');
   });
 
@@ -91,6 +96,17 @@ describe('fileEditorSupport', () => {
   it('builds the base editor extensions without throwing', () => {
     expect(() => getFileEditorBaseExtensions(() => {})).not.toThrow();
     expect(getFileEditorBaseExtensions(() => {}).length).toBeGreaterThan(0);
+  });
+
+  it('keeps Amux completion sources scoped to file types that need them', () => {
+    expect(getFileEditorCompletionSources('index.ts')).toHaveLength(0);
+    expect(getFileEditorCompletionSources('styles.css')).toHaveLength(0);
+    expect(getFileEditorCompletionSources('component.test.ts')).toHaveLength(1);
+    expect(getFileEditorCompletionSources('README.md')).toHaveLength(2);
+    expect(getFileEditorCompletionSources('settings.json')).toHaveLength(2);
+    expect(getFileEditorCompletionSources('.gitignore', '/project', '.gitignore')).toHaveLength(1);
+    expect(getFileEditorCompletionSources('.gitignore')).toHaveLength(0);
+    expect(getFileEditorCompletionExtension('index.ts')).toBeDefined();
   });
 
   it('loads and caches only the requested grammar', async () => {

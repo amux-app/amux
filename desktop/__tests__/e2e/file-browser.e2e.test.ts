@@ -17,6 +17,7 @@ import {
   waitForAppReady,
   waitForRendererPaneHydration,
 } from './e2e-helpers';
+import { assertVisualBaseline } from './visual-regression';
 
 const ROOT = resolve(__dirname, '..', '..');
 const MAIN_ENTRY = resolve(ROOT, 'out', 'main', 'index.js');
@@ -32,6 +33,9 @@ interface E2EStores {
   pane: {
     getState: () => PaneStoreState;
   };
+  ui?: {
+    setState: (partial: { theme: 'dark' | 'light' }) => void;
+  };
 }
 
 interface E2EWindow {
@@ -45,7 +49,15 @@ interface E2EWindow {
 
 async function seedProject(root: string): Promise<void> {
   await mkdir(join(root, 'src', 'nested'), { recursive: true });
+  await mkdir(join(root, 'desktop', 'child', 'nested'), { recursive: true });
+  await mkdir(join(root, 'dist'), { recursive: true });
   await writeFile(join(root, 'package.json'), '{"name":"file-browser-e2e"}\n');
+  await writeFile(join(root, '.dockerignore'), '');
+  await writeFile(join(root, '.gitignore'), 'desktop\n');
+  await writeFile(join(root, 'dist.txt'), 'dist\n');
+  await writeFile(join(root, 'desktop', '.gitignore'), 'child\n');
+  await writeFile(join(root, 'desktop', 'child', 'child.ts'), 'export const child = true;\n');
+  await writeFile(join(root, 'desktop', 'child', 'nested', 'inner.ts'), 'export const inner = true;\n');
   await writeFile(join(root, 'README.md'), '# Title\n\nSome **markdown** body.\n\n- one\n- two\n');
   await writeFile(join(root, 'src', 'index.ts'), 'export const value = 42;\n');
   await writeFile(join(root, 'src', 'nested', 'deep.ts'), 'export const deep = true;\n');
@@ -82,6 +94,16 @@ function row(page: Page, path: string) {
 
 async function waitForVisible(locator: ReturnType<Page['locator']>, timeout = 10_000): Promise<void> {
   await locator.waitFor({ state: 'visible', timeout });
+}
+
+async function applyTheme(page: Page, theme: 'dark' | 'light'): Promise<void> {
+  await page.evaluate((value) => {
+    (window as unknown as E2EWindow).__aumxStores?.ui?.setState({ theme: value });
+  }, theme);
+  await expect.poll(
+    () => page.evaluate(() => document.documentElement.getAttribute('data-theme')),
+    { timeout: 5_000 },
+  ).toBe(theme);
 }
 
 async function killProjectTmuxSession(projectRoot: string): Promise<void> {
@@ -547,6 +569,127 @@ describe.runIf(process.env.AUMX_E2E === '1')('File Browser E2E', () => {
       () => readFile(join(projectRoot, 'src', 'index.ts'), 'utf8'),
       { timeout: 10_000 },
     ).toBe('export const value = { answer: 42 };\n');
+  }, 30_000);
+
+  it('completes root and nested ignore paths with keyboard-safe acceptance', async () => {
+    const panel = page.locator('[data-testid="file-browser-panel"]');
+    if (!await panel.isVisible()) {
+      await page.locator('[data-testid="sidebar-file-browser-toggle"]').click();
+      await waitForVisible(panel);
+    }
+    await page.locator('[data-testid="file-tree"]').hover();
+    await page.mouse.wheel(0, -20_000);
+    await waitForVisible(row(page, '.gitignore'));
+    await row(page, '.gitignore').click();
+
+    const editor = page.locator('[data-testid="file-viewer"] .cm-editor .cm-content');
+    const popup = page.locator('[data-testid="file-viewer"] .cm-tooltip-autocomplete');
+    await waitForVisible(editor);
+    await editor.fill('');
+    await editor.fill('de');
+    await waitForVisible(popup);
+    await expect.poll(() => popup.locator('.cm-completionLabel').allTextContents()).toContain('desktop');
+    await page.keyboard.press('ArrowDown');
+    await expect.poll(() => popup.innerHTML()).toContain('aria-selected');
+    await page.keyboard.press('Escape');
+    await popup.waitFor({ state: 'hidden', timeout: 5_000 });
+    await expect.poll(() => editor.evaluate((element) => document.activeElement === element)).toBe(true);
+
+    await editor.fill('');
+    await editor.fill('de');
+    await waitForVisible(popup);
+    await page.keyboard.press('Tab');
+    await expect.poll(() => editor.textContent()).toBe('desktop/');
+    await waitForVisible(popup);
+    await expect.poll(() => popup.locator('.cm-completionLabel').allTextContents()).toContain('child');
+
+    await page.keyboard.press('Escape');
+    await popup.waitFor({ state: 'hidden', timeout: 5_000 });
+    if (await row(page, 'desktop').getAttribute('aria-expanded') === 'false') {
+      await row(page, 'desktop').click();
+    }
+    await waitForVisible(row(page, 'desktop/.gitignore'));
+    await row(page, 'desktop/.gitignore').click();
+    await waitForVisible(editor);
+    await editor.fill('ch');
+    await waitForVisible(popup);
+    await expect.poll(() => popup.locator('.cm-completionLabel').allTextContents()).toContain('child');
+
+    await row(page, '.dockerignore').click();
+    await waitForVisible(editor);
+    await editor.fill('d');
+    await waitForVisible(popup);
+    await page.keyboard.type('ist.txt');
+    await expect.poll(() => editor.textContent()).toBe('dist.txt');
+    await waitForVisible(popup);
+    await expect.poll(() => popup.locator('.cm-completionLabel').allTextContents()).toContain('dist.txt');
+    await expect.poll(() => editor.evaluate((element) => document.activeElement === element)).toBe(true);
+    await editor.press('ArrowDown');
+    await editor.press('Enter');
+    expect(await editor.textContent()).toBe('dist.txt');
+    await expect.poll(
+      () => readFile(join(projectRoot, '.dockerignore'), 'utf8'),
+      { timeout: 10_000 },
+    ).toBe('dist.txt\n');
+    await page.keyboard.press('Meta+z');
+    await expect.poll(
+      () => readFile(join(projectRoot, '.dockerignore'), 'utf8'),
+      { timeout: 10_000 },
+    ).toBe('dist.txt');
+  }, 30_000);
+
+  it('shows deterministic TypeScript member completion from the language server', async () => {
+    await installPane(page, projectRoot);
+    const panel = page.locator('[data-testid="file-browser-panel"]');
+    if (!await panel.isVisible()) {
+      await page.locator('[data-testid="sidebar-file-browser-toggle"]').click();
+      await waitForVisible(panel);
+    }
+    await page.locator('[data-testid="file-tree"]').hover();
+    await page.mouse.wheel(0, -20_000);
+    await waitForVisible(row(page, 'src'));
+    if (await row(page, 'src').getAttribute('aria-expanded') === 'false') await row(page, 'src').click();
+    await waitForVisible(row(page, 'src/index.ts'));
+    await row(page, 'src/index.ts').click();
+
+    const editor = page.locator('[data-testid="file-viewer"] .cm-editor .cm-content');
+    const popup = page.locator('[data-testid="file-viewer"] .cm-tooltip-autocomplete');
+    await waitForVisible(editor);
+    await editor.fill('export const target = { member: 42 };\ntarget.');
+    await waitForVisible(page.getByText('TS: ready', { exact: true }), 15_000);
+    await page.keyboard.press('Control+Space');
+    await waitForVisible(popup, 15_000);
+    await expect.poll(
+      () => popup.locator('.cm-completionLabel').allTextContents(),
+      { timeout: 15_000 },
+    ).toContain('member');
+  }, 30_000);
+
+  it('keeps the completion popup readable in dark and light themes', async () => {
+    const panel = page.locator('[data-testid="file-browser-panel"]');
+    if (!await panel.isVisible()) {
+      await page.locator('[data-testid="sidebar-file-browser-toggle"]').click();
+      await waitForVisible(panel);
+    }
+    await page.locator('[data-testid="file-tree"]').hover();
+    await page.mouse.wheel(0, -20_000);
+    await waitForVisible(row(page, '.gitignore'));
+    await row(page, '.gitignore').click();
+
+    const editor = page.locator('[data-testid="file-viewer"] .cm-editor .cm-content');
+    const popup = page.locator('[data-testid="file-viewer"] .cm-tooltip-autocomplete');
+    const viewer = page.locator('[data-testid="file-viewer"]');
+    await waitForVisible(editor);
+    for (const theme of ['dark', 'light'] as const) {
+      await applyTheme(page, theme);
+      await editor.fill('zz');
+      await waitForVisible(popup);
+      await expect.poll(() => popup.locator('li').count()).toBe(12);
+      await assertVisualBaseline(page, viewer, `file-completion-${theme}`);
+      await page.keyboard.press('Escape');
+      await popup.waitFor({ state: 'hidden', timeout: 5_000 });
+    }
+    await applyTheme(page, 'dark');
   }, 30_000);
 
   it('drags a multi-file selection onto a folder with a real mouse gesture', async () => {
