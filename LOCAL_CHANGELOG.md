@@ -2,32 +2,45 @@
 
 ## Fix demo-hero WebP ghosting and re-compose both demo cuts
 
-- **Date/time:** 2026-08-25 20:10 UTC
-- **Impact:** Medium — regenerates the published demo assets and changes the encoder output paths, the recording's camera clamp and its staging gates. No app runtime code.
-- **Why:** The README hero had a green-tinted, ghosted sidebar. `img2webp` encodes non-key frames as sub-rectangle diffs and retains the rest of the canvas, so with no keyframe cadence a region the differ skipped kept an earlier scene's lossy residue. A first fix changed nothing on GitHub because the encoder wrote to `docs/assets/` while README.md serves `.github/assets/`, and `docs/` is gitignored. A frame audit then found four more defects: unclamped camera translate leaving 40–70% of shots black with the window sliced, three overlays hardcoding `left:48px` against a ~285px sidebar, `clearMockTerminals()` baring real terminal chrome in scene 2 and the outro, and every sidebar row reading "unknown" because it reads the activity store, not the pane record.
-- **How:** Outputs repointed to `.github/assets/`, with `assertReadmeReferencesHero()` failing the encode if they diverge. `assembleWebp()` passes `-kmin 3 -kmax 12`; `encodeHero()` rejects any file whose stale-pixel window exceeds 2s, measured by a RIFF walk of the ANMF chain. `camera()` clamps both axes to `(scale-1)*viewport/2`. New `overlays/layout.ts` measures the sidebar edge. Review popover anchors to a header trigger; review-pane beat held wide; marketplace grid stops stretching and carries 8 cards; spotlight softened 0.55 → 0.32; `syncPaneActivity()` seeds the activity store.
+- **Date/time:** 2026-08-25 20:35 UTC
+- **Impact:** Medium — regenerates the published demo assets; changes encoder output paths, the recording's camera clamp and its staging gates. No app runtime code.
+
+Fixed:
+
+- Ghosted, green-tinted sidebar in the hero WebP. `img2webp` encodes non-key frames as sub-rectangle diffs and retains the rest of the canvas; with no cadence a skipped region kept an earlier scene's residue. Now `-kmin 3 -kmax 12`, and `encodeHero()` rejects a stale-pixel window over 2s via a RIFF walk of the ANMF chain.
+- Encoder wrote to `docs/assets/` while README.md serves `.github/assets/`, and `docs/` is gitignored — regenerated assets never reached a commit. Outputs repointed; `assertReadmeReferencesHero()` fails the encode if they diverge again.
+- Unclamped camera translate left 40–70% of shots black with the window sliced. `camera()` clamps both axes to `(scale-1)*viewport/2`.
+- Marketplace, review-pane and file-browser overlays hardcoded `left:48px` against a ~285px sidebar. New `overlays/layout.ts` measures it.
+- `clearMockTerminals()` bared real boot spinners and the "Reconnecting terminal" toast in scene 2 and the outro. Both beats now repaint and gate.
+- Every sidebar row read "unknown" — it reads the activity store, not the pane record. `syncPaneActivity()` seeds it.
+- `.aumx/` in `.gitignore` and `desktop/.gitignore` failed the brand guard; removed as duplicates of the existing `.[a]umx/` entries.
+
+Also: review popover anchors to a header trigger, review-pane beat held wide, marketplace grid stops stretching and carries 8 cards, spotlight softened 0.55 → 0.32.
 
 ### Risk and compatibility
 
-Both guards can only reject, never alter, an asset. The camera clamp is a no-op at the wide shot and only reduces translation. Left alone as decisions, not defects: `docs/` stays gitignored, and `docs/src/content/introduction.js` still points at `/amux-demo-hero.mp4`, a pre-rename name nothing produces.
+Both new guards can only reject, never alter, an asset. The camera clamp is a no-op at the wide shot. `.[a]umx/` still ignores `.aumx/` (verified with `git check-ignore`). Untouched: `docs/` stays gitignored, and `docs/src/content/introduction.js` points at `/amux-demo-hero.mp4`, a pre-rename name nothing produces.
 
 ### Validation
 
 ```
+$ pnpm run verify:static
+Brand namespace guard: clean; allowlisted historical matches: 2
+Internal-refs gate: clean (public rules)
+Package versions aligned at 0.1.0
+tsc --noEmit / eslint --max-warnings 0 / knip: clean
+
 $ node scripts/render-demo-assets.mjs --self-test
-Self-test passed          # keyframe-free encode rejected; README serves .github/assets/muxbase-demo.webp
+Self-test passed
 
 $ node scripts/render-demo-assets.mjs --hero
 hero webp   .github/assets/muxbase-demo.webp   7.52MB  q72  stale-pixel window 1.04s / 2s
 
 $ make demo
 Test Files 1 passed (1) | Tests 2 passed (2)
-
-$ cd desktop && pnpm typecheck && pnpm exec eslint --max-warnings 0 __tests__/e2e/demo
-(clean)
 ```
 
-A/B on identical 227 source frames — current 34.7 dB mean / 32.3 min / 16.0 worst-tile; `-kmin 3 -kmax 12` 39.5 / 36.1 / 10.0 (adopted, +0.9% size); `-sharp_yuv` 34.8 / 32.4 / 16.0 (rejected). Published asset: 216 frames vs source, psnr_min 36.21, mean 39.55, worst tile 9.97. Frame 80 diffed against `git show HEAD:.github/assets/muxbase-demo.webp` — ghosting gone, sidebar reads *idle/working/waiting for input · branch* instead of *unknown*. Both cuts re-audited at 2fps (36 hero / 86 full): no off-frame windows, no sliced sidebars, no boot-spinner or reconnect chrome, loop seam holds (13.73 vs 13.76).
+A/B on identical 227 source frames: current 34.7 dB mean / 32.3 min / 16.0 worst-tile; `-kmin 3 -kmax 12` 39.5 / 36.1 / 10.0 (adopted, +0.9% size); `-sharp_yuv` 34.8 / 32.4 / 16.0 (rejected). Published asset: 216 frames vs source, psnr_min 36.21, mean 39.55, worst tile 9.97. Both cuts re-audited at 2fps (36 hero / 86 full): no off-frame windows, no sliced sidebars, no boot-spinner or reconnect chrome, loop seam holds (13.73 vs 13.76).
 
 ## Stabilize macOS visual regression CI
 
