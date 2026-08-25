@@ -38,7 +38,7 @@ dev: core-build ## Start in development mode with hot reload
 	cd $(DESKTOP_DIR) && pnpm exec electron-vite dev
 
 dev-worktree: core-build ## Run dev from a worktree on its own port + user-data dir (defaults to 5374; override MUXBASE_RENDERER_PORT for multiple worktrees)
-	@case "$$(pwd)" in *.muxbase/worktrees/*|*.muxbase/worktrees/*) ;; *) echo "✗ dev-worktree must run from inside .muxbase/worktrees/<name>"; exit 1 ;; esac
+	@case "$$(pwd)" in *.muxbase/worktrees/*) ;; *) echo "✗ dev-worktree must run from inside .muxbase/worktrees/<name>"; exit 1 ;; esac
 	@WT_ROOT=$$(pwd); \
 	 PORT="$${MUXBASE_RENDERER_PORT:-5374}"; \
 	 USER_DATA="$$WT_ROOT/.muxbase-dev/userdata"; \

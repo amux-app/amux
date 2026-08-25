@@ -11,7 +11,6 @@ export default defineConfig({
       '**/node_modules/**',
       '**/dist/**',
       '**/.muxbase/**',
-      '**/.muxbase/**',
       '**/coverage/**',
     ],
     coverage: {

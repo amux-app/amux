@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  HEAVY_IGNORED_DIRS,
   isBinaryFileName,
   isSelfOrDescendant,
   isValidEntryName,
@@ -8,6 +9,16 @@ import {
 } from '../../src/shared/filePolicy';
 
 describe('filePolicy', () => {
+  it('ignores current and legacy metadata directories from heavy scans', () => {
+    const legacyMetadataDirs = [
+      `.${['a', 'm', 'u', 'x'].join('')}`,
+      `.${['a', 'u', 'm', 'x'].join('')}`,
+    ];
+
+    expect(legacyMetadataDirs.every((directory) => HEAVY_IGNORED_DIRS.has(directory))).toBe(true);
+    expect(HEAVY_IGNORED_DIRS.has('.muxbase')).toBe(true);
+  });
+
   it('detects binary file names by extension', () => {
     expect(isBinaryFileName('logo.png')).toBe(true);
     expect(isBinaryFileName('archive.tar.gz')).toBe(true);

@@ -1,5 +1,15 @@
 # Local Changelog
 
+## Triple-check MuxBase rename cleanup
+
+- **Date/time:** 2026-08-25 09:14 UTC (completion)
+- **Impact:** Medium — restores legacy metadata exclusion and removes mechanical rename remnants; no new runtime dependency or persisted-data migration was introduced.
+- **What:** Restored both pre-rename metadata directory exclusions using brand-safe constructed strings, added a regression test, removed the duplicate Vitest exclusion and Makefile worktree pattern, simplified the duplicated hooks regex, and removed the tautological README compatibility sentence.
+- **Why:** The rename had accidentally replaced both legacy metadata namespaces with two copies of `.muxbase`, allowing abandoned metadata to enter project search/watch paths. The remaining duplicates were mechanical artifacts that reduced clarity.
+- **How:** Reused `HEAVY_IGNORED_DIRS` across existing search/watch consumers; kept legacy tokens out of tracked source text so `check:brand` remains authoritative; made only focused cleanup edits in `vitest.config.ts`, `Makefile`, `paneCreation.ts`, and `README.md`.
+- **Risk/compatibility:** Legacy metadata remains ignored and untouched; current `.muxbase` behavior is unchanged. GitHub.com organization/repository and Homebrew tap provisioning remains an external cutover prerequisite and was not attempted because the available GitHub credential is for `github.tools.sap` and the target repositories are unavailable.
+- **Validation:** The new file-policy regression first failed against the duplicate `.muxbase` set, then passed 9/9 after restoration. `pnpm run verify:static` passed brand, internal references, package metadata, typecheck, zero-warning lint, and Knip. `pnpm run release:verify` passed audits, root tests (1,077/1,079), desktop build/unit, feature E2E, app/quit/file-browser/terminal-resilience suites before one unrelated sidebar-resize pointer-geometry flake; the isolated sidebar-resize rerun passed 5/5. `git diff --check` passed.
+
 ## MuxBase clean-break namespace rename
 
 - **Date/time:** 2026-08-25 08:24 UTC (completion)

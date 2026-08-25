@@ -570,7 +570,7 @@ export async function createPane(
 
     const isHooksEditingSession = useWorktree && !!prompt && (
       /(create|edit|modify).*(muxbase|\.)?.*(hooks)/i.test(prompt)
-      || /\.(?:muxbase|muxbase)-hooks/i.test(prompt)
+      || /\.muxbase-hooks/i.test(prompt)
     );
 
     if (useWorktree && worktreePath && branchName && !worktreeCreatedDirectly) {

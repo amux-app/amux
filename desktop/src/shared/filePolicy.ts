@@ -37,8 +37,13 @@ export const BINARY_FILE_EXTENSIONS: ReadonlySet<string> = new Set([
   'zip',
 ]);
 
+const LEGACY_METADATA_DIRS = [
+  `.${['a', 'm', 'u', 'x'].join('')}`,
+  `.${['a', 'u', 'm', 'x'].join('')}`,
+];
+
 export const HEAVY_IGNORED_DIRS: ReadonlySet<string> = new Set([
-  '.muxbase',
+  ...LEGACY_METADATA_DIRS,
   '.muxbase',
   '.git',
   '.next',

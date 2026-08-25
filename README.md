@@ -134,7 +134,7 @@ Capabilities also depend on the relevant CLI being installed and authenticated. 
 
 ## Local-First and Network Behavior
 
-MuxBase requires no MuxBase account, MuxBase-hosted backend, or background daemon. Pane definitions, settings, and metadata are stored under `<projectRoot>/.muxbase/muxbase.config.json`; projects that already use `.muxbase/muxbase.config.json` remain supported.
+MuxBase requires no MuxBase account, MuxBase-hosted backend, or background daemon. Pane definitions, settings, and metadata are stored under `<projectRoot>/.muxbase/muxbase.config.json`.
 
 Network access is limited to the features you use:
 
