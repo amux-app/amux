@@ -1,5 +1,15 @@
 # Local Changelog
 
+## Triple-check editor Enter correction
+
+- **Date/time:** 2026-08-25 05:38 UTC (completion)
+- **Impact:** Medium — restores existing CodeMirror editor Enter behavior while preserving completion acceptance; no new IPC, dependency, or persisted-data change.
+- **What:** Removed the completion DOM-level Enter interceptor and direct newline fallback that preempted CodeMirror’s default keymap. Enter now only attempts completion acceptance and falls through to the existing `defaultKeymap` for normal indentation, brace-pair splitting, modifier behavior, and multiple selections. Restored the default completion interaction guard and kept permanent regressions for opening-brace indentation and brace-pair splitting.
+- **Why:** The triple-check scratch reproduction failed all three plain-Enter checks on the committed implementation. The first two were genuine editor-wide regressions; the multi-cursor assertion was rejected because the implementation inserted both newlines and CodeMirror correctly applied indentation.
+- **How:** Reduced `acceptCompletionIfDocumentChanges` to the approved document-comparison command, removed the `Prec.highest` DOM handler and direct newline helper, removed `interactionDelay: 0`, and converted the valid scratch cases into `enter-regression.test.ts`. No file-size refactor was made because the repository guidance requires extraction only when ownership or testability improves; no keyword removal was made because the keyword table remains used by exported/test-file completion behavior.
+- **Risk/compatibility:** Existing completion Tab/Enter behavior remains covered by the focused EditorView tests and file-browser E2E. Plain Enter now delegates to CodeMirror’s established indentation and multi-selection semantics. The review’s visual-list, leading-dot, and AGENTS claims were verified as non-blocking or already covered.
+- **Validation:** The scratch test first failed 3/3 before the correction; permanent Enter regressions pass 2/2. Focused completion/path/editor tests pass 35/35; full desktop tests pass 3,579 with 167 skips; desktop typecheck, `lint:ci`, and build pass; file-browser Electron E2E passes 17/17; `git diff --check` passes.
+
 ## CodeMirror completion experience v3
 
 - **Date/time:** 2026-08-24 21:28 UTC (completion)

@@ -7,7 +7,6 @@ import {
   completeAnyWord,
   moveCompletionSelection,
   pickedCompletion,
-  selectedCompletion,
   snippetCompletion,
   startCompletion,
   type Completion,
@@ -77,36 +76,8 @@ const SEARCH_MATCH_MARK = Decoration.mark({ class: 'aumx-file-editor-search-matc
 
 const acceptCompletionIfDocumentChanges: Command = (view) => {
   const before = view.state.sliceDoc();
-  const selected = selectedCompletion(view.state);
-  if (selected && typeof selected.apply !== 'function') {
-    const replacement = selected.apply ?? selected.label;
-    const line = view.state.doc.lineAt(view.state.selection.main.head);
-    const linePrefix = line.text.slice(0, view.state.selection.main.head - line.from);
-    if (linePrefix.endsWith(replacement)) {
-      closeCompletion(view);
-      return insertEditorNewline(view);
-    }
-  }
-  if (!acceptCompletion(view)) {
-    return insertEditorNewline(view);
-  }
-  if (view.state.sliceDoc() !== before) return true;
-  const { from, to } = view.state.selection.main;
-  view.dispatch({
-    changes: { from, insert: view.state.lineBreak, to },
-    userEvent: 'input',
-  });
-  return true;
-};
-
-const insertEditorNewline: Command = (view) => {
-  if (view.state.readOnly) return false;
-  const { from, to } = view.state.selection.main;
-  view.dispatch({
-    changes: { from, insert: view.state.lineBreak, to },
-    userEvent: 'input',
-  });
-  return true;
+  if (!acceptCompletion(view)) return false;
+  return view.state.sliceDoc() !== before;
 };
 
 const acceptCompletionOrIndent: Command = (view) => (
@@ -126,17 +97,10 @@ const FILE_EDITOR_COMPLETION_KEYMAP = Prec.high(keymap.of([
   { key: 'Tab', run: acceptCompletionOrIndent },
 ]));
 
-const FILE_EDITOR_COMPLETION_ENTER_HANDLER = Prec.highest(EditorView.domEventHandlers({
-  keydown(event, view) {
-    if (event.key !== 'Enter' || event.isComposing) return false;
-    return acceptCompletionIfDocumentChanges(view);
-  },
-}));
-
 const suppressNoopCompletionHistory = EditorState.transactionExtender.of((transaction) => {
   if (
     !transaction.annotation(pickedCompletion)
-    || transaction.newDoc.toString() !== transaction.startState.doc.toString()
+    || !transaction.newDoc.eq(transaction.startState.doc)
   ) return null;
 
   return { annotations: Transaction.addToHistory.of(false) };
@@ -659,7 +623,6 @@ export function getFileEditorBaseExtensions(
         onDocumentChange();
       }
     }),
-    FILE_EDITOR_COMPLETION_ENTER_HANDLER,
     FILE_EDITOR_COMPLETION_KEYMAP,
     keymap.of([
       ...foldKeymap,
@@ -686,7 +649,6 @@ export function getFileEditorCompletionExtension(
       closeOnBlur: true,
       defaultKeymap: false,
       icons: true,
-      interactionDelay: 0,
       maxRenderedOptions: 12,
       activateOnCompletion: (completion) => completion.type === 'folder',
     }),
