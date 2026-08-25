@@ -366,7 +366,15 @@ export class MarketplaceInstaller {
       throw new Error('Marketplace source changed; review the installation again');
     }
     for (const entry of preview.agents) {
-      assertNoSymlinks(entry.artifacts.flatMap((item) => item.sourcePaths));
+      for (const artifact of entry.artifacts) {
+        if (artifact.name.startsWith('native:')) {
+          for (const sourcePath of artifact.sourcePaths) {
+            collectNativeMarketplaceTreeEntries(sourcePath, nativeConfig?.clonePath ?? sourcePath);
+          }
+        } else {
+          assertNoSymlinks(artifact.sourcePaths);
+        }
+      }
     }
     const result: InstallResult = { pluginId: plugin.id, agents: {} };
 

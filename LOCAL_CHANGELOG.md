@@ -53,6 +53,36 @@ Test Files 354 passed, 22 skipped; Tests 3623 passed, 168 skipped.
 Fresh `wshobson/agents` commit d82998e7df393c671ede2387a8435075f0b633f5 retained its tracked `CLAUDE.md` symlink. Full preview succeeded; Claude, Codex, and OpenCode all installed with `full` status; 49 artifacts were ownership-tracked; installed `CLAUDE.md` was a regular file matching `AGENTS.md`.
 ```
 
+### Review closeout correction
+
+- **Date/time:** 2026-08-25 20:47 UTC (completion)
+- **Impact:** Medium — aligns the exported core installer with the production transactional installer and its preview contract.
+- **What/why:** A commit-level review found that `MarketplaceInstaller.install()` still reapplied the legacy blanket symlink rejection after its preview had accepted a safe native-tree link. The desktop transaction path was correct, but direct consumers of the exported `muxbase/core` API could still reproduce the original full-install failure.
+- **How:** Native preview artifacts are now revalidated with the same containment-aware walker used for preview and materialization. Non-native skills, agents, hooks, MCP scripts, and JS plugins retain the strict no-symlink validation. A focused public-API regression proves preview and install agree for a safe internal alias.
+- **Risk/compatibility:** No API, IPC, persistence, or destination behavior changed. Unsafe native links still fail closed, direct artifacts remain stricter, and the second pre-install source validation remains in place.
+
+```text
+# RED: exported installer regression before the correction
+$ pnpm vitest run __tests__/marketplace/MarketplaceInstaller.test.ts --no-file-parallelism
+Test Files 1 failed; Tests 1 failed, 18 passed. The accepted native link was rejected by the legacy pre-install assertion.
+
+# Focused GREEN
+$ pnpm vitest run __tests__/marketplace/MarketplaceInstaller.test.ts __tests__/marketplace/nativeMarketplaceContainment.test.ts __tests__/marketplace/MarketplaceIntegrityInstaller.test.ts __tests__/marketplace/NativeInstaller.test.ts --no-file-parallelism
+Test Files 4 passed; Tests 61 passed.
+
+# Marketplace regression suite and static quality gates
+$ pnpm vitest run __tests__/marketplace --no-file-parallelism
+Test Files 15 passed; Tests 149 passed.
+$ pnpm run verify:static
+Passed: brand guard, internal-reference gate, version alignment, TypeScript, zero-warning ESLint, and Knip.
+$ pnpm build
+Passed: hook documentation generation and TypeScript production build.
+
+# Read-only closeout review with an isolated Codex home
+$ CODEX_HOME=<isolated> codex review --uncommitted -c 'sandbox_mode="read-only"' -c 'approval_policy="never"'
+Clean: no actionable findings; the reviewer confirmed native containment validation remains aligned while non-native artifacts retain strict rejection.
+```
+
 ## Harden the pane-to-pane review workflow
 
 - **Date/time:** 2026-08-25 19:55 UTC (completion)
