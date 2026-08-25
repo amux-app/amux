@@ -1,5 +1,15 @@
 # Local Changelog
 
+## README coverage badge
+
+- **Date/time:** 2026-08-25 10:36 UTC (completion)
+- **Impact:** Low — documents the latest measured desktop code coverage in the public README; application behavior, dependencies, CI execution, and persisted data are unchanged.
+- **What:** Added a flat-square `coverage` badge showing **82.27%** to the README badge row and linked it to the live MuxBase CI workflow.
+- **Why:** The desktop coverage gate is executed in CI, but the current workflow does not publish a machine-readable percentage to Codecov or another dynamic badge service. The badge therefore uses the latest verified local coverage result rather than displaying a misleading `unknown` third-party badge.
+- **How:** Added the Shields.io badge URL alongside the existing CI/release badges. Verified the current coverage summary from `desktop/coverage/coverage-summary.json` after running the desktop coverage suite.
+- **Risk/compatibility:** Documentation-only. The numeric badge must be refreshed when the measured coverage changes; its CI link remains the source for the authoritative workflow result.
+- **Validation:** `cd desktop && pnpm test:coverage` passed 351 files with 3,573 tests and 167 intentional E2E skips at **82.27% lines/statements (51,420/62,501)**, 83.03% functions, and 81.65% branches; `curl -sSL -o /dev/null -w` returned HTTP 200 for the badge and live CI URLs; and `git diff --check` passed. README-wide Prettier was intentionally not applied because it would reflow unrelated existing documentation.
+
 ## Triple-check MuxBase rename cleanup
 
 - **Date/time:** 2026-08-25 09:14 UTC (completion)

@@ -20,6 +20,8 @@
 <p align="center">
   <a href="https://github.com/muxbase-app/muxbase/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/muxbase-app/muxbase/ci.yml?branch=main&style=flat-square&label=CI" alt="CI status" /></a>
   &nbsp;
+  <a href="https://github.com/amux-app/muxbase/actions/workflows/ci.yml"><img src="https://img.shields.io/badge/coverage-82.27%25-brightgreen?style=flat-square" alt="Code coverage: 82.27%" /></a>
+  &nbsp;
   <a href="https://github.com/muxbase-app/muxbase/releases/latest"><img src="https://img.shields.io/github/v/release/muxbase-app/muxbase?display_name=tag&style=flat-square&label=release" alt="Latest release" /></a>
   &nbsp;
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-1a1a1a?style=flat-square" alt="MIT license" /></a>
