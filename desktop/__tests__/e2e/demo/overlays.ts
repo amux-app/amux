@@ -4,6 +4,7 @@
 // so the recordings never depend on live agent processes.
 export * from './overlays/file-browser';
 export * from './overlays/focus-panel';
+export * from './overlays/layout';
 export * from './overlays/marketplace';
 export * from './overlays/misc';
 export * from './overlays/review';

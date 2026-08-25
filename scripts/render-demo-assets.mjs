@@ -22,6 +22,20 @@ const OUTPUT_FPS = 25;
 const HERO_FRAME_FPS = 12.5;
 const HERO_DENOISE_FILTER = 'hqdn3d=1.5:1.5:4:4';
 const HERO_QUALITY_STEPS = [72, 68, 64];
+// img2webp encodes every non-key frame as a sub-rectangle diff and retains
+// whatever pixels last occupied the rest of the canvas. Without a keyframe
+// cadence, a region the differ considers unchanged keeps the lossy residue of
+// an *earlier scene* indefinitely — which showed up as a green-tinted, ghosted
+// sidebar in the hero. A full-canvas frame at least every HERO_KEYFRAME_MAX
+// frames flushes that residue for +0.9% size.
+const HERO_KEYFRAME_MIN = 3;
+const HERO_KEYFRAME_MAX = 12;
+// libwebp counts candidate frames, then merges identical neighbours, so the
+// emitted gap between full-canvas frames runs a little past -kmax (measured:
+// 15 frames for kmax 12). The property that actually matters is how long stale
+// pixels can survive on screen, so the guard is expressed in seconds with
+// headroom over the observed gap rather than as an exact frame count.
+const HERO_KEYFRAME_MAX_GAP_SEC = 2;
 const HERO_MAX_BYTES = 9 * 1024 * 1024;
 const TRIM_PAD_SEC = 0.15;
 
@@ -117,9 +131,10 @@ function encodeHero(inputPath, outputPath, trimStartSec = 0, maxBytes = HERO_MAX
         + `${HERO_QUALITY_STEPS.at(-1)}; exceeds the ${formatBytes(maxBytes)} budget`,
       );
     }
+    const { worstGapSec } = assertKeyframeCadence(tempOutput);
     renameSync(tempOutput, outputPath);
     return {
-      path: outputPath, probe, quality: usedQuality, size, trimStartSec, frameCount: frames.length,
+      path: outputPath, probe, quality: usedQuality, size, trimStartSec, frameCount: frames.length, worstGapSec,
     };
   } finally {
     rmSync(tempOutput, { force: true });
@@ -154,10 +169,14 @@ function extractFrames(inputPath, framesDir, scaleFilter, trimStartSec = 0) {
   return frames;
 }
 
-function assembleWebp(frames, outputPath, quality) {
+// keyframes === false disables the cadence entirely; only the self-test uses
+// that, to prove assertKeyframeCadence actually rejects a ghosting-prone file.
+function assembleWebp(frames, outputPath, quality, keyframes = true) {
   const frameDurationMs = Math.round(1000 / HERO_FRAME_FPS);
   execFileSync('img2webp', [
     '-loop', '0',
+    '-kmin', String(keyframes ? HERO_KEYFRAME_MIN : 0),
+    '-kmax', String(keyframes ? HERO_KEYFRAME_MAX : 0),
     '-lossy',
     '-q', String(quality),
     '-m', '6',
@@ -165,6 +184,61 @@ function assembleWebp(frames, outputPath, quality) {
     ...frames,
     '-o', outputPath,
   ], { stdio: 'inherit' });
+}
+
+// Walks the RIFF chunk chain of an animated WebP and returns the canvas size
+// plus every ANMF frame's rectangle. ANMF stores offsets in 2px units and
+// dimensions minus one, all as 24-bit little-endian.
+function readWebpFrames(path) {
+  const buf = readFileSync(path);
+  if (buf.toString('ascii', 0, 4) !== 'RIFF' || buf.toString('ascii', 8, 12) !== 'WEBP') {
+    throw new Error(`Not a RIFF/WEBP file: ${path}`);
+  }
+  const u24 = (offset) => buf.readUIntLE(offset, 3);
+
+  let canvas = null;
+  const frames = [];
+  let cursor = 12;
+  while (cursor + 8 <= buf.length) {
+    const fourCC = buf.toString('ascii', cursor, cursor + 4);
+    const size = buf.readUInt32LE(cursor + 4);
+    const payload = cursor + 8;
+    if (fourCC === 'VP8X') canvas = { width: u24(payload + 4) + 1, height: u24(payload + 7) + 1 };
+    if (fourCC === 'ANMF') {
+      frames.push({
+        x: u24(payload) * 2,
+        y: u24(payload + 3) * 2,
+        width: u24(payload + 6) + 1,
+        height: u24(payload + 9) + 1,
+      });
+    }
+    cursor = payload + size + (size % 2);
+  }
+  if (!canvas) throw new Error(`No VP8X canvas header in ${path}`);
+  return { canvas, frames };
+}
+
+// Guards the defect this cadence exists to prevent: if full-canvas frames stop
+// appearing, stale pixels from earlier scenes survive in regions the differ
+// skips, and the asset ships with ghosting.
+function assertKeyframeCadence(path, maxGapSec = HERO_KEYFRAME_MAX_GAP_SEC) {
+  const { canvas, frames } = readWebpFrames(path);
+  const isKeyframe = (f) => f.x === 0 && f.y === 0 && f.width === canvas.width && f.height === canvas.height;
+  let gap = 0;
+  let worstGap = 0;
+  for (const frame of frames) {
+    gap = isKeyframe(frame) ? 0 : gap + 1;
+    worstGap = Math.max(worstGap, gap);
+  }
+  const worstGapSec = worstGap / HERO_FRAME_FPS;
+  if (worstGapSec > maxGapSec) {
+    throw new Error(
+      `${path}: stale pixels can survive ${worstGapSec.toFixed(1)}s (max ${maxGapSec}s) — `
+      + `${worstGap} consecutive non-keyframes across ${frames.length} frames means ghosting will show. `
+      + 'Check the -kmin/-kmax arguments in assembleWebp.',
+    );
+  }
+  return { frameCount: frames.length, worstGap, worstGapSec };
 }
 
 function formatBytes(bytes) {
@@ -197,6 +271,9 @@ function printResult(label, result) {
   console.log(`  output:   ${TARGET_WIDTH}x${TARGET_HEIGHT}`);
   console.log(`  size:     ${formatBytes(result.size)}`);
   if (result.quality !== undefined) console.log(`  quality:  ${result.quality}`);
+  if (result.worstGapSec !== undefined) {
+    console.log(`  keyframes: worst stale-pixel window ${result.worstGapSec.toFixed(2)}s / ${HERO_KEYFRAME_MAX_GAP_SEC}s`);
+  }
 }
 
 function runFfmpeg(args) {
@@ -285,6 +362,26 @@ async function selfTest() {
       const leftoverTemp = tempPathFor(committedPath);
       if (existsSync(leftoverTemp)) {
         throw new Error(`Leftover temp file was not cleaned up: ${leftoverTemp}`);
+      }
+
+      console.log('  -- keyframe-cadence guard --');
+      const cadence = assertKeyframeCadence(heroOut);
+      console.log(`  keyframe gap: ${cadence.worstGapSec.toFixed(2)}s / ${HERO_KEYFRAME_MAX_GAP_SEC}s across ${cadence.frameCount} frames`);
+      const framesDir = mkdtempSync(join(tempDir, 'cadence-frames-'));
+      const ghostPath = join(tempDir, `ghosting-${width}x${height}.webp`);
+      const cadenceFrames = extractFrames(sample, framesDir, buildScaleFilter(width, height), 0);
+      assembleWebp(cadenceFrames, ghostPath, HERO_QUALITY_STEPS[0], false);
+      // Bound the comparison by the cadenced encode's own stale window rather
+      // than the production budget: the self-test clip is only ~2s long, so an
+      // absolute threshold would pass a file that has no keyframes at all.
+      let cadenceRejected = false;
+      try {
+        assertKeyframeCadence(ghostPath, cadence.worstGapSec);
+      } catch {
+        cadenceRejected = true;
+      }
+      if (!cadenceRejected) {
+        throw new Error('assertKeyframeCadence accepted a keyframe-free WebP — the ghosting guard has no teeth');
       }
     }
     console.log('\nSelf-test passed');

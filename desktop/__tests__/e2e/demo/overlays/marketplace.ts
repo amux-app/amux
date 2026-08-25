@@ -1,19 +1,32 @@
 import type { Page } from 'playwright';
+import { measureContentLeft } from './layout';
 
 export async function paintMarketplaceMockup(page: Page): Promise<void> {
-  await page.evaluate(() => {
+  const contentLeft = await measureContentLeft(page);
+  await page.evaluate((left) => {
     const old = document.getElementById('__cinema_marketplace');
     if (old) old.remove();
 
     const overlay = document.createElement('div');
     overlay.id = '__cinema_marketplace';
     overlay.style.cssText = `
-      position:fixed;left:48px;right:0;top:0;bottom:0;z-index:40;pointer-events:none;
+      position:fixed;left:${left}px;right:0;top:0;bottom:0;z-index:40;pointer-events:none;
       background:#000;
       padding:28px 32px 28px;overflow:hidden;
       font-family:'Inter',-apple-system,sans-serif;color:#e6edf3;
       animation:cinema-fade-in 360ms ease both;
     `;
+
+    const plugins = [
+      { name: 'pr-reviewer', version: '0.9.7', desc: 'Inline PR comments with severity, fix suggestions, and a final go/no-go verdict.', skills: 2, mcps: 0, hooks: 1, agents: 1, featured: true },
+      { name: 'spec-driven-dev', version: '2.0.1', desc: 'Plan from a spec, implement in slices, write tests at each gate, never skip review.', skills: 4, mcps: 1, hooks: 0, agents: 2 },
+      { name: 'security-auditor', version: '1.4.2', desc: 'Comprehensive security review across OWASP, secrets, supply-chain, and dependency CVEs.', skills: 3, mcps: 0, hooks: 1, agents: 1 },
+      { name: 'figma-mcp', version: '1.0.3', desc: 'Read Figma frames as a tool — design tokens, components, layouts surfaced to your agent.', skills: 0, mcps: 1, hooks: 0, agents: 0 },
+      { name: 'refactor-pro', version: '1.2.0', desc: 'Find code smells, extract pure functions, dedupe across files. Idiomatic for TS, Python, Go.', skills: 5, mcps: 0, hooks: 0, agents: 2 },
+      { name: 'test-author', version: '0.8.5', desc: 'Generate AAA-style tests from a function or class. Targets vitest, jest, pytest.', skills: 2, mcps: 0, hooks: 0, agents: 1 },
+      { name: 'release-notes', version: '1.1.0', desc: 'Turn a merged range into changelog entries grouped by area, with breaking changes called out.', skills: 2, mcps: 0, hooks: 1, agents: 1 },
+      { name: 'postgres-mcp', version: '0.6.2', desc: 'Query and introspect a live database as a tool — schemas, indexes, and plans in the agent loop.', skills: 0, mcps: 1, hooks: 0, agents: 0 },
+    ];
 
     overlay.innerHTML = `
       <div style="display:flex;flex-direction:column;height:100%;gap:18px;">
@@ -51,18 +64,11 @@ export async function paintMarketplaceMockup(page: Page): Promise<void> {
           </div>
         </div>
 
-        <div style="font-size:10px;letter-spacing:0.12em;color:#6b7280;font-weight:700;text-transform:uppercase;">Available · 8</div>
+        <div style="font-size:10px;letter-spacing:0.12em;color:#6b7280;font-weight:700;text-transform:uppercase;">Available · ${plugins.length}</div>
 
-        <div id="__cinema_marketplace_grid" style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;overflow:hidden;">
+        <div id="__cinema_marketplace_grid" style="flex:1;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:min-content;align-content:start;gap:12px;overflow:hidden;">
 
-          ${[
-            { name: 'pr-reviewer', version: '0.9.7', desc: 'Inline PR comments with severity, fix suggestions, and a final go/no-go verdict.', skills: 2, mcps: 0, hooks: 1, agents: 1, featured: true },
-            { name: 'spec-driven-dev', version: '2.0.1', desc: 'Plan from a spec, implement in slices, write tests at each gate, never skip review.', skills: 4, mcps: 1, hooks: 0, agents: 2 },
-            { name: 'security-auditor', version: '1.4.2', desc: 'Comprehensive security review across OWASP, secrets, supply-chain, and dependency CVEs.', skills: 3, mcps: 0, hooks: 1, agents: 1 },
-            { name: 'figma-mcp', version: '1.0.3', desc: 'Read Figma frames as a tool — design tokens, components, layouts surfaced to your agent.', skills: 0, mcps: 1, hooks: 0, agents: 0, tag: 'MCP' },
-            { name: 'refactor-pro', version: '1.2.0', desc: 'Find code smells, extract pure functions, dedupe across files. Idiomatic for TS, Python, Go.', skills: 5, mcps: 0, hooks: 0, agents: 2 },
-            { name: 'test-author', version: '0.8.5', desc: 'Generate AAA-style tests from a function or class. Targets vitest, jest, pytest.', skills: 2, mcps: 0, hooks: 0, agents: 1 },
-          ].map((p) => `
+          ${plugins.map((p) => `
             <div style="border:1px solid ${p.featured ? '#58a6ff44' : '#1c1c20'};border-radius:12px;background:${p.featured ? 'linear-gradient(135deg, rgba(88,166,255,0.04), transparent 70%), #050507' : '#050507'};padding:14px 16px;display:flex;flex-direction:column;gap:8px;${p.featured ? 'box-shadow:0 0 28px -8px rgba(88,166,255,0.32);' : ''}">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
                 <div style="display:flex;align-items:center;gap:8px;min-width:0;">
@@ -88,7 +94,7 @@ export async function paintMarketplaceMockup(page: Page): Promise<void> {
       </div>
     `;
     document.body.appendChild(overlay);
-  });
+  }, contentLeft);
 }
 
 export async function hideMarketplaceMockup(page: Page): Promise<void> {

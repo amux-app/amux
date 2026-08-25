@@ -31,6 +31,9 @@ export async function paintFocusPanel(page: Page, mockId: string): Promise<void>
           <button data-tab="tokens" style="padding:11px 16px;font-size:12px;color:#9aa0aa;border-bottom:2px solid transparent;background:none;border-left:none;border-right:none;border-top:none;cursor:default;font-family:inherit;">Tokens</button>
           <button data-tab="worktree" style="padding:11px 16px;font-size:12px;color:#9aa0aa;border-bottom:2px solid transparent;background:none;border-left:none;border-right:none;border-top:none;cursor:default;font-family:inherit;">Worktree</button>
         </div>
+        <button id="__cinema_review_trigger" aria-label="Start review" style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;margin-right:6px;border-radius:6px;border:none;background:none;color:#9aa0aa;cursor:default;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><g stroke="currentColor" stroke-width="1.8" opacity="0.85"><circle cx="10" cy="10" r="6"/><line x1="14.5" y1="14.5" x2="20" y2="20" stroke-linecap="round"/></g><polyline points="7.5 10.5 9.5 12.5 12.5 8.5" stroke="#58a6ff" stroke-width="2.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
         <div style="display:inline-flex;align-items:center;gap:8px;margin-right:12px;padding:4px 10px;border-radius:999px;background:#15161b;border:1px solid #21222a;">
           <svg width="36" height="14" viewBox="0 0 36 14" fill="none"><polyline points="0,8 6,7 12,9 18,6 24,9 30,5 36,7" stroke="#fbbf24" stroke-width="1.5" fill="none" /></svg>
           <span style="font-size:10px;font-weight:700;color:#fbbf24;font-family:'SFMono-Regular',Menlo,monospace;">55</span>
