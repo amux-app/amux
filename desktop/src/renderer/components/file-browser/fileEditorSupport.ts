@@ -75,9 +75,9 @@ const IGNORE_FILE_NAMES = new Set([
 const SEARCH_MATCH_MARK = Decoration.mark({ class: 'aumx-file-editor-search-match' });
 
 const acceptCompletionIfDocumentChanges: Command = (view) => {
-  const before = view.state.sliceDoc();
+  const before = view.state.doc;
   if (!acceptCompletion(view)) return false;
-  return view.state.sliceDoc() !== before;
+  return !view.state.doc.eq(before);
 };
 
 const acceptCompletionOrIndent: Command = (view) => (

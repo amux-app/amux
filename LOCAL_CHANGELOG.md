@@ -1,5 +1,15 @@
 # Local Changelog
 
+## Triple-check completion hot-path allocation
+
+- **Date/time:** 2026-08-25 06:17 UTC (completion)
+- **Impact:** Low — removes an avoidable full-document allocation from the file-editor Enter command; behavior and public contracts are unchanged.
+- **What:** Changed `acceptCompletionIfDocumentChanges` to retain the existing `Text` document and compare with `Text.eq()` after completion acceptance instead of calling `sliceDoc()` before and after every Enter keypress.
+- **Why:** Plain Enter is a hot path even when no completion is active; copying a full document up to the editor’s 150 KB full-tier limit was unnecessary.
+- **How:** Reused the same `Text.eq()` approach already used by the no-op completion history suppressor. No new abstraction or test surface was needed.
+- **Risk/compatibility:** This is comparison-only; completion acceptance, no-op newline behavior, indentation, and Undo semantics are unchanged. Existing local `.gitignore` edits were preserved and not included in this commit.
+- **Validation:** Focused completion, path, editor-support, and Enter regression tests passed 35/35; focused ESLint passed. `git diff --check` is blocked only by the pre-existing user-modified `.gitignore` trailing whitespace at line 105.
+
 ## Triple-check editor Enter correction
 
 - **Date/time:** 2026-08-25 05:38 UTC (completion)
