@@ -7,8 +7,9 @@
  */
 
 import { readFileSync, writeFileSync } from 'fs';
-import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+import { toTypeScriptStringLiteral } from './typescript-source-literal.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -378,7 +379,7 @@ const tsContent = `/**
  * DO NOT EDIT MANUALLY - run 'pnpm generate:hooks-docs' to regenerate
  */
 
-export const AGENTS_MD = \`${agentsMd.replace(/`/g, '\\`')}\`;
+export const AGENTS_MD = ${toTypeScriptStringLiteral(agentsMd)};
 `;
 
 writeFileSync(outputPath, tsContent);

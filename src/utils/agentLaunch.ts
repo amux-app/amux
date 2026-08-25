@@ -3,6 +3,7 @@ import {
   type AgentName,
 } from '../agents/agent-contract.js';
 import { shQuote } from './shellEscape.js';
+import { normalizeAsciiName } from './safeName.js';
 
 export type { AgentName } from '../agents/agent-contract.js';
 export { getAgentLabel, getAgentSlugSuffix } from '../agents/agent-contract.js';
@@ -18,12 +19,7 @@ export interface AgentLaunchOption {
 export function appendSlugSuffix(baseSlug: string, slugSuffix?: string): string {
   if (!slugSuffix) return baseSlug;
 
-  const normalizedSuffix = slugSuffix
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  const normalizedSuffix = normalizeAsciiName(slugSuffix);
 
   if (!normalizedSuffix) return baseSlug;
   if (baseSlug === normalizedSuffix || baseSlug.endsWith(`-${normalizedSuffix}`)) {

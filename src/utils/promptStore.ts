@@ -1,8 +1,9 @@
 import * as fs from 'fs/promises';
 import type { Dirent } from 'fs';
 import path from 'path';
-import { shQuote } from './shellEscape.js';
 import { LogService } from '../services/LogService.js';
+import { normalizeAsciiName } from './safeName.js';
+import { shQuote } from './shellEscape.js';
 import { getProjectMetadataPath } from './worktreePaths.js';
 
 const log = LogService.getInstance();
@@ -12,17 +13,16 @@ const PROMPT_FILE_EXTENSION = '.txt';
 const MAX_SLUG_PREFIX_LENGTH = 64;
 
 function sanitizeSlugForFilename(slug: string): string {
-  const normalized = slug
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  const normalized = normalizeAsciiName(slug, {
+    allowedPunctuation: '._',
+    maxLength: MAX_SLUG_PREFIX_LENGTH,
+  });
 
   if (!normalized) {
     return 'pane';
   }
 
-  return normalized.slice(0, MAX_SLUG_PREFIX_LENGTH);
+  return normalized;
 }
 
 function randomSuffix(): string {

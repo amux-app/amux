@@ -10,7 +10,6 @@ const SYSTEM_REMINDER = /^\s*<system-reminder\b[^>]*>[\s\S]*?<\/system-reminder>
 
 const LEADING_COMMAND = /^\s*\/(?:goal|plan|task|implement)\b(?:\s+|:\s*)/iu;
 const LEADING_MARKDOWN = /^\s*(?:```\w*\s*|#{1,6}\s+|[-*+]\s+)/u;
-const TRAILING_FENCE = /\s*```\s*$/u;
 
 const GRAPHEME_SEGMENTER = typeof Intl.Segmenter === 'function'
   ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
@@ -106,7 +105,8 @@ function stripPromptNoise(value: string): string {
     if (next === current) break;
     current = next;
   }
-  return current.replace(TRAILING_FENCE, '').trim();
+  const trimmed = current.trimEnd();
+  return (trimmed.endsWith('```') ? trimmed.slice(0, -3) : trimmed).trim();
 }
 
 function stripRequestWrappers(value: string): string {

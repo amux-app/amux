@@ -31,6 +31,33 @@ function legacyHookOwner(value: unknown, event: string): string | null {
   return suffix.slice(0, eventIndex);
 }
 
+function getOrCreateHookList(
+  hookMap: Record<string, Record<string, unknown>[]>,
+  event: string,
+): Record<string, unknown>[] {
+  const existing = Object.hasOwn(hookMap, event) ? hookMap[event] : undefined;
+  if (Array.isArray(existing)) return existing;
+
+  const list: Record<string, unknown>[] = [];
+  Object.defineProperty(hookMap, event, {
+    configurable: true,
+    enumerable: true,
+    value: list,
+    writable: true,
+  });
+  return list;
+}
+
+function upsertHookEntry(
+  list: Record<string, unknown>[],
+  sentinel: string,
+  entry: Record<string, unknown>,
+): void {
+  const index = list.findIndex((hook) => hook[SENTINEL_PREFIX] === sentinel);
+  if (index === -1) list.push(entry);
+  else list.splice(index, 1, entry);
+}
+
 /** Matches the exact owner on new entries and safely parses legacy sentinels. */
 export function isMarketplaceHookOwnedBy(entry: unknown, pluginId: string, event: string): boolean {
   if (typeof entry !== 'object' || entry === null) return false;
@@ -95,7 +122,7 @@ export class HookTranslator {
 
     const settings = loadJson(settingsPath);
     const hooksMap = this.ensureEventMap(settings, 'hooks');
-    if (!hooksMap[hook.event]) hooksMap[hook.event] = [];
+    const list = getOrCreateHookList(hooksMap, hook.event);
 
     const sentinel = this.sentinelKey(pluginId, hook.event, hookIndex);
     const entry: Record<string, unknown> = {
@@ -105,9 +132,7 @@ export class HookTranslator {
       hooks: [{ type: 'command', command: hook.command }],
     };
     // Replace existing entry with same sentinel key (idempotent re-install)
-    const list = hooksMap[hook.event];
-    const idx = list.findIndex((h) => h[SENTINEL_PREFIX] === sentinel);
-    if (idx >= 0) { list[idx] = entry; } else { list.push(entry); }
+    upsertHookEntry(list, sentinel, entry);
     settings['hooks'] = hooksMap;
 
     writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
@@ -119,7 +144,10 @@ export class HookTranslator {
     mkdirSync(path.dirname(hooksPath), { recursive: true });
 
     const data = loadJson(hooksPath);
-    if (!data[hook.event]) data[hook.event] = [];
+    const list = getOrCreateHookList(
+      data as Record<string, Record<string, unknown>[]>,
+      hook.event,
+    );
 
     const sentinel = this.sentinelKey(pluginId, hook.event, hookIndex);
     const entry: Record<string, unknown> = {
@@ -128,9 +156,7 @@ export class HookTranslator {
       command: hook.command,
       ...(hook.matcher ? { matcher: hook.matcher } : {}),
     };
-    const list = data[hook.event] as Record<string, unknown>[];
-    const idx = list.findIndex((h) => h[SENTINEL_PREFIX] === sentinel);
-    if (idx >= 0) { list[idx] = entry; } else { list.push(entry); }
+    upsertHookEntry(list, sentinel, entry);
 
     writeFileSync(hooksPath, JSON.stringify(data, null, 2), 'utf-8');
     return { status: 'full', path: hooksPath, skipped: [] };

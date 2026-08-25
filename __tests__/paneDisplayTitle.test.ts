@@ -41,6 +41,10 @@ describe('condenseTitleLocally', () => {
     expect(condenseTitleLocally('Pleased users can export reports')).toBe('Pleased users can export reports');
   });
 
+  it('removes a trailing markdown fence after a large whitespace run', () => {
+    expect(condenseTitleLocally(`Please update docs${' '.repeat(100_000)}\`\`\``)).toBe('Update docs');
+  });
+
   it('preserves joined emoji and combining marks at the display limit', () => {
     const family = '👨‍👩‍👧‍👦';
     const combining = 'e\u0301';

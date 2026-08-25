@@ -65,7 +65,9 @@ describe('GitOperations', () => {
       // Assert
       expect(mkdirSync).toHaveBeenCalledWith('/tmp/clones', { recursive: true });
       const call = cloneArgs()!;
-      const tempTarget = (call[1] as string[])[4];
+      const args = call[1] as string[];
+      expect(args.slice(0, 5)).toEqual(['clone', '--depth', '1', '--', 'https://github.com/example/repo.git']);
+      const tempTarget = args[5];
       expect(tempTarget).toMatch(/^\/tmp\/clones\/repo\.tmp-[0-9a-f]{12}$/);
       expect(renameSync).toHaveBeenCalledWith(tempTarget, '/tmp/clones/repo');
     });
@@ -91,7 +93,7 @@ describe('GitOperations', () => {
 
       // Assert
       await expect(promise).rejects.toThrow('network down');
-      const tempTarget = (cloneArgs()![1] as string[])[4];
+      const tempTarget = (cloneArgs()![1] as string[])[5];
       expect(rmSync).toHaveBeenCalledWith(tempTarget, { recursive: true, force: true });
       expect(renameSync).not.toHaveBeenCalled();
     });
@@ -142,7 +144,7 @@ describe('GitOperations', () => {
       const sha = await new GitOperations().ensureClone('https://github.com/example/repo', '/tmp/clones/repo');
 
       // Assert: our temp is cleaned up and we return the existing clone's HEAD.
-      const tempTarget = (cloneArgs()![1] as string[])[4];
+      const tempTarget = (cloneArgs()![1] as string[])[5];
       expect(rmSync).toHaveBeenCalledWith(tempTarget, { recursive: true, force: true });
       expect(sha).toBe('winsha000000');
     });
