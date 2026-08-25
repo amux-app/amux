@@ -46,6 +46,7 @@ beforeEach(() => {
     const { result } = renderHook(() => useReviewControls(makePane(), 'idle'));
 
     expect(result.current.canReview).toBe(true);
+    expect(result.current.scope).toBe('worktree');
     expect(result.current.canSendFixes).toBe(false);
     expect(gitApi.getStatus).not.toHaveBeenCalled();
   });
@@ -59,6 +60,7 @@ beforeEach(() => {
     expect(result.current.canReview).toBe(false);
     await waitFor(() => expect(result.current.canReview).toBe(true));
     expect(gitApi.getStatus).toHaveBeenCalledWith({ worktreePath: '/tmp/project' });
+    expect(result.current.scope).toBe('uncommitted');
   });
 
   it('does not offer review or inspect dirty state for Pi panes', () => {

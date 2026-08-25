@@ -5,6 +5,9 @@ export const REVIEW_NO_ISSUES_SENTINEL = 'NO_ISSUES_FOUND';
 
 const LGTM_FALLBACK_REGEX = /^(?:lgtm|looks good(?: to me)?|no issues(?: found)?|no actionable findings|nothing to fix)\.?$/i;
 const FINDING_LINE_REGEX = /^(?:[-*+]\s+|#{1,6}\s+)?(?:\*\*)?(?:critical|important|minor)(?:\*\*)?\b\s*[—:-]/i;
+const PURE_FENCE_LINE = /^(?:```|~~~)\w*$/;
+const SENTINEL_WRAPPERS = ['**', '__', '*', '_', '`'] as const;
+const SENTINEL_NORMALIZATION_MAX_ITERATIONS = 8;
 
 type ReviewFindingsKind = 'no-issues' | 'findings';
 
@@ -42,13 +45,58 @@ export function extractReviewFindings(session: NormalizedSession | null): Review
 
 function isNoIssuesReview(text: string): boolean {
   const lines = text.trim().split('\n').map((l) => l.trim()).filter(Boolean);
-  const reviewLines = lines.filter((line) => !line.startsWith(REVIEW_SKILL_ACK_PREFIX));
+  const reviewLines = lines.filter((line) => (
+    !line.startsWith(REVIEW_SKILL_ACK_PREFIX) && !PURE_FENCE_LINE.test(line)
+  ));
   const firstLine = reviewLines[0];
   if (!firstLine) return false;
   if (reviewLines.some((line) => FINDING_LINE_REGEX.test(line))) return false;
 
-  if (firstLine === REVIEW_NO_ISSUES_SENTINEL) return true;
+  if (normalizeSentinelLine(firstLine) === REVIEW_NO_ISSUES_SENTINEL) return true;
   if (reviewLines.length <= 2 && LGTM_FALLBACK_REGEX.test(firstLine)) return true;
 
   return false;
+}
+
+function normalizeSentinelLine(line: string): string {
+  let normalized = line;
+
+  for (let iteration = 0; iteration < SENTINEL_NORMALIZATION_MAX_ITERATIONS; iteration += 1) {
+    const trimmed = normalized.trim();
+    if (trimmed !== normalized) {
+      normalized = trimmed;
+      continue;
+    }
+
+    const heading = normalized.match(/^#{1,6}\s+/);
+    if (heading) {
+      normalized = normalized.slice(heading[0].length);
+      continue;
+    }
+
+    const list = normalized.match(/^[-*+]\s+/);
+    if (list) {
+      normalized = normalized.slice(list[0].length);
+      continue;
+    }
+
+    const wrapper = SENTINEL_WRAPPERS.find((candidate) => (
+      normalized.length > candidate.length * 2
+      && normalized.startsWith(candidate)
+      && normalized.endsWith(candidate)
+    ));
+    if (wrapper) {
+      normalized = normalized.slice(wrapper.length, -wrapper.length);
+      continue;
+    }
+
+    if (/[.!:]$/.test(normalized)) {
+      normalized = normalized.slice(0, -1);
+      continue;
+    }
+
+    break;
+  }
+
+  return normalized;
 }

@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { listAgents } from '../../api/agent.api';
 import { usePaneActions } from '../../hooks/usePaneActions';
+import type { ReviewScope } from '../../hooks/useReviewControls';
 import { cn } from '../../lib/cn';
 import { HEADER_ICON_BUTTON_CLASS } from '../../lib/constants';
 import { useReviewLaunchStore } from '../../stores/review-launch.store';
@@ -14,6 +15,7 @@ interface ReviewLaunchButtonProps {
   paneId: string;
   defaultAgent?: AgentName;
   highlight?: boolean;
+  scope?: ReviewScope;
 }
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
@@ -48,7 +50,7 @@ function AuroraLoupeIcon() {
   );
 }
 
-export function ReviewLaunchButton({ paneId, defaultAgent, highlight }: ReviewLaunchButtonProps) {
+export function ReviewLaunchButton({ paneId, defaultAgent, highlight, scope = 'worktree' }: ReviewLaunchButtonProps) {
   const { startReview } = usePaneActions();
   const isLaunching = useReviewLaunchStore((s) => s.launchingIds.has(paneId));
   const [open, setOpen] = useState(false);
@@ -116,6 +118,11 @@ export function ReviewLaunchButton({ paneId, defaultAgent, highlight }: ReviewLa
           Review with
         </p>
         <ReviewAgentSegments agents={agents} selected={selected} onSelect={setSelected} />
+        {scope === 'uncommitted' && (
+          <p className="mt-[10px] text-[11px] leading-snug text-[var(--text-secondary)]">
+            Uncommitted changes only — existing commits on this branch are not reviewed.
+          </p>
+        )}
         <button
           onClick={handleStart}
           disabled={!canStart}

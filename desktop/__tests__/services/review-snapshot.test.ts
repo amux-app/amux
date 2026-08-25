@@ -3,7 +3,12 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { collectSnapshotDiffData, collectWorkingDiffData, createReviewSnapshot } from '../../src/main/services/git/gitDiff';
+import {
+  collectSnapshotDiffData,
+  collectWorkingDiffData,
+  createReviewSnapshot,
+  hasReviewSnapshotChanged,
+} from '../../src/main/services/git/gitDiff';
 
 function git(cwd: string, args: string[]): string {
   return execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
@@ -255,5 +260,19 @@ describe('non-worktree review on a shared checkout (real git)', () => {
     expect(snapshot.sha).toBe(head);
     const diff = await collectWorkingDiffData(repo, snapshot.sha);
     expect(diff.changedFiles).toEqual([]);
+  });
+
+  it('reports unchanged content when the source has not drifted since the review snapshot', async () => {
+    const snapshot = await createReviewSnapshot(repo);
+
+    await expect(hasReviewSnapshotChanged(repo, snapshot.sha)).resolves.toBe(false);
+  });
+
+  it('reports changed content when the source drifts after the review snapshot', async () => {
+    writeFileSync(join(repo, 'f.txt'), 'changed after review\n');
+    const reviewed = await createReviewSnapshot(repo);
+    writeFileSync(join(repo, 'f.txt'), 'changed again\n');
+
+    await expect(hasReviewSnapshotChanged(repo, reviewed.sha)).resolves.toBe(true);
   });
 });

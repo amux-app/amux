@@ -291,8 +291,8 @@ describe('portalled pane header menus', () => {
   });
 
   describe('ReviewLaunchButton', () => {
-    async function openPopover() {
-      renderInPanel(<ReviewLaunchButton defaultAgent="claude" paneId={PANE.id} />);
+    async function openPopover(scope: 'worktree' | 'uncommitted' = 'worktree') {
+      renderInPanel(<ReviewLaunchButton defaultAgent="claude" paneId={PANE.id} scope={scope} />);
       const trigger = screen.getByRole('button', { name: 'Start review' });
       fireEvent.click(trigger);
       await screen.findByRole('button', { name: 'Start Review' });
@@ -322,6 +322,13 @@ describe('portalled pane header menus', () => {
       // Assert
       await waitFor(() => expect(paneApi.startReview).toHaveBeenCalledTimes(1));
       expect(paneApi.startReview).toHaveBeenCalledWith({ paneId: PANE.id, agent: 'claude' });
+    });
+
+    it('shows the shared-checkout review scope before starting', async () => {
+      await openPopover('uncommitted');
+
+      expect(screen.getByText('Uncommitted changes only — existing commits on this branch are not reviewed.'))
+        .toBeTruthy();
     });
 
     it('starts the review with the reviewer picked in the popover', async () => {

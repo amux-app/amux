@@ -17,8 +17,11 @@ interface ReviewControls {
   isReviewSourceMissing: boolean;
   openReviewPaneId?: string;
   reviewSourcePaneId?: string;
+  scope: ReviewScope;
   showHandedOffPill: boolean;
 }
+
+export type ReviewScope = 'worktree' | 'uncommitted';
 
 export function useReviewControls(pane: MuxBasePane, _status: PaneActivityState): ReviewControls {
   const reviewAgentEnabled = useElectronSettingsStore((s) => isReviewAgentEnabled(s.settings));
@@ -63,6 +66,7 @@ export function useReviewControls(pane: MuxBasePane, _status: PaneActivityState)
     isReviewSourceMissing: isReviewPane && !!pane.review && !reviewSourcePane,
     openReviewPaneId,
     reviewSourcePaneId: reviewSourcePane?.id,
+    scope: hasWorktree ? 'worktree' : 'uncommitted',
     showHandedOffPill: reviewAgentEnabled && isReviewPane && !!pane.review?.handedOffAt,
   };
 }

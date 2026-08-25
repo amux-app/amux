@@ -97,6 +97,7 @@ vi.mock('muxbase/core', () => ({
   ensureMuxBaseGitignore: vi.fn().mockResolvedValue(undefined),
   generateLocalSlug: vi.fn(() => 'duel-task'),
   getProjectMetadataDir: coreState.getProjectMetadataDir,
+  isGitObjectId: (value: unknown) => typeof value === 'string' && /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(value),
   getStatusDetector: () => ({ on: vi.fn(), removePane: vi.fn() }),
   TMUX_SHELL_READY_DELAY: 0,
 }));
@@ -897,7 +898,7 @@ describe('MuxBaseBridge.startFixHandoffAction — rejection paths and in-flight 
     const result = await bridge.startFixHandoffAction('review-pane');
 
     // Assert
-    expect(result).toEqual({ success: true, noIssues: true, sourcePaneId: 'source-pane' });
+    expect(result).toEqual({ snapshotDrift: 'unknown', success: true, noIssues: true, sourcePaneId: 'source-pane' });
     // Critical: no shell command typed into the source pane
     expect(asInternals(bridge).sendPromptToPane).not.toHaveBeenCalled();
     // No findings file written
@@ -940,7 +941,7 @@ describe('MuxBaseBridge.startFixHandoffAction — rejection paths and in-flight 
     const result = await bridge.startFixHandoffAction('review-pane');
 
     // Assert
-    expect(result).toEqual({ success: true, sourcePaneId: 'source-pane' });
+    expect(result).toEqual({ snapshotDrift: 'unknown', success: true, sourcePaneId: 'source-pane' });
     expect(writeFileSync).toHaveBeenCalled();
     expect(asInternals(bridge).sendPromptToPane).toHaveBeenCalledTimes(1);
     expect(atomicWriteJsonSync).toHaveBeenCalled();

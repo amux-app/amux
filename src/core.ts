@@ -121,6 +121,7 @@ export {
   isValidBranchName,
   getPaneBranchName,
   ensureMuxBaseGitignore,
+  isGitObjectId,
 } from './utils/git.js';
 export {
   getProjectConfigPath,

@@ -1,5 +1,6 @@
 import type { MuxBaseConfig, MuxBasePane, MuxBaseSettings } from '../types.js';
 import { isAgentName } from '../agents/agent-contract.js';
+import { isGitObjectId } from './git.js';
 import { CLAUDE_FULLSCREEN_DEFAULT_RESET_KEY, isSettingKey, validateSettingValue } from './settingsSchema.js';
 
 export { CLAUDE_FULLSCREEN_DEFAULT_RESET_KEY } from './settingsSchema.js';
@@ -81,6 +82,9 @@ function validateReview(value: unknown, index: number): void {
     throw new Error(`Invalid ${path}.startedAt: expected a finite number`);
   }
   validateOptionalFiniteNumber(value, 'handedOffAt', path);
+  if (value.snapshotSha !== undefined && !isGitObjectId(value.snapshotSha)) {
+    throw new Error(`Invalid ${path}.snapshotSha: expected a git object id`);
+  }
 }
 
 function validateDuel(value: unknown, index: number): void {

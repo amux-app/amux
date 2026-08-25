@@ -298,6 +298,9 @@ export function usePaneActions() {
         } else if (response.error) {
           addToast(response.error, 'error');
         }
+        if (response.success && response.snapshotDrift === 'changed') {
+          addToast("The author's code changed since this review — findings may cite outdated line numbers.", 'warning');
+        }
         return response;
       } catch (err) {
         addToast(`Failed to send fixes: ${(err as Error).message}`, 'error');
