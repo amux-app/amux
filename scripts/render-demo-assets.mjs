@@ -5,14 +5,20 @@ import {
   existsSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { extname, join, resolve } from 'node:path';
+import { extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT_DIR = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const DEMO_DIR = resolve(ROOT_DIR, '.tmp/demo');
 const HERO_INPUT = join(DEMO_DIR, 'hero.webm');
-const HERO_OUTPUT = resolve(ROOT_DIR, 'docs/assets/muxbase-demo.webp');
-const HERO_MP4_OUTPUT = resolve(ROOT_DIR, 'docs/public/muxbase-demo-hero.mp4');
+// The published hero assets live under .github/assets — that is what README.md
+// serves and what git tracks. `docs/` is excluded by .gitignore, so anything
+// written there can never reach a commit; the docs-site copy is emitted purely
+// for local preview and is written last so a docs failure cannot block the
+// tracked assets.
+const HERO_OUTPUT = resolve(ROOT_DIR, '.github/assets/muxbase-demo.webp');
+const HERO_MP4_OUTPUT = resolve(ROOT_DIR, '.github/assets/muxbase-demo-hero.mp4');
+const DOCS_HERO_MP4_OUTPUT = resolve(ROOT_DIR, 'docs/public/muxbase-demo-hero.mp4');
 const FULL_INPUT = join(DEMO_DIR, 'full.webm');
 const FULL_OUTPUT = join(DEMO_DIR, 'muxbase-demo-full.mp4');
 
@@ -241,6 +247,19 @@ function assertKeyframeCadence(path, maxGapSec = HERO_KEYFRAME_MAX_GAP_SEC) {
   return { frameCount: frames.length, worstGap, worstGapSec };
 }
 
+// The hero was silently regenerated into a path README.md does not serve, so
+// the published image stayed stale while every local check passed. Fail loudly
+// instead: the encoder's output path and the README's reference must agree.
+function assertReadmeReferencesHero() {
+  const readmePath = resolve(ROOT_DIR, 'README.md');
+  const relativeHero = relative(ROOT_DIR, HERO_OUTPUT);
+  if (readFileSync(readmePath, 'utf8').includes(relativeHero)) return;
+  throw new Error(
+    `README.md does not reference ${relativeHero}. The hero would be written somewhere nothing serves it — `
+    + 'point HERO_OUTPUT at the path README.md uses, or update README.md.',
+  );
+}
+
 function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(2)}MB`;
 }
@@ -384,6 +403,11 @@ async function selfTest() {
         throw new Error('assertKeyframeCadence accepted a keyframe-free WebP — the ghosting guard has no teeth');
       }
     }
+
+    console.log('\n  -- README hero-path guard --');
+    assertReadmeReferencesHero();
+    console.log(`  README.md serves ${relative(ROOT_DIR, HERO_OUTPUT)}`);
+
     console.log('\nSelf-test passed');
   } finally {
     rmSync(tempDir, { force: true, recursive: true });
@@ -404,9 +428,11 @@ async function main() {
 
   const tasks = [];
   if (runHero) {
+    assertReadmeReferencesHero();
     const heroTrim = resolveTrim(HERO_INPUT, 'hero');
     tasks.push(['hero webp', () => encodeHero(HERO_INPUT, HERO_OUTPUT, heroTrim)]);
     tasks.push(['hero mp4', () => encodeFull(HERO_INPUT, HERO_MP4_OUTPUT, heroTrim)]);
+    tasks.push(['hero mp4 (docs preview)', () => encodeFull(HERO_INPUT, DOCS_HERO_MP4_OUTPUT, heroTrim)]);
   }
   if (runFull) {
     const fullTrim = resolveTrim(FULL_INPUT, 'full');
