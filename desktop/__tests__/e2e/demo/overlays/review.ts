@@ -5,9 +5,7 @@ const POPOVER_WIDTH = 264;
 const POPOVER_GAP = 6;
 
 export async function paintReviewPopover(page: Page, selectedAgent: 'claude' | 'codex' | 'opencode' = 'codex'): Promise<void> {
-  // Mirrors the real ReviewLaunchButton: an AnchoredMenu hung under the header
-  // trigger, right-aligned to it. Anchoring to the trigger is what makes the
-  // card read as a popover rather than a panel floating over the content.
+  // Mirrors ReviewLaunchButton: right-aligned under the header trigger.
   const trigger = await measureIdentityRect(page, '#__cinema_review_trigger');
   await page.evaluate(({ selected, anchor, width, gap }) => {
     const old = document.getElementById('__cinema_review_popover');

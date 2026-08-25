@@ -84,10 +84,8 @@ async function installDemoBootstrap(page: Page): Promise<void> {
   );
 }
 
-// The sidebar, pane cells and kanban all read live state from the activity
-// store, never from the pane record — an unseeded store makes every staged row
-// read "unknown". Derived from the staged panes so one status update keeps the
-// whole UI consistent.
+// Sidebar, pane cells and kanban read live state from the activity store, never
+// from the pane record — unseeded, every staged row renders as "unknown".
 async function syncPaneActivity(page: Page): Promise<void> {
   await page.evaluate(() => {
     const store = (window as any).__muxbaseStores?.paneActivity;
@@ -328,10 +326,7 @@ export async function runHeroCut(page: Page): Promise<CutResult> {
   await dissolve(page, async () => {
     await paintReviewPaneSpawn(page);
   });
-  // Held wide. The review pane is already a full-screen composition, and any
-  // punch-in here has to crop the sidebar to gain nothing — the transcript and
-  // findings span almost the whole pane, so a tighter frame removes chrome
-  // rather than empty space. The dissolve in and the callout carry the beat.
+  // Held wide — the pane fills the frame already, so a punch only crops chrome.
   await resetCamera(page, { durationMs: 400 });
   await sleep(800);
 
@@ -386,9 +381,8 @@ export async function runFullCut(page: Page): Promise<CutResult> {
   await brand.hideTitleCard(page);
 
   // Scene 2 — spawn a pane, typing reveal, camera punches into the prompt.
-  // The staged fleet stays painted behind the dialog: stripping the terminal
-  // overlays here uncovered the real boot spinner and "Reconnecting terminal"
-  // toast, which showed through around the dialog.
+  // The fleet stays staged behind the dialog; clearing it here bared the real
+  // boot spinner and "Reconnecting terminal" toast around the dialog.
   await showCreateDialogMockup(page);
   await assertStagedTerminalsClean(page);
   await sleep(360);
@@ -571,10 +565,8 @@ export async function runFullCut(page: Page): Promise<CutResult> {
   await hideCallout(page);
   await hideMarketplaceMockup(page);
 
-  // Scene 7 — outro over the live fleet. The marketplace beat cleared the
-  // staged terminals, so hiding it re-exposes the real boot spinners and the
-  // "Reconnecting terminal" toast behind the outro card — repaint and gate
-  // before the card goes up, exactly as the hero cut's outro does.
+  // Scene 7 — outro over the live fleet. Scene 6 cleared the staged terminals,
+  // so repaint and gate before the card goes up or the real chrome shows behind it.
   await paintMockTerminals(page);
   await assertStagedTerminalsClean(page);
   await hideCursor(page);

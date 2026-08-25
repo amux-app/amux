@@ -102,13 +102,8 @@ export async function camera(
         if (rect) center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
       }
 
-      // Centring on a target near a frame edge demands more translation than
-      // the punched-in body can absorb, which slides the window off-screen and
-      // leaves a dead black void. The body spans `scale * viewport` about the
-      // centre, so it only keeps covering the frame while
-      // |t| <= (scale - 1) * viewport / 2. Clamp to exactly that: edge targets
-      // land as close to centre as the shot allows, and the wide shot
-      // (scale < 1, limit 0) stays centred as before.
+      // The body only keeps covering the frame while |t| <= (scale-1)*viewport/2;
+      // past that an edge target slides the window off-screen into a black void.
       const clamp = (value: number, limit: number) => Math.min(limit, Math.max(-limit, value));
       const tx = target ? clamp(scale * (vw / 2 - center.x), Math.max(0, (scale - 1) * vw / 2)) : 0;
       const ty = target ? clamp(scale * (vh / 2 - center.y), Math.max(0, (scale - 1) * vh / 2)) : 0;
@@ -349,10 +344,7 @@ export async function vignetteSpotlight(
     const layer = document.getElementById('__cinema_layer');
     if (!layer) return;
     document.getElementById('__cinema_vignette_spot')?.remove();
-    // Tuned to read as emphasis, not a blackout: a tight hole plus a steep
-    // 0.55 scrim buried ~60% of the fleet shot in near-black, so the frame
-    // looked broken rather than focused. A wider hole, a longer falloff and a
-    // lighter floor keep the surrounding panes legible.
+    // Emphasis, not a blackout — a tighter/steeper scrim buried the fleet shot.
     const r = radius ?? 240;
     const f = falloff ?? 620;
     const i = intensity ?? 0.32;

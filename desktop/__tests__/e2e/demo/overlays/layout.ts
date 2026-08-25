@@ -9,11 +9,8 @@ export interface IdentityRect {
   height: number;
 }
 
-// Overlays are position:fixed children of the cinema-transformed <body>, so
-// they are laid out in that body's *untransformed* coordinate space. Any rect
-// they are positioned from must therefore be read with the transform stripped
-// — the same technique camera() and measureUnionRect() use — or the overlay
-// lands offset by the current camera move.
+// Overlays are position:fixed children of the cinema-transformed <body>, so they
+// lay out in its untransformed space — read rects with the transform stripped.
 export async function measureIdentityRect(page: Page, selector: string): Promise<IdentityRect | null> {
   return page.evaluate((sel) => {
     const body = document.body;
@@ -32,9 +29,8 @@ export async function measureIdentityRect(page: Page, selector: string): Promise
   }, selector);
 }
 
-// Full-bleed overlays (marketplace, review pane) must start exactly where the
-// real sidebar ends, or they slice it mid-word. A hardcoded rail width can't
-// do that — the sidebar is resizable and collapsible — so it is measured live.
+// Full-bleed overlays start where the sidebar ends. Measured, not hardcoded:
+// the sidebar is resizable and collapsible.
 export async function measureContentLeft(page: Page): Promise<number> {
   const rect = await measureIdentityRect(page, SIDEBAR_SELECTOR);
   return rect ? Math.round(rect.x + rect.width) : 0;

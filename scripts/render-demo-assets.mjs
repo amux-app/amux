@@ -11,11 +11,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT_DIR = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const DEMO_DIR = resolve(ROOT_DIR, '.tmp/demo');
 const HERO_INPUT = join(DEMO_DIR, 'hero.webm');
-// The published hero assets live under .github/assets — that is what README.md
-// serves and what git tracks. `docs/` is excluded by .gitignore, so anything
-// written there can never reach a commit; the docs-site copy is emitted purely
-// for local preview and is written last so a docs failure cannot block the
-// tracked assets.
+// README.md serves .github/assets and git tracks it; `docs/` is gitignored, so
+// the docs copy is local preview only.
 const HERO_OUTPUT = resolve(ROOT_DIR, '.github/assets/muxbase-demo.webp');
 const HERO_MP4_OUTPUT = resolve(ROOT_DIR, '.github/assets/muxbase-demo-hero.mp4');
 const DOCS_HERO_MP4_OUTPUT = resolve(ROOT_DIR, 'docs/public/muxbase-demo-hero.mp4');
@@ -28,19 +25,13 @@ const OUTPUT_FPS = 25;
 const HERO_FRAME_FPS = 12.5;
 const HERO_DENOISE_FILTER = 'hqdn3d=1.5:1.5:4:4';
 const HERO_QUALITY_STEPS = [72, 68, 64];
-// img2webp encodes every non-key frame as a sub-rectangle diff and retains
-// whatever pixels last occupied the rest of the canvas. Without a keyframe
-// cadence, a region the differ considers unchanged keeps the lossy residue of
-// an *earlier scene* indefinitely — which showed up as a green-tinted, ghosted
-// sidebar in the hero. A full-canvas frame at least every HERO_KEYFRAME_MAX
-// frames flushes that residue for +0.9% size.
+// img2webp encodes non-key frames as sub-rectangle diffs and retains the rest of
+// the canvas, so without a cadence a "unchanged" region keeps an earlier scene's
+// lossy residue forever. Costs +0.9% size.
 const HERO_KEYFRAME_MIN = 3;
 const HERO_KEYFRAME_MAX = 12;
-// libwebp counts candidate frames, then merges identical neighbours, so the
-// emitted gap between full-canvas frames runs a little past -kmax (measured:
-// 15 frames for kmax 12). The property that actually matters is how long stale
-// pixels can survive on screen, so the guard is expressed in seconds with
-// headroom over the observed gap rather than as an exact frame count.
+// libwebp merges duplicate frames, so the emitted gap overshoots -kmax (15 for
+// kmax 12) — budget the stale window in seconds, not frames.
 const HERO_KEYFRAME_MAX_GAP_SEC = 2;
 const HERO_MAX_BYTES = 9 * 1024 * 1024;
 const TRIM_PAD_SEC = 0.15;
@@ -175,8 +166,7 @@ function extractFrames(inputPath, framesDir, scaleFilter, trimStartSec = 0) {
   return frames;
 }
 
-// keyframes === false disables the cadence entirely; only the self-test uses
-// that, to prove assertKeyframeCadence actually rejects a ghosting-prone file.
+// keyframes: false is the self-test's negative case.
 function assembleWebp(frames, outputPath, quality, keyframes = true) {
   const frameDurationMs = Math.round(1000 / HERO_FRAME_FPS);
   execFileSync('img2webp', [
@@ -192,9 +182,7 @@ function assembleWebp(frames, outputPath, quality, keyframes = true) {
   ], { stdio: 'inherit' });
 }
 
-// Walks the RIFF chunk chain of an animated WebP and returns the canvas size
-// plus every ANMF frame's rectangle. ANMF stores offsets in 2px units and
-// dimensions minus one, all as 24-bit little-endian.
+// ANMF stores offsets in 2px units and dimensions minus one, as 24-bit LE.
 function readWebpFrames(path) {
   const buf = readFileSync(path);
   if (buf.toString('ascii', 0, 4) !== 'RIFF' || buf.toString('ascii', 8, 12) !== 'WEBP') {
@@ -224,9 +212,6 @@ function readWebpFrames(path) {
   return { canvas, frames };
 }
 
-// Guards the defect this cadence exists to prevent: if full-canvas frames stop
-// appearing, stale pixels from earlier scenes survive in regions the differ
-// skips, and the asset ships with ghosting.
 function assertKeyframeCadence(path, maxGapSec = HERO_KEYFRAME_MAX_GAP_SEC) {
   const { canvas, frames } = readWebpFrames(path);
   const isKeyframe = (f) => f.x === 0 && f.y === 0 && f.width === canvas.width && f.height === canvas.height;
@@ -247,9 +232,6 @@ function assertKeyframeCadence(path, maxGapSec = HERO_KEYFRAME_MAX_GAP_SEC) {
   return { frameCount: frames.length, worstGap, worstGapSec };
 }
 
-// The hero was silently regenerated into a path README.md does not serve, so
-// the published image stayed stale while every local check passed. Fail loudly
-// instead: the encoder's output path and the README's reference must agree.
 function assertReadmeReferencesHero() {
   const readmePath = resolve(ROOT_DIR, 'README.md');
   const relativeHero = relative(ROOT_DIR, HERO_OUTPUT);
@@ -390,9 +372,8 @@ async function selfTest() {
       const ghostPath = join(tempDir, `ghosting-${width}x${height}.webp`);
       const cadenceFrames = extractFrames(sample, framesDir, buildScaleFilter(width, height), 0);
       assembleWebp(cadenceFrames, ghostPath, HERO_QUALITY_STEPS[0], false);
-      // Bound the comparison by the cadenced encode's own stale window rather
-      // than the production budget: the self-test clip is only ~2s long, so an
-      // absolute threshold would pass a file that has no keyframes at all.
+      // Bound by the cadenced encode's own window: the ~2s clip would pass the
+      // absolute budget even with no keyframes at all.
       let cadenceRejected = false;
       try {
         assertKeyframeCadence(ghostPath, cadence.worstGapSec);
