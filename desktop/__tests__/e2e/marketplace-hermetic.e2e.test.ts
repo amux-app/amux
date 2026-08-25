@@ -6,6 +6,7 @@ import {
   readFileSync,
   realpathSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -71,6 +72,8 @@ describe.runIf(process.env.MUXBASE_E2E === '1' && process.env.MUXBASE_E2E_FAKE_A
         join(pluginRoot, 'skills', SKILL_NAME, 'SKILL.md'),
         '# Hermetic marketplace skill\n',
       );
+      writeFileSync(join(sourceClone, 'AGENTS.md'), '# Shared marketplace instructions\n');
+      symlinkSync('AGENTS.md', join(sourceClone, 'CLAUDE.md'));
       execFileSync('git', ['init'], { cwd: sourceClone, stdio: 'ignore' });
       execFileSync('git', ['config', 'user.email', 'e2e@muxbase.test'], { cwd: sourceClone });
       execFileSync('git', ['config', 'user.name', 'MuxBase E2E'], { cwd: sourceClone });
@@ -159,6 +162,34 @@ describe.runIf(process.env.MUXBASE_E2E === '1' && process.env.MUXBASE_E2E_FAKE_A
       });
       expect(uninstall.success, uninstall.error).toBe(true);
       for (const destination of destinations) expect(existsSync(destination)).toBe(false);
+    }, 30_000);
+
+    it('fully installs a marketplace containing a safe internal symlink', async () => {
+      const request = {
+        mode: 'full' as const,
+        pluginId: PLUGIN_ID,
+        sourceUrl: SOURCE_URL,
+      };
+      const preview = await invoke<MarketplacePreviewResponse>(page, IPC.MARKETPLACE_PREVIEW, request);
+      expect(preview.success, preview.error).toBe(true);
+      if (!preview.preview) throw new Error('Marketplace preview was not returned');
+
+      const install = await invoke<MarketplaceInstallResponse>(page, IPC.MARKETPLACE_INSTALL, {
+        ...request,
+        previewDigest: preview.preview.digest,
+      });
+      expect(install.success, install.error).toBe(true);
+
+      const materializedLink = join(isolatedHome, '.claude', 'plugins', 'marketplaces', 'muxbase-hermetic', 'CLAUDE.md');
+      expect(readFileSync(materializedLink, 'utf8')).toBe('# Shared marketplace instructions\n');
+      expect(realpathSync(materializedLink)).toBe(materializedLink);
+
+      const uninstall = await invoke<MarketplaceUninstallResponse>(page, IPC.MARKETPLACE_UNINSTALL, {
+        pluginId: PLUGIN_ID,
+        sourceUrl: SOURCE_URL,
+      });
+      expect(uninstall.success, uninstall.error).toBe(true);
+      expect(existsSync(materializedLink)).toBe(false);
     }, 30_000);
   },
 );

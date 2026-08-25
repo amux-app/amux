@@ -7,6 +7,10 @@ import { AgentTranslator } from './AgentTranslator.js';
 import { HookTranslator } from './HookTranslator.js';
 import { McpTranslator } from './McpTranslator.js';
 import { NativeInstaller, type NativeMarketplaceConfig } from './NativeInstaller.js';
+import {
+  collectNativeMarketplaceTreeEntries,
+  type NativeMarketplaceTreeEntry,
+} from './NativeMarketplaceTree.js';
 import { SkillTranslator } from './SkillTranslator.js';
 import type {
   AgentInstallInfo,
@@ -47,13 +51,15 @@ function contentHash(filePath: string): string {
   return createHash('sha256').update(readFileSync(filePath)).digest('hex');
 }
 
-interface ArtifactEntry {
-  entryType: 'directory' | 'file';
-  relativePath: string;
-  contentHash?: string;
+function formatArtifactEntries(entries: NativeMarketplaceTreeEntry[]): string[] {
+  return entries.map((entry) => [
+    entry.entryType,
+    entry.relativePath,
+    entry.contentHash ?? '',
+  ].join(':'));
 }
 
-function collectArtifactEntries(rootPath: string, relativePath = '.'): ArtifactEntry[] {
+function collectArtifactEntries(rootPath: string, relativePath = '.'): NativeMarketplaceTreeEntry[] {
   const stat = lstatSync(rootPath);
   if (stat.isSymbolicLink()) throw new Error(`Marketplace artifact symlinks are not allowed: ${rootPath}`);
   if (!stat.isDirectory() && !stat.isFile()) {
@@ -67,7 +73,7 @@ function collectArtifactEntries(rootPath: string, relativePath = '.'): ArtifactE
     }];
   }
 
-  const entries: ArtifactEntry[] = [{ entryType: 'directory', relativePath }];
+  const entries: NativeMarketplaceTreeEntry[] = [{ entryType: 'directory', relativePath }];
   return readdirSync(rootPath, { withFileTypes: true })
     .sort((left, right) => left.name.localeCompare(right.name))
     .reduce(
@@ -176,16 +182,29 @@ function artifact(
 ): MarketplacePreviewArtifact {
   const entries = sourcePaths.flatMap((sourcePath) => collectArtifactEntries(sourcePath));
   return {
-    contentHashes: entries.map((entry) => [
-      entry.entryType,
-      entry.relativePath,
-      entry.contentHash ?? '',
-    ].join(':')),
+    contentHashes: formatArtifactEntries(entries),
     destinationPaths,
     executable,
     name,
     sourcePaths,
     ...(detail ? { detail } : {}),
+  };
+}
+
+function nativeArtifact(
+  name: string,
+  sourcePath: string,
+  destinationPath: string,
+  containmentRoot: string,
+): MarketplacePreviewArtifact {
+  const entries = collectNativeMarketplaceTreeEntries(sourcePath, containmentRoot);
+  return {
+    contentHashes: formatArtifactEntries(entries),
+    destinationPaths: [destinationPath],
+    executable: true,
+    name,
+    sourcePaths: [sourcePath],
+    detail: 'Native installer recursively copies this tree before registration.',
   };
 }
 
@@ -280,12 +299,11 @@ export class MarketplaceInstaller {
           });
         }
         for (const operation of this.nativeInstaller.getNativeCopyOperations(nativeConfig, agent)) {
-          artifacts.push(artifact(
+          artifacts.push(nativeArtifact(
             `native:${operation.name}`,
-            [operation.sourcePath],
-            [operation.destinationPath],
-            true,
-            'Native installer recursively copies this tree before registration.',
+            operation.sourcePath,
+            operation.destinationPath,
+            nativeConfig.clonePath ?? operation.sourcePath,
           ));
         }
       }

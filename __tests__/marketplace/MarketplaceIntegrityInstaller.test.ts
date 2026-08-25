@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdtempSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -28,6 +28,48 @@ function setup(): { homeDir: string; journalDir: string; plugin: DetectedPlugin;
 }
 
 describe('MarketplaceIntegrityInstaller', () => {
+  it('materializes safe internal symlinks during a full native install', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'muxbase-marketplace-integrity-'));
+    const clonePath = path.join(root, 'source');
+    const homeDir = path.join(root, 'home');
+    mkdirSync(clonePath);
+    writeFileSync(path.join(clonePath, 'AGENTS.md'), '# Shared instructions\n');
+    symlinkSync('AGENTS.md', path.join(clonePath, 'CLAUDE.md'));
+    const plugin: DetectedPlugin = {
+      agents: [],
+      hooks: [],
+      id: 'native-plugin',
+      jsPlugins: [],
+      mcpServers: [],
+      name: 'Native Plugin',
+      skills: [],
+    };
+
+    const result = new MarketplaceIntegrityInstaller().install(
+      plugin,
+      ['claude'],
+      {
+        clonePath,
+        marketplaceName: 'native-marketplace',
+        marketplaceUrl: 'https://example.test/native-marketplace.git',
+        pluginId: plugin.id,
+        sourceFormat: 'claude-marketplace',
+      },
+      undefined,
+      'full',
+      { homeDir, journalDir: path.join(root, 'journal') },
+    );
+    const installedLinkPath = path.join(homeDir, '.claude', 'plugins', 'marketplaces', 'native-marketplace', 'CLAUDE.md');
+
+    expect(lstatSync(installedLinkPath).isSymbolicLink()).toBe(false);
+    expect(readFileSync(installedLinkPath, 'utf8')).toBe('# Shared instructions\n');
+    expect(result.ownershipManifest.artifacts).toContainEqual(expect.objectContaining({
+      path: path.dirname(installedLinkPath),
+      scope: 'source',
+      type: 'directory',
+    }));
+  });
+
   it('installs a skill transactionally and records the directory digest as ownership', () => {
     const { homeDir, journalDir, plugin } = setup();
     const result = new MarketplaceIntegrityInstaller().install(

@@ -1,5 +1,58 @@
 # Local Changelog
 
+## Fix full marketplace installs for safe internal symlinks
+
+- **Date/time:** 2026-08-25 20:34 UTC (completion)
+- **Impact:** High — changes security-sensitive native marketplace source handling, preview digests, transactional installation output, and ownership tracking without changing IPC or persisted schemas.
+- **What:** Full installation now succeeds for marketplaces such as `wshobson/agents` that contain safe relative symlinks inside the cloned repository. Native marketplace copies materialize those links as ordinary files or directories, so installed and transaction-staged trees remain symlink-free.
+- **Why:** Selecting every plugin item switches to native `full` mode. Claude full-mode preview recursively inspected the entire marketplace clone and rejected the source-level `CLAUDE.md -> AGENTS.md` alias before installation, even though the link was relative and resolved inside the clone. Selected/direct installation worked because it never copied that whole tree.
+- **How:** Added one shared native-tree walker used by both preview hashing and native materialization. It resolves relative links against the canonical clone, retains their alias path in the preview graph, copies resolved content without links, detects directory cycles, and removes any partially materialized destination on failure. The existing direct-artifact and transaction-wide symlink rejection remains unchanged.
+
+### Risk and compatibility
+
+Only recursively copied native marketplace trees accept links, and only when the link target is relative, resolvable, and canonically contained by the source clone. Absolute, escaping, broken, cyclic, and special-file cases still fail closed. Selected skills and local MCP artifacts keep their stricter no-symlink policy, and `MarketplaceTransaction` still rejects every symlink; no destination can gain a symlink through this change. Preview and installation use the same traversal semantics, executable file modes remain preserved, and no IPC, registry, ownership-manifest, or configuration schema changed.
+
+### Validation
+
+```text
+# RED: focused regression before implementation
+$ pnpm vitest run __tests__/marketplace/nativeMarketplaceContainment.test.ts __tests__/marketplace/MarketplaceIntegrityInstaller.test.ts --no-file-parallelism
+Failed as expected: 6 failed, 20 passed. Safe internal preview and transactional full install reproduced the reported rejection; unsafe-link assertions exposed the blanket error path.
+
+# Focused GREEN and core build
+$ pnpm vitest run __tests__/marketplace/nativeMarketplaceContainment.test.ts __tests__/marketplace/MarketplaceIntegrityInstaller.test.ts __tests__/marketplace/NativeInstaller.test.ts --no-file-parallelism
+Test Files 3 passed; Tests 42 passed.
+$ pnpm build
+Passed: hook documentation generation and TypeScript build.
+
+# Marketplace and IPC regression suites
+$ pnpm vitest run __tests__/marketplace --no-file-parallelism
+Test Files 15 passed; Tests 148 passed.
+$ cd desktop && pnpm vitest run --config vitest.config.ts --no-file-parallelism __tests__/main/marketplace-handlers.test.ts
+Test Files 1 passed; Tests 9 passed.
+
+# Static and build verification
+$ pnpm run verify:static
+Passed: brand guard, internal-reference gate, version alignment, TypeScript, zero-warning ESLint, and Knip.
+$ cd desktop && pnpm typecheck
+Passed: core build plus desktop main and renderer TypeScript checks.
+$ cd desktop && pnpm build
+Passed: Electron main, preload, and renderer production build.
+
+# Hermetic Electron full-install regression
+$ cd desktop && MUXBASE_E2E=1 MUXBASE_E2E_FAKE_AGENTS=1 MUXBASE_E2E_ALLOW_STORE_COERCE=1 pnpm exec node ../scripts/run-desktop-e2e.mjs --files __tests__/e2e/marketplace-hermetic.e2e.test.ts -- pnpm exec vitest run --config vitest.config.ts --no-file-parallelism
+Test Files 1 passed; Tests 2 passed. Full preview/install/materialization/ownership/uninstall passed through real IPC.
+
+# Complete suites
+$ pnpm test
+Passed: complete core suite, exit 0.
+$ cd desktop && pnpm test
+Test Files 354 passed, 22 skipped; Tests 3623 passed, 168 skipped.
+
+# Production-shaped source verification
+Fresh `wshobson/agents` commit d82998e7df393c671ede2387a8435075f0b633f5 retained its tracked `CLAUDE.md` symlink. Full preview succeeded; Claude, Codex, and OpenCode all installed with `full` status; 49 artifacts were ownership-tracked; installed `CLAUDE.md` was a regular file matching `AGENTS.md`.
+```
+
 ## Harden the pane-to-pane review workflow
 
 - **Date/time:** 2026-08-25 19:55 UTC (completion)

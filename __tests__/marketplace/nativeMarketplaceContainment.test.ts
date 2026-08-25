@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -51,17 +51,83 @@ describe('native marketplace preview containment', () => {
     ]));
   });
 
-  it('rejects symlinks anywhere in a native recursively copied tree', () => {
+  it('materializes safe relative symlinks that stay inside a native tree', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'muxbase-native-preview-'));
+    writeFileSync(path.join(root, 'AGENTS.md'), '# Shared instructions\n');
+    symlinkSync('AGENTS.md', path.join(root, 'CLAUDE.md'));
+
+    const preview = new MarketplaceInstaller().preview(
+      plugin,
+      ['claude'],
+      nativeConfig(root),
+    );
+    const nativeArtifact = preview.agents[0]?.artifacts.find((artifact) => artifact.name === 'native:marketplace clone');
+    const agentsHash = nativeArtifact?.contentHashes.find((entry) => entry.startsWith('file:AGENTS.md:'))?.split(':').at(-1);
+    const claudeHash = nativeArtifact?.contentHashes.find((entry) => entry.startsWith('file:CLAUDE.md:'))?.split(':').at(-1);
+
+    expect(agentsHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(claudeHash).toBe(agentsHash);
+  });
+
+  it('rejects symlinks that escape a native recursively copied tree', () => {
     const root = mkdtempSync(path.join(tmpdir(), 'muxbase-native-preview-'));
     const outside = mkdtempSync(path.join(tmpdir(), 'muxbase-native-outside-'));
     writeFileSync(path.join(outside, 'secret.js'), 'secret');
-    symlinkSync(outside, path.join(root, 'linked-directory'), 'dir');
+    symlinkSync(path.relative(root, outside), path.join(root, 'linked-directory'), 'dir');
 
     expect(() => new MarketplaceInstaller().preview(
       plugin,
       ['claude'],
       nativeConfig(root),
-    )).toThrow('symlinks are not allowed');
+    )).toThrow('escapes source tree');
+  });
+
+  it('cleans a partially materialized native tree when a later symlink escapes', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'muxbase-native-preview-'));
+    const outside = mkdtempSync(path.join(tmpdir(), 'muxbase-native-outside-'));
+    const home = mkdtempSync(path.join(tmpdir(), 'muxbase-native-home-'));
+    writeFileSync(path.join(root, 'safe.js'), 'safe');
+    writeFileSync(path.join(outside, 'secret.js'), 'secret');
+    symlinkSync(path.relative(root, outside), path.join(root, 'z-linked-directory'), 'dir');
+
+    expect(() => new NativeInstaller().install(nativeConfig(root), 'claude', home)).toThrow('escapes source tree');
+    expect(existsSync(path.join(home, '.claude', 'plugins', 'marketplaces', 'native-marketplace'))).toBe(false);
+    expect(existsSync(path.join(home, '.claude', 'settings.json'))).toBe(false);
+  });
+
+  it('rejects absolute symlink targets in a native recursively copied tree', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'muxbase-native-preview-'));
+    const target = path.join(root, 'target.js');
+    writeFileSync(target, 'safe');
+    symlinkSync(target, path.join(root, 'absolute-link.js'));
+
+    expect(() => new MarketplaceInstaller().preview(
+      plugin,
+      ['claude'],
+      nativeConfig(root),
+    )).toThrow('absolute symlink target');
+  });
+
+  it('rejects broken symlinks in a native recursively copied tree', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'muxbase-native-preview-'));
+    symlinkSync('missing.js', path.join(root, 'broken-link.js'));
+
+    expect(() => new MarketplaceInstaller().preview(
+      plugin,
+      ['claude'],
+      nativeConfig(root),
+    )).toThrow('broken or cyclic symlink');
+  });
+
+  it('rejects cyclic symlinks in a native recursively copied tree', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'muxbase-native-preview-'));
+    symlinkSync('.', path.join(root, 'cycle'), 'dir');
+
+    expect(() => new MarketplaceInstaller().preview(
+      plugin,
+      ['claude'],
+      nativeConfig(root),
+    )).toThrow('symlink cycle');
   });
 
   it('reports the plugin cache tree when the native marketplace manifest selects it', () => {
