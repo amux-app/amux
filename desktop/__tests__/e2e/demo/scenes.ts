@@ -84,6 +84,34 @@ async function installDemoBootstrap(page: Page): Promise<void> {
   );
 }
 
+// Sidebar, pane cells and kanban read live state from the activity store, never
+// from the pane record — unseeded, every staged row renders as "unknown".
+async function syncPaneActivity(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const store = (window as any).__muxbaseStores?.paneActivity;
+    const panes = (window as any).__muxbaseStores?.pane?.getState?.()?.panes;
+    if (!store || !panes) return;
+    const activityState: Record<string, string> = {
+      analyzing: 'working', idle: 'idle', waiting: 'waiting', working: 'working',
+    };
+    const entries: Record<string, unknown> = {};
+    panes.forEach((pane: any, index: number) => {
+      entries[pane.id] = {
+        activityRevision: index + 1,
+        adapterHealth: 'healthy',
+        certainty: 'confirmed',
+        liveness: 'running',
+        openBackgroundWork: [],
+        origin: 'adapter',
+        paneIncarnationId: `${pane.id}-demo`,
+        sinceWallMs: 0,
+        state: activityState[pane.agentStatus] ?? 'working',
+      };
+    });
+    store.getState().replaceSnapshot({ epochId: 'demo', panes: entries, revision: Date.now() });
+  });
+}
+
 async function setProviderHealth(page: Page): Promise<void> {
   await page.evaluate((statuses) => {
     const w = window as any;
@@ -133,6 +161,7 @@ async function updatePaneStatus(page: Page, paneId: string, status: AgentStatus)
     },
     { id: paneId, status },
   );
+  await syncPaneActivity(page);
 }
 
 async function markPaneReady(page: Page, paneId: string): Promise<void> {
@@ -145,6 +174,7 @@ async function markPaneReady(page: Page, paneId: string): Promise<void> {
     const panes = state.panes.map((p: any) => (p.id === id ? { ...p, agentStatus: 'idle' } : p));
     stores.pane.setState({ panes, justFinishedPaneIds: next });
   }, paneId);
+  await syncPaneActivity(page);
 }
 
 // Measures the union bounding box of two selectors in identity (untransformed)
@@ -189,6 +219,7 @@ async function measureUnionRect(
 // so the poster/title-card frame is always a genuinely live, clean fleet.
 async function bootstrapAndReveal(page: Page): Promise<void> {
   await installDemoBootstrap(page);
+  await syncPaneActivity(page);
   await setProviderHealth(page);
   await setView(page, 'fleet');
   await setSelectedPane(page, null);
@@ -295,13 +326,9 @@ export async function runHeroCut(page: Page): Promise<CutResult> {
   await dissolve(page, async () => {
     await paintReviewPaneSpawn(page);
   });
-  // Punch into the transcript + findings columns together — both are
-  // shorter than the pane's full height, so a tight zoom on their union
-  // keeps the void below them out of frame.
-  const reviewPaneZoomRect = await measureUnionRect(page, '#__cinema_review_transcript', '#__cinema_review_findings');
-  if (reviewPaneZoomRect) await camera(page, reviewPaneZoomRect, { scale: 1.2, durationMs: 550 });
-  await sleep(800);
+  // Held wide — the pane fills the frame already, so a punch only crops chrome.
   await resetCamera(page, { durationMs: 400 });
+  await sleep(800);
 
   await clickSelector(page, '#__cinema_send_fixes_btn', { real: false });
   await paintSendFixesDialog(page);
@@ -353,9 +380,11 @@ export async function runFullCut(page: Page): Promise<CutResult> {
   await sleep(1500); // truly static hold — encoder trims here; stays >=1000ms to absorb clock/video drift
   await brand.hideTitleCard(page);
 
-  // Scene 2 — spawn a pane, typing reveal, camera punches into the prompt
-  await clearMockTerminals(page);
+  // Scene 2 — spawn a pane, typing reveal, camera punches into the prompt.
+  // The fleet stays staged behind the dialog; clearing it here bared the real
+  // boot spinner and "Reconnecting terminal" toast around the dialog.
   await showCreateDialogMockup(page);
+  await assertStagedTerminalsClean(page);
   await sleep(360);
   await camera(page, '#__cinema_prompt_field', { scale: 1.16 });
   await typeIntoElement(
@@ -441,7 +470,7 @@ export async function runFullCut(page: Page): Promise<CutResult> {
     n: '04',
     title: 'Catch a bad model day.',
     body: 'Live aistupidlevel benchmark per pane.',
-    corner: 'top-left',
+    corner: 'bottom-left',
   });
   if (sparkBox) {
     await moveCursorTo(page, sparkBox.x + sparkBox.width / 2, sparkBox.y + sparkBox.height / 2);
@@ -501,10 +530,8 @@ export async function runFullCut(page: Page): Promise<CutResult> {
     body: 'Read-only, pinned to the SHA. Findings stream in as it works.',
     corner: 'bottom-right',
   });
-  const fullReviewPaneZoomRect = await measureUnionRect(page, '#__cinema_review_transcript', '#__cinema_review_findings');
-  if (fullReviewPaneZoomRect) await camera(page, fullReviewPaneZoomRect, { scale: 1.2 });
+  await resetCamera(page, { durationMs: 400 });
   await sleep(1500);
-  await resetCamera(page, { durationMs: 450 });
   await camera(page, '#__cinema_send_fixes_btn', { scale: 1.15 });
   await clickSelector(page, '#__cinema_send_fixes_btn', { real: false });
   await sleep(500);
@@ -538,7 +565,10 @@ export async function runFullCut(page: Page): Promise<CutResult> {
   await hideCallout(page);
   await hideMarketplaceMockup(page);
 
-  // Scene 7 — outro
+  // Scene 7 — outro over the live fleet. Scene 6 cleared the staged terminals,
+  // so repaint and gate before the card goes up or the real chrome shows behind it.
+  await paintMockTerminals(page);
+  await assertStagedTerminalsClean(page);
   await hideCursor(page);
   await brand.showOutroCard(page, {
     pills: ['Many agents in parallel', 'Isolated worktrees', 'Fleet · Focus · Files', 'Agent-to-agent review', 'Marketplace'],

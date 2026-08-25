@@ -1,21 +1,26 @@
 import type { Page } from 'playwright';
+import { measureContentLeft, measureIdentityRect } from './layout';
+
+const POPOVER_WIDTH = 264;
+const POPOVER_GAP = 6;
 
 export async function paintReviewPopover(page: Page, selectedAgent: 'claude' | 'codex' | 'opencode' = 'codex'): Promise<void> {
-  await page.evaluate((selected) => {
+  // Mirrors ReviewLaunchButton: right-aligned under the header trigger.
+  const trigger = await measureIdentityRect(page, '#__cinema_review_trigger');
+  await page.evaluate(({ selected, anchor, width, gap }) => {
     const old = document.getElementById('__cinema_review_popover');
     if (old) old.remove();
 
-    // Anchor near the focus panel's top-right where the Review button would sit (~ right:30, top:96)
-    const anchor = document.querySelector('#__cinema_focus_panel') as HTMLElement | null;
-    const rect = anchor?.getBoundingClientRect();
-    const left = rect ? Math.max(40, rect.left + 18) : 60;
-    const top = rect ? rect.top + 78 : 140;
+    const left = anchor
+      ? Math.max(gap, anchor.x + anchor.width - width)
+      : Math.max(gap, window.innerWidth - width - 40);
+    const top = anchor ? anchor.y + anchor.height + gap : 96;
 
     const wrap = document.createElement('div');
     wrap.id = '__cinema_review_popover';
     wrap.style.cssText = `
       position:fixed;left:${left}px;top:${top}px;z-index:99999;pointer-events:none;
-      width:264px;padding:14px;border-radius:14px;
+      width:${width}px;padding:14px;border-radius:14px;
       background:#14151c;
       border:1px solid rgba(255,255,255,0.10);
       box-shadow:0 16px 50px -12px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06);
@@ -51,7 +56,9 @@ export async function paintReviewPopover(page: Page, selectedAgent: 'claude' | '
       </button>
     `;
     document.body.appendChild(wrap);
-  }, selectedAgent);
+  }, {
+    anchor: trigger, gap: POPOVER_GAP, selected: selectedAgent, width: POPOVER_WIDTH,
+  });
 }
 
 export async function hideReviewPopover(page: Page): Promise<void> {
@@ -67,14 +74,15 @@ export async function hideReviewPopover(page: Page): Promise<void> {
 // stream in the codex agent's own terminal output; the findings LIST only
 // appears in the SendFixesConfirmDialog. We mirror both here.
 export async function paintReviewPaneSpawn(page: Page): Promise<void> {
-  await page.evaluate(() => {
+  const contentLeft = await measureContentLeft(page);
+  await page.evaluate((left) => {
     document.getElementById('__cinema_focus_panel')?.remove();
     document.getElementById('__cinema_review_pane')?.remove();
 
     const overlay = document.createElement('div');
     overlay.id = '__cinema_review_pane';
     overlay.style.cssText = `
-      position:fixed;left:48px;top:0;right:0;bottom:0;z-index:50;pointer-events:none;
+      position:fixed;left:${left}px;top:0;right:0;bottom:0;z-index:50;pointer-events:none;
       background:#06070b;
       font-family:'Inter',-apple-system,sans-serif;color:#e6edf3;
       overflow:hidden;
@@ -181,7 +189,7 @@ export async function paintReviewPaneSpawn(page: Page): Promise<void> {
 
     overlay.innerHTML = header + body;
     document.body.appendChild(overlay);
-  });
+  }, contentLeft);
 }
 
 export async function hideReviewPaneSpawn(page: Page): Promise<void> {

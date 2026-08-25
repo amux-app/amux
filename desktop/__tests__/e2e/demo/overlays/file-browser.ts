@@ -1,14 +1,18 @@
 import type { Page } from 'playwright';
+import { measureContentLeft } from './layout';
+
+const TREE_WIDTH = 240;
 
 export async function paintFileBrowserPanel(page: Page): Promise<void> {
-  await page.evaluate(() => {
+  const contentLeft = await measureContentLeft(page);
+  await page.evaluate(({ left, treeWidth }) => {
     const old = document.getElementById('__cinema_filebrowser');
     if (old) old.remove();
 
     const panel = document.createElement('div');
     panel.id = '__cinema_filebrowser';
     panel.style.cssText = `
-      position:fixed;left:48px;top:54px;width:240px;bottom:0;z-index:55;pointer-events:none;
+      position:fixed;left:${left}px;top:54px;width:${treeWidth}px;bottom:0;z-index:55;pointer-events:none;
       background:#050507;
       border-right:1px solid #1c1c20;
       overflow:hidden;
@@ -106,18 +110,19 @@ export async function paintFileBrowserPanel(page: Page): Promise<void> {
 
     panel.innerHTML = header + `<div style="overflow:hidden;flex:1;">${treeHtml}</div>`;
     document.body.appendChild(panel);
-  });
+  }, { left: contentLeft, treeWidth: TREE_WIDTH });
 }
 
 export async function paintFileBrowserFileOpen(page: Page): Promise<void> {
-  await page.evaluate(() => {
+  const contentLeft = await measureContentLeft(page);
+  await page.evaluate((left) => {
     const old = document.getElementById('__cinema_fileview');
     if (old) old.remove();
 
     const view = document.createElement('div');
     view.id = '__cinema_fileview';
     view.style.cssText = `
-      position:fixed;left:288px;right:760px;top:54px;bottom:0;z-index:56;pointer-events:none;
+      position:fixed;left:${left}px;right:760px;top:54px;bottom:0;z-index:56;pointer-events:none;
       background:#0d1117;
       border-right:1px solid #1c1c20;
       overflow:hidden;
@@ -170,7 +175,7 @@ export async function paintFileBrowserFileOpen(page: Page): Promise<void> {
 
     view.innerHTML = TAB + `<div style="padding:12px 0;">${linesHtml}</div>`;
     document.body.appendChild(view);
-  });
+  }, contentLeft + TREE_WIDTH);
 }
 
 export async function hideFileBrowserPanel(page: Page): Promise<void> {

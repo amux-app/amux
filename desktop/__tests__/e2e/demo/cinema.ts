@@ -102,8 +102,11 @@ export async function camera(
         if (rect) center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
       }
 
-      const tx = target ? scale * (vw / 2 - center.x) : 0;
-      const ty = target ? scale * (vh / 2 - center.y) : 0;
+      // The body only keeps covering the frame while |t| <= (scale-1)*viewport/2;
+      // past that an edge target slides the window off-screen into a black void.
+      const clamp = (value: number, limit: number) => Math.min(limit, Math.max(-limit, value));
+      const tx = target ? clamp(scale * (vw / 2 - center.x), Math.max(0, (scale - 1) * vw / 2)) : 0;
+      const ty = target ? clamp(scale * (vh / 2 - center.y), Math.max(0, (scale - 1) * vh / 2)) : 0;
 
       body.style.transition = `transform ${durationMs}ms cubic-bezier(0.22,1,0.36,1)`;
       requestAnimationFrame(() => {
@@ -341,9 +344,10 @@ export async function vignetteSpotlight(
     const layer = document.getElementById('__cinema_layer');
     if (!layer) return;
     document.getElementById('__cinema_vignette_spot')?.remove();
-    const r = radius ?? 140;
-    const f = falloff ?? 320;
-    const i = intensity ?? 0.55;
+    // Emphasis, not a blackout — a tighter/steeper scrim buried the fleet shot.
+    const r = radius ?? 240;
+    const f = falloff ?? 620;
+    const i = intensity ?? 0.32;
     const v = document.createElement('div');
     v.id = '__cinema_vignette_spot';
     v.style.cssText = `
