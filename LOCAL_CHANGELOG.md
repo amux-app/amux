@@ -1,5 +1,15 @@
 # Local Changelog
 
+## Remove file-completion visual baseline artifacts
+
+- **Date/time:** 2026-08-25 06:22 UTC (completion)
+- **Impact:** Low — removes two committed PNG baseline artifacts and their direct file-browser references; editor/runtime behavior is unchanged.
+- **What:** Safely removed `file-completion-dark.png` and `file-completion-light.png` from `code_compl`. Replaced the file-browser baseline dependency with a dark/light popup availability and computed-color smoke assertion so the E2E suite remains runnable without missing artifacts.
+- **Why:** The requested branch cleanup explicitly removes both completion baseline files while preserving meaningful popup coverage and avoiding broken missing-baseline failures.
+- **How:** Deleted only the two exact tracked PNG paths, removed the unused visual-baseline import/calls, and retained the existing seeded 12-option dark/light popup flow.
+- **Risk/compatibility:** The dedicated pixel baselines are no longer part of this branch’s file-browser E2E gate; the existing app visual baselines remain unchanged. The removed files remain recoverable from Git history, including commit `52bdd1d`.
+- **Validation:** The focused file-browser E2E and changed-file lint/type checks are rerun before commit; `git diff --check` is verified on staged changes. The unrelated `.gitignore` working-tree change, if present, is not staged.
+
 ## Triple-check completion hot-path allocation
 
 - **Date/time:** 2026-08-25 06:17 UTC (completion)
