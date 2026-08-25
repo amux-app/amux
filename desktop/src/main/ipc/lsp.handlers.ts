@@ -15,7 +15,7 @@ import {
   assessTypeScriptLspSupport,
   resolveTypeScriptLspBinary,
 } from '../lsp/typescriptLspPolicy.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { EditorRuntimeMetrics } from '../services/EditorRuntimeMetrics.js';
 import { ElectronSettingsService } from '../services/ElectronSettingsService.js';
 import { log } from '../services/Logger.js';
@@ -37,7 +37,7 @@ export function stopLspServers(): void {
   stopRegisteredLspServers();
 }
 
-export function registerLspHandlers(bridge: AumxBridge): void {
+export function registerLspHandlers(bridge: MuxBaseBridge): void {
   const subscriptions = new Map<string, Subscription>();
   const subscribersByRoot = new Map<string, Set<WebContents>>();
   const destroyHandlers = new Map<WebContents, () => void>();

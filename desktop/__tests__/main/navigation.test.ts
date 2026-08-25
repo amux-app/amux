@@ -3,7 +3,7 @@ import { isAllowedAppNavigationUrl } from '../../src/main/utils/navigation';
 
 describe('isAllowedAppNavigationUrl', () => {
   it('allows packaged renderer URLs', () => {
-    expect(isAllowedAppNavigationUrl('file:///Applications/Amux.app/index.html', { isDev: false })).toBe(true);
+    expect(isAllowedAppNavigationUrl('file:///Applications/MuxBase.app/index.html', { isDev: false })).toBe(true);
     expect(isAllowedAppNavigationUrl('app://renderer/index.html', { isDev: false })).toBe(true);
   });
 
@@ -23,7 +23,7 @@ describe('isAllowedAppNavigationUrl', () => {
   });
 
   it('allows only the exact packaged renderer file when configured', () => {
-    const rendererUrl = 'file:///Applications/Amux.app/Contents/Resources/app.asar/out/renderer/index.html';
+    const rendererUrl = 'file:///Applications/MuxBase.app/Contents/Resources/app.asar/out/renderer/index.html';
 
     expect(isAllowedAppNavigationUrl(rendererUrl, { isDev: false, rendererUrl })).toBe(true);
     expect(isAllowedAppNavigationUrl('file:///Users/me/Downloads/external.html', {

@@ -19,7 +19,7 @@ import { buildGitRefVerifyArgs, buildGitRefVerifyCommand } from '../src/utils/pa
 describe('getPaneBranchName', () => {
   it('returns branchName when set', () => {
     const pane = {
-      id: 'aumx-1', slug: 'fix-auth', branchName: 'feat/fix-auth',
+      id: 'muxbase-1', slug: 'fix-auth', branchName: 'feat/fix-auth',
       prompt: 'test', paneId: '%1',
     };
     expect(getPaneBranchName(pane)).toBe('feat/fix-auth');
@@ -27,7 +27,7 @@ describe('getPaneBranchName', () => {
 
   it('falls back to slug when branchName is not set', () => {
     const pane = {
-      id: 'aumx-1', slug: 'fix-auth',
+      id: 'muxbase-1', slug: 'fix-auth',
       prompt: 'test', paneId: '%1',
     };
     expect(getPaneBranchName(pane)).toBe('fix-auth');
@@ -35,7 +35,7 @@ describe('getPaneBranchName', () => {
 
   it('falls back to slug when branchName is undefined', () => {
     const pane = {
-      id: 'aumx-1', slug: 'fix-auth', branchName: undefined,
+      id: 'muxbase-1', slug: 'fix-auth', branchName: undefined,
       prompt: 'test', paneId: '%1',
     };
     expect(getPaneBranchName(pane)).toBe('fix-auth');
@@ -157,9 +157,9 @@ describe('slug and branchName separation', () => {
   it('worktree path uses slug, not branchName', () => {
     const projectRoot = '/home/user/project';
     const slug = 'fix-auth';
-    const worktreePath = `${projectRoot}/.aumx/worktrees/${slug}`;
+    const worktreePath = `${projectRoot}/.muxbase/worktrees/${slug}`;
 
-    expect(worktreePath).toBe('/home/user/project/.aumx/worktrees/fix-auth');
+    expect(worktreePath).toBe('/home/user/project/.muxbase/worktrees/fix-auth');
     expect(worktreePath.split('/').pop()).toBe('fix-auth');
   });
 
@@ -351,38 +351,38 @@ describe('baseBranch in worktree creation command', () => {
   });
 
   it('produces correct command with baseBranch as start-point', () => {
-    const worktreePath = '/project/.aumx/worktrees/fix-auth';
+    const worktreePath = '/project/.muxbase/worktrees/fix-auth';
     const branchName = 'feat/fix-auth';
     const baseBranch = 'main';
 
     const startPoint = baseBranch ? ` "${baseBranch}"` : '';
     const cmd = `git worktree add "${worktreePath}" -b "${branchName}"${startPoint}`;
 
-    expect(cmd).toBe('git worktree add "/project/.aumx/worktrees/fix-auth" -b "feat/fix-auth" "main"');
+    expect(cmd).toBe('git worktree add "/project/.muxbase/worktrees/fix-auth" -b "feat/fix-auth" "main"');
   });
 
   it('produces correct command without baseBranch (uses HEAD)', () => {
-    const worktreePath = '/project/.aumx/worktrees/fix-auth';
+    const worktreePath = '/project/.muxbase/worktrees/fix-auth';
     const branchName = 'fix-auth';
     const baseBranch = '';
 
     const startPoint = baseBranch ? ` "${baseBranch}"` : '';
     const cmd = `git worktree add "${worktreePath}" -b "${branchName}"${startPoint}`;
 
-    expect(cmd).toBe('git worktree add "/project/.aumx/worktrees/fix-auth" -b "fix-auth"');
+    expect(cmd).toBe('git worktree add "/project/.muxbase/worktrees/fix-auth" -b "fix-auth"');
   });
 
   it('uses existing branch without -b flag when branch exists', () => {
-    const worktreePath = '/project/.aumx/worktrees/fix-auth';
+    const worktreePath = '/project/.muxbase/worktrees/fix-auth';
     const branchName = 'feat/fix-auth';
 
     const cmd = `git worktree add "${worktreePath}" "${branchName}"`;
 
-    expect(cmd).toBe('git worktree add "/project/.aumx/worktrees/fix-auth" "feat/fix-auth"');
+    expect(cmd).toBe('git worktree add "/project/.muxbase/worktrees/fix-auth" "feat/fix-auth"');
   });
 });
 
-// ─── AUMX_BRANCH hook env ───
+// ─── MUXBASE_BRANCH hook env ───
 
 describe('hooks environment uses branchName', () => {
   it('uses branchName when set', () => {

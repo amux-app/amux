@@ -78,7 +78,7 @@ export function AdvancedSettings() {
           <ElectronSettingRow
             settingKey="enableAgentLifecycleAdapters"
             label="Agent Lifecycle Adapters"
-            description="Allow Amux to install local lifecycle hook definitions for supported agents. This writes only hook configuration and records no prompt or tool content."
+            description="Allow MuxBase to install local lifecycle hook definitions for supported agents. This writes only hook configuration and records no prompt or tool content."
             type="boolean"
             badge="Experimental"
           />
@@ -95,7 +95,7 @@ export function AdvancedSettings() {
           <ElectronSettingRow
             settingKey="enableTelemetryCostTracking"
             label="Cost Tracking"
-            description="Capture real cost from Claude Code's own telemetry (localhost only). New Claude panes report directly to Amux; existing panes keep their estimate until restarted."
+            description="Capture real cost from Claude Code's own telemetry (localhost only). New Claude panes report directly to MuxBase; existing panes keep their estimate until restarted."
             type="boolean"
           />
           <ElectronSettingRow

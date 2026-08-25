@@ -1,4 +1,4 @@
-import { SettingsManager } from 'aumx/core';
+import { SettingsManager } from 'muxbase/core';
 import type { AgentDefaultSlice } from '../../../shared/ipc-types.js';
 
 export function readPiDefaults(projectRoot?: string): AgentDefaultSlice {

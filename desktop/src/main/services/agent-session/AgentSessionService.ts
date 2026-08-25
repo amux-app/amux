@@ -1,5 +1,5 @@
 import type { BrowserWindow } from 'electron';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { NormalizedSession, AgentType } from '../../../shared/agent-session-types.js';
 import type { AgentSessionSearchResult } from '../../../shared/ipc-types.js';
 import { IPC_EVENT } from '../../../shared/ipc-channels.js';
@@ -27,7 +27,7 @@ export class AgentSessionService {
   private claimedFiles = new Set<string>();
   private window: BrowserWindow | null = null;
   private projectRoot: string;
-  private resolvePaneCwd?: (pane: AumxPane) => Promise<string | null>;
+  private resolvePaneCwd?: (pane: MuxBasePane) => Promise<string | null>;
   private onSessionIdDiscovered?: (paneId: string, sessionId: string) => void;
   private onNativeTitleDiscovered?: (paneId: string, harvested: HarvestedTitle) => void;
   private persistedSessionIds = new Map<string, string>();
@@ -39,7 +39,7 @@ export class AgentSessionService {
 
   constructor(
     projectRoot: string,
-    resolvePaneCwd?: (pane: AumxPane) => Promise<string | null>,
+    resolvePaneCwd?: (pane: MuxBasePane) => Promise<string | null>,
     onSessionIdDiscovered?: (paneId: string, sessionId: string) => void,
     onNativeTitleDiscovered?: (paneId: string, harvested: HarvestedTitle) => void,
     private readonly otlpReceiver?: ClaudeCodeOtlpReceiver,
@@ -73,7 +73,7 @@ export class AgentSessionService {
     if (this.canDeliverToRenderer()) this.flushDirtyDeliveries();
   }
 
-  async onPaneCreated(pane: AumxPane): Promise<void> {
+  async onPaneCreated(pane: MuxBasePane): Promise<void> {
     if (!pane.agent) return;
     const agentType = pane.agent as AgentType;
     if (!agentHasSessionParsing(agentType)) {
@@ -83,7 +83,7 @@ export class AgentSessionService {
     return this.startContextOnce(pane, agentType);
   }
 
-  async ensureTracking(pane: AumxPane, detectedAgent: AgentType): Promise<void> {
+  async ensureTracking(pane: MuxBasePane, detectedAgent: AgentType): Promise<void> {
     if (!agentHasSessionParsing(detectedAgent)) return;
     return this.startContextOnce({ ...pane, agent: detectedAgent }, detectedAgent);
   }
@@ -92,7 +92,7 @@ export class AgentSessionService {
     return this.contexts.has(paneId);
   }
 
-  private startContextOnce(pane: AumxPane, agentType: AgentType): Promise<void> {
+  private startContextOnce(pane: MuxBasePane, agentType: AgentType): Promise<void> {
     if (this.contexts.has(pane.id)) return Promise.resolve();
     const inflight = this.startingContexts.get(pane.id);
     if (inflight) return inflight;
@@ -103,7 +103,7 @@ export class AgentSessionService {
     return promise;
   }
 
-  private async startContext(pane: AumxPane, agentType: AgentType): Promise<void> {
+  private async startContext(pane: MuxBasePane, agentType: AgentType): Promise<void> {
     let context: PaneSessionContext | null = null;
     try {
       this.paneSlugs.set(pane.id, pane.slug);
@@ -382,7 +382,7 @@ export class AgentSessionService {
     return topics;
   }
 
-  private async resolveDiscoveryRoot(pane: AumxPane): Promise<string> {
+  private async resolveDiscoveryRoot(pane: MuxBasePane): Promise<string> {
     if (pane.worktreePath) {
       return this.resolveWorktreeDiscoveryRoot(pane);
     }
@@ -411,7 +411,7 @@ export class AgentSessionService {
     return paneRoot || this.projectRoot;
   }
 
-  private async resolveWorktreeDiscoveryRoot(pane: AumxPane): Promise<string> {
+  private async resolveWorktreeDiscoveryRoot(pane: MuxBasePane): Promise<string> {
     const worktreeRoot = pane.worktreePath;
     if (!worktreeRoot) return this.projectRoot;
 

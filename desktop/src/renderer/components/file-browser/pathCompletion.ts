@@ -8,8 +8,8 @@ import { posix } from 'path-browserify';
 import type { FileEntry, FileListRequest, FileListResponse } from '../../../shared/ipc-types';
 import { listFiles } from '../../api/file.api';
 
-export const PATH_COMPLETION_CACHE_TTL_MS = 5_000;
-export const PATH_COMPLETION_CACHE_MAX_ENTRIES = 50;
+const PATH_COMPLETION_CACHE_TTL_MS = 5_000;
+const PATH_COMPLETION_CACHE_MAX_ENTRIES = 50;
 
 export interface ParsedLiteralIgnorePath {
   directoryPath: string;
@@ -76,7 +76,7 @@ function resolveListingDirectory(
   return normalizeRelativeDirectory(posix.join(baseDirectory, parsed.directoryPath));
 }
 
-export function isLiteralPathSegment(value: string): boolean {
+function isLiteralPathSegment(value: string): boolean {
   return value !== '.'
     && value !== '..'
     && ![...value].some((character) => (

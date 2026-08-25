@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { IPC } from '../../shared/ipc-channels.js';
 import type {
   PaneCreateRequest,
@@ -18,7 +18,7 @@ import type {
   PaneDuelCreateRequest,
   PaneDuelResolveRequest,
 } from '../../shared/ipc-types.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { ElectronSettingsService } from '../services/ElectronSettingsService.js';
 import { formatError } from '../utils/formatError.js';
 import { authorizeProjectRoot } from '../services/projectRootAuthorization.js';
@@ -29,7 +29,7 @@ const REVIEW_AGENT_DISABLED_MESSAGE = 'Code Review Agent is disabled — enable 
 const UNAUTHORIZED_PANE_MESSAGE = 'Unauthorized pane';
 
 /** tmux targets must come from main state, never from a renderer supplied identifier. */
-function resolveRegisteredPane(bridge: AumxBridge, channel: string, paneId: string): AumxPane | undefined {
+function resolveRegisteredPane(bridge: MuxBaseBridge, channel: string, paneId: string): MuxBasePane | undefined {
   const pane = bridge.getPanes().find((candidate) => candidate.id === paneId);
   if (!pane) {
     log.warn('ipc:pane', 'Rejected request for an unregistered pane', { channel, paneId });
@@ -37,7 +37,7 @@ function resolveRegisteredPane(bridge: AumxBridge, channel: string, paneId: stri
   return pane;
 }
 
-export function registerPaneHandlers(bridge: AumxBridge): void {
+export function registerPaneHandlers(bridge: MuxBaseBridge): void {
   const settings = ElectronSettingsService.getInstance();
   const isReviewAgentEnabled = (): boolean => settings.get('enableReviewAgent') === true;
   secureHandle(IPC.PANE_LIST, async (_event, request?: { projectRoot?: string }) => {

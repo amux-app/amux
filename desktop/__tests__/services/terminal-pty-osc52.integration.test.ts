@@ -1,4 +1,4 @@
-import { execAsync } from 'aumx/core';
+import { execAsync } from 'muxbase/core';
 import { spawnSync } from 'child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
@@ -72,7 +72,7 @@ describe('TerminalPtyService real tmux integration', () => {
   });
 
   it('attaches an isolated PTY view with mouse enabled', async () => {
-    const label = `aumx-pty-mouse-${process.pid}-${Date.now()}`;
+    const label = `muxbase-pty-mouse-${process.pid}-${Date.now()}`;
     labels.push(label);
 
     runTmux(label, ['-f', '/dev/null', 'new-session', '-d', '-s', 'src', 'sleep', '86400']);
@@ -109,9 +109,9 @@ describe('TerminalPtyService real tmux integration', () => {
   }, 15_000);
 
   it('delivers application OSC 52 through the app-local transcript follower without mutating server policy', async () => {
-    const label = `aumx-osc52-${process.pid}-${Date.now()}`;
+    const label = `muxbase-osc52-${process.pid}-${Date.now()}`;
     labels.push(label);
-    const tempDir = mkdtempSync(join(tmpdir(), 'aumx-osc52-'));
+    const tempDir = mkdtempSync(join(tmpdir(), 'muxbase-osc52-'));
     tempDirs.push(tempDir);
     const triggerPath = join(tempDir, 'go');
     const transcriptPath = join(tempDir, 'pane.ansi');
@@ -174,7 +174,7 @@ describe('TerminalPtyService real tmux integration', () => {
   }, 15_000);
 
   it('preserves UTF-8 block glyphs when the desktop process has no locale', async () => {
-    const label = `aumx-utf8-${process.pid}-${Date.now()}`;
+    const label = `muxbase-utf8-${process.pid}-${Date.now()}`;
     labels.push(label);
     const script = `printf '${SHELL_UTF8_BLOCK_LOGO}  Claude Code\\n'; sleep 86400`;
 

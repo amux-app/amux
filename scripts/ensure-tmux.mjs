@@ -32,18 +32,18 @@ async function main(runMode) {
   }
 
   if (detected.status === 'unparseable') {
-    fail(`Amux could not verify tmux version ${detected.raw || 'empty output'}. Install stable tmux >= ${MINIMUM} manually.`);
+    fail(`MuxBase could not verify tmux version ${detected.raw || 'empty output'}. Install stable tmux >= ${MINIMUM} manually.`);
     return;
   }
 
   if (detected.status === 'unverifiable') {
-    fail(`Amux could not execute the selected tmux binary. Install stable tmux >= ${MINIMUM} manually.`);
+    fail(`MuxBase could not execute the selected tmux binary. Install stable tmux >= ${MINIMUM} manually.`);
     return;
   }
 
   if (runMode === 'check') {
     if (!current) fail(`tmux is required. Install it with: brew install ${FORMULA}`);
-    else fail(`tmux ${current} is below Amux's minimum ${MINIMUM}. Run: brew upgrade ${FORMULA}`);
+    else fail(`tmux ${current} is below MuxBase's minimum ${MINIMUM}. Run: brew upgrade ${FORMULA}`);
     return;
   }
 
@@ -130,9 +130,9 @@ async function checkRunningServer() {
     const { stdout } = await execFileAsync('tmux', ['display-message', '-p', '#{version}'], { timeout: 5_000 });
     const server = stdout.trim();
     if (!parse(server)) {
-      fail(`Amux could not verify the running tmux server version ${server || 'empty output'}; restart tmux completely before starting Amux.`);
+      fail(`MuxBase could not verify the running tmux server version ${server || 'empty output'}; restart tmux completely before starting MuxBase.`);
     } else if (!isSupported(server)) {
-      fail(`tmux server ${server} is still running below ${MINIMUM}. Save and close active tmux sessions, then restart tmux completely before starting Amux.`);
+      fail(`tmux server ${server} is still running below ${MINIMUM}. Save and close active tmux sessions, then restart tmux completely before starting MuxBase.`);
     } else {
       console.log(`ok tmux server ${server} (>= ${MINIMUM})`);
     }
@@ -141,7 +141,7 @@ async function checkRunningServer() {
       ? `${'stderr' in error ? String(error.stderr ?? '') : ''} ${'message' in error ? String(error.message ?? '') : ''}`.toLowerCase()
       : String(error).toLowerCase();
     if (detail.includes('no server running') || detail.includes('no such file or directory')) return;
-    fail('Amux could not verify the running tmux server. Restart tmux completely before starting Amux.');
+    fail('MuxBase could not verify the running tmux server. Restart tmux completely before starting MuxBase.');
   }
 }
 

@@ -5,7 +5,7 @@
  */
 
 import { execSync } from 'child_process';
-import type { AumxPane } from '../types.js';
+import type { MuxBasePane } from '../types.js';
 import { TmuxService } from '../services/TmuxService.js';
 import { execFileAsync } from './execAsync.js';
 import { resolveProjectRootFromPath } from './projectRoot.js';
@@ -63,9 +63,9 @@ interface UntrackedPaneInfo {
 }
 
 /**
- * Gets all untracked tmux panes (panes not in aumx config)
+ * Gets all untracked tmux panes (panes not in muxbase config)
  * @param sessionName The tmux session name
- * @param trackedPaneIds Array of pane IDs already tracked by aumx
+ * @param trackedPaneIds Array of pane IDs already tracked by muxbase
  * @param controlPaneId Optional control pane ID to exclude
  * @param welcomePaneId Optional welcome pane ID to exclude
  * @returns Array of untracked pane information
@@ -92,11 +92,11 @@ export async function getUntrackedPanes(
 
       if (!paneId || !paneId.startsWith('%')) continue;
 
-      // CRITICAL: Skip internal aumx panes by title
-      if (title === 'aumx-spacer') {
+      // CRITICAL: Skip internal muxbase panes by title
+      if (title === 'muxbase-spacer') {
         continue;
       }
-      if (title && title.startsWith('aumx v')) {
+      if (title && title.startsWith('muxbase v')) {
         continue;
       }
       if (title === 'Welcome') {
@@ -111,8 +111,8 @@ export async function getUntrackedPanes(
         continue;
       }
 
-      // CRITICAL: Skip panes running aumx itself (node process running aumx)
-      if (command && (command === 'node' || command.includes('aumx'))) {
+      // CRITICAL: Skip panes running muxbase itself (node process running muxbase)
+      if (command && (command === 'node' || command.includes('muxbase'))) {
         continue;
       }
 
@@ -149,13 +149,13 @@ async function detectPaneProjectInfo(
 }
 
 /**
- * Creates a AumxPane object for a shell pane
+ * Creates a MuxBasePane object for a shell pane
  * @param paneId The tmux pane ID
- * @param nextId The next available aumx ID number
+ * @param nextId The next available muxbase ID number
  * @param _existingTitle Optional existing title retained for API compatibility
- * @returns AumxPane object for the shell pane
+ * @returns MuxBasePane object for the shell pane
  */
-export async function createShellPane(paneId: string, nextId: number, _existingTitle?: string): Promise<AumxPane> {
+export async function createShellPane(paneId: string, nextId: number, _existingTitle?: string): Promise<MuxBasePane> {
   const tmuxService = TmuxService.getInstance();
   const shellType = await detectShellType(paneId);
   const paneProjectInfo = await detectPaneProjectInfo(paneId);
@@ -173,7 +173,7 @@ export async function createShellPane(paneId: string, nextId: number, _existingT
   }
 
   return {
-    id: `aumx-${nextId}`,
+    id: `muxbase-${nextId}`,
     slug,
     prompt: '', // No prompt for manually created panes
     paneId,
@@ -185,17 +185,17 @@ export async function createShellPane(paneId: string, nextId: number, _existingT
 }
 
 /**
- * Gets the next available aumx ID number
+ * Gets the next available muxbase ID number
  * @param existingPanes Array of existing panes
  * @returns Next available ID number
  */
-export function getNextAumxId(existingPanes: AumxPane[]): number {
+export function getNextMuxBaseId(existingPanes: MuxBasePane[]): number {
   if (existingPanes.length === 0) return 1;
 
   // Extract numeric IDs from all panes
   const ids = existingPanes
     .map(p => {
-      const match = p.id.match(/^aumx-(\d+)$/);
+      const match = p.id.match(/^muxbase-(\d+)$/);
       return match ? parseInt(match[1], 10) : 0;
     })
     .filter(id => id > 0);

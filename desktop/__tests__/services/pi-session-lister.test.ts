@@ -35,7 +35,7 @@ afterEach(async () => {
 
 describe('listPiSessions', () => {
   it('lists only matching-project sessions newest first with bounded titles', async () => {
-    const sessionsRoot = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-sessions-'));
+    const sessionsRoot = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-sessions-'));
     temporaryRoots.push(sessionsRoot);
     await createSession(sessionsRoot, {
       cwd: '/repo/current',
@@ -65,7 +65,7 @@ describe('listPiSessions', () => {
   });
 
   it('skips malformed files and keeps valid untitled sessions usable', async () => {
-    const sessionsRoot = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-sessions-'));
+    const sessionsRoot = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-sessions-'));
     temporaryRoots.push(sessionsRoot);
     await createSession(sessionsRoot, {
       cwd: '/repo/current',
@@ -84,7 +84,7 @@ describe('listPiSessions', () => {
   });
 
   it('uses the latest session name instead of the first prompt', async () => {
-    const sessionsRoot = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-sessions-'));
+    const sessionsRoot = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-sessions-'));
     temporaryRoots.push(sessionsRoot);
     await createSession(sessionsRoot, {
       cwd: '/repo/current',
@@ -100,7 +100,7 @@ describe('listPiSessions', () => {
   });
 
   it('lists sessions from Pi session-directory overrides', async () => {
-    const sessionDir = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-custom-sessions-'));
+    const sessionDir = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-custom-sessions-'));
     temporaryRoots.push(sessionDir);
     const file = path.join(sessionDir, 'custom.jsonl');
     await writeFile(file, `${JSON.stringify({
@@ -122,8 +122,8 @@ describe('listPiSessions', () => {
   });
 
   it('honors Pi global sessionDir settings', async () => {
-    const agentDir = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-agent-dir-'));
-    const sessionDir = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-configured-sessions-'));
+    const agentDir = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-agent-dir-'));
+    const sessionDir = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-configured-sessions-'));
     temporaryRoots.push(agentDir, sessionDir);
     await writeFile(path.join(agentDir, 'settings.json'), JSON.stringify({ sessionDir }), 'utf8');
     await writeFile(path.join(sessionDir, 'configured.jsonl'), `${JSON.stringify({
@@ -149,10 +149,10 @@ describe('listPiSessions', () => {
   });
 
   it('honors a project-scoped Pi sessionDir over the global setting', async () => {
-    const projectRoot = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-project-'));
-    const agentDir = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-agent-dir-'));
-    const globalSessionDir = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-global-sessions-'));
-    const projectSessionDir = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-project-sessions-'));
+    const projectRoot = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-project-'));
+    const agentDir = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-agent-dir-'));
+    const globalSessionDir = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-global-sessions-'));
+    const projectSessionDir = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-project-sessions-'));
     temporaryRoots.push(projectRoot, agentDir, globalSessionDir, projectSessionDir);
     await writeFile(path.join(agentDir, 'settings.json'), JSON.stringify({ sessionDir: globalSessionDir }), 'utf8');
     await mkdir(path.join(projectRoot, '.pi'), { recursive: true });
@@ -180,7 +180,7 @@ describe('listPiSessions', () => {
   });
 
   it('filters shared custom directories by project before applying the limit', async () => {
-    const sessionDir = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-custom-sessions-'));
+    const sessionDir = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-custom-sessions-'));
     temporaryRoots.push(sessionDir);
     const current = path.join(sessionDir, 'current.jsonl');
     const other = path.join(sessionDir, 'other.jsonl');
@@ -204,7 +204,7 @@ describe('listPiSessions', () => {
   });
 
   it('uses the latest session name when it is appended beyond the bounded head', async () => {
-    const sessionsRoot = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-sessions-'));
+    const sessionsRoot = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-sessions-'));
     temporaryRoots.push(sessionsRoot);
     const cwd = '/repo/current';
     const encodedCwd = `--${path.resolve(cwd).replace(/^[/\\]/, '').replace(/[/\\:]/g, '-')}--`;
@@ -225,7 +225,7 @@ describe('listPiSessions', () => {
   });
 
   it('preserves a session name from the middle of a long transcript', async () => {
-    const sessionsRoot = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-sessions-'));
+    const sessionsRoot = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-sessions-'));
     temporaryRoots.push(sessionsRoot);
     const cwd = '/repo/current';
     const encodedCwd = `--${path.resolve(cwd).replace(/^[/\\]/, '').replace(/[/\\:]/g, '-')}--`;
@@ -247,7 +247,7 @@ describe('listPiSessions', () => {
   });
 
   it('does not parse past the requested session limit', async () => {
-    const sessionsRoot = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-sessions-'));
+    const sessionsRoot = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-sessions-'));
     temporaryRoots.push(sessionsRoot);
     await createSession(sessionsRoot, {
       cwd: '/repo/current',

@@ -139,7 +139,7 @@ describe('usePaneActions', () => {
     const actions = renderActions();
 
     // Act
-    const closed = await actions.current.closePane('aumx-1');
+    const closed = await actions.current.closePane('muxbase-1');
 
     // Assert — the default choice id is sent back through the callback
     expect(paneApiSpies.executeCallback).toHaveBeenCalledWith({
@@ -156,7 +156,7 @@ describe('usePaneActions', () => {
     const actions = renderActions();
 
     // Act
-    const closed = await actions.current.closePane('aumx-1');
+    const closed = await actions.current.closePane('muxbase-1');
 
     // Assert
     expect(storeState.addToast).toHaveBeenCalledWith(
@@ -170,7 +170,7 @@ describe('usePaneActions', () => {
     paneApiSpies.closePane.mockResolvedValue({ type: 'error', message: 'Pane is still running' });
     const actions = renderActions();
 
-    const closed = await actions.current.closePane('aumx-1');
+    const closed = await actions.current.closePane('muxbase-1');
 
     expect(storeState.addToast).toHaveBeenCalledWith('Pane is still running', 'error');
     expect(closed).toBe(false);
@@ -196,7 +196,7 @@ describe('usePaneActions', () => {
     // Arrange
     paneApiSpies.createPane.mockResolvedValue({
       success: true,
-      pane: { id: 'aumx-9', slug: 'fix-bug' },
+      pane: { id: 'muxbase-9', slug: 'fix-bug' },
     });
     const actions = renderActions();
 
@@ -204,7 +204,7 @@ describe('usePaneActions', () => {
     await actions.current.createPane({ prompt: 'fix the bug' });
 
     // Assert
-    expect(storeState.selectPane).toHaveBeenCalledWith('aumx-9');
+    expect(storeState.selectPane).toHaveBeenCalledWith('muxbase-9');
     expect(storeState.addToast).toHaveBeenCalledWith(
       expect.stringContaining('fix-bug'),
       'success',
@@ -232,7 +232,7 @@ describe('usePaneActions', () => {
     storeState.viewMode = 'focus';
     paneApiSpies.createPane.mockResolvedValue({
       success: true,
-      pane: { id: 'aumx-9', slug: 'fix-bug' },
+      pane: { id: 'muxbase-9', slug: 'fix-bug' },
     });
     const actions = renderActions();
 
@@ -248,7 +248,7 @@ describe('usePaneActions', () => {
     storeState.viewMode = 'fleet';
     paneApiSpies.createPane.mockResolvedValue({
       success: true,
-      pane: { id: 'aumx-9', slug: 'fix-bug' },
+      pane: { id: 'muxbase-9', slug: 'fix-bug' },
     });
     const actions = renderActions();
 
@@ -272,10 +272,10 @@ describe('usePaneActions', () => {
     const actions = renderActions();
 
     // Act
-    await actions.current.mergePane('aumx-2');
+    await actions.current.mergePane('muxbase-2');
 
     // Assert — conflict UI is opened rather than toasting a generic message
-    expect(storeState.openConflictResolution).toHaveBeenCalledWith('aumx-2', conflictResult);
+    expect(storeState.openConflictResolution).toHaveBeenCalledWith('muxbase-2', conflictResult);
     expect(storeState.openConflictView).toHaveBeenCalled();
   });
 

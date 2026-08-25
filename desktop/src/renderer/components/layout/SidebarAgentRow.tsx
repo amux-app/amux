@@ -1,6 +1,6 @@
-import type { AgentName, AumxPane } from 'aumx/core';
+import type { AgentName, MuxBasePane } from 'muxbase/core';
 import type { PaneActivityState } from '../../../shared/pane-activity';
-import { PANE_NAME_MAX_LENGTH, validatePaneName } from 'aumx/pane-name';
+import { PANE_NAME_MAX_LENGTH, validatePaneName } from 'muxbase/pane-name';
 import {
   memo,
   useCallback,
@@ -47,7 +47,7 @@ const ACTIVITY_STATUS_LABELS: Record<PaneActivityState, string> = {
 };
 
 export interface SidebarAgentRowProps {
-  pane: AumxPane;
+  pane: MuxBasePane;
   hidden: boolean;
   onDelete: (paneId: string) => Promise<boolean>;
   onRename: (paneId: string, name: string) => void | Promise<void>;
@@ -64,7 +64,7 @@ function visualStatus(status: SidebarPaneStatus | undefined): PaneActivityState 
   return status?.status ?? 'unknown';
 }
 
-function resolveSubLine(pane: AumxPane, visual: PaneActivityState): string {
+function resolveSubLine(pane: MuxBasePane, visual: PaneActivityState): string {
   const statusLabel = ACTIVITY_STATUS_LABELS[visual].toLowerCase();
   if (pane.branchName) return `${statusLabel} · ${pane.branchName}`;
   if (pane.type === 'shell' && pane.shellType) return `${statusLabel} · ${pane.shellType.toLowerCase()}`;
@@ -72,7 +72,7 @@ function resolveSubLine(pane: AumxPane, visual: PaneActivityState): string {
 }
 
 /** The agent whose brand mark anchors the row's right edge; shells fall back to the terminal glyph. */
-function resolveBrandAgent(pane: AumxPane): AgentName | 'shell' | null {
+function resolveBrandAgent(pane: MuxBasePane): AgentName | 'shell' | null {
   if (pane.agent) return pane.agent;
   if (pane.type === 'shell') return 'shell';
   return null;
@@ -80,7 +80,7 @@ function resolveBrandAgent(pane: AumxPane): AgentName | 'shell' | null {
 
 /** Resting agent-identity mark pinned to the row's right edge. It shares the actions anchor and
  * cross-fades out as the hover/focus ⋯ menu fades in, so the two never overlap and nothing shifts. */
-function TrailingBrand({ pane }: Readonly<{ pane: AumxPane }>) {
+function TrailingBrand({ pane }: Readonly<{ pane: MuxBasePane }>) {
   const agent = resolveBrandAgent(pane);
   if (!agent) return null;
   return (
@@ -124,7 +124,7 @@ function SidebarDiffCounts({ paneId }: Readonly<{ paneId: string }>) {
   );
 }
 
-function deleteMessage(pane: AumxPane): string {
+function deleteMessage(pane: MuxBasePane): string {
   if (pane.role === 'review') {
     return 'This stops the review agent and removes this chat from the sidebar. The temporary review workspace is cleaned up; your source worktree and project code are kept.';
   }

@@ -39,4 +39,4 @@ export const SIDEBAR_PANEL_MAX_SIZE = `${SIDEBAR_MAX_WIDTH}px`;
 /** Leaves the content column its default width at the app's 800px minimum window. */
 export const SIDEBAR_CONTENT_MIN_SIZE = '320px';
 
-export const SIDEBAR_RESIZE_HANDLE_CLASS = 'aumx-resize-handle aumx-resize-handle--sidebar';
+export const SIDEBAR_RESIZE_HANDLE_CLASS = 'muxbase-resize-handle muxbase-resize-handle--sidebar';

@@ -201,19 +201,19 @@ describe('UnsavedChangesGuard', () => {
 
   it('bypasses only the quit discard modal during automated Electron teardown', () => {
     expect(shouldBypassQuitDiscardPrompt({
-      AUMX_E2E: '1',
+      MUXBASE_E2E: '1',
       NODE_ENV: 'test',
     }, false)).toBe(true);
     expect(shouldBypassQuitDiscardPrompt({
-      AUMX_E2E: '0',
+      MUXBASE_E2E: '0',
       NODE_ENV: 'test',
     }, false)).toBe(false);
     expect(shouldBypassQuitDiscardPrompt({
-      AUMX_E2E: '1',
+      MUXBASE_E2E: '1',
       NODE_ENV: 'production',
     }, false)).toBe(false);
     expect(shouldBypassQuitDiscardPrompt({
-      AUMX_E2E: '1',
+      MUXBASE_E2E: '1',
       NODE_ENV: 'test',
     }, true)).toBe(false);
   });

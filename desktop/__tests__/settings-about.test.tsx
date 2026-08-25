@@ -33,7 +33,7 @@ describe('AboutSettings', () => {
     render(<AboutSettings />);
 
     expect(await screen.findByText(/automatic updates unavailable/i)).toBeTruthy();
-    expect(screen.getByText(/quit Amux, drag it to Applications/i)).toBeTruthy();
+    expect(screen.getByText(/quit MuxBase, drag it to Applications/i)).toBeTruthy();
     expect((screen.getByRole('button', { name: 'Check for Updates' }) as HTMLButtonElement).disabled)
       .toBe(true);
   });

@@ -1,5 +1,5 @@
-import type { AumxPane, DuelMetadata, ReviewMetadata } from 'aumx/core';
-import { CLAUDE_TERMINAL_COLS } from 'aumx/pane-terminal-profile';
+import type { MuxBasePane, DuelMetadata, ReviewMetadata } from 'muxbase/core';
+import { CLAUDE_TERMINAL_COLS } from 'muxbase/pane-terminal-profile';
 import type {
   CompactionEvent,
   MessageTokens,
@@ -145,7 +145,7 @@ function hasValidTerminalProfile(value: Record<string, unknown>): boolean {
   return value.terminalFixedCols === undefined;
 }
 
-function isAumxPane(value: unknown): value is AumxPane {
+function isMuxBasePane(value: unknown): value is MuxBasePane {
   if (!isRecord(value)) return false;
 
   return isString(value.id)
@@ -385,12 +385,12 @@ function isProjectTextSearchResult(value: unknown): value is ProjectTextSearchRe
     && isString(value.lineContent);
 }
 
-export function sanitizePaneList(value: unknown): AumxPane[] | null {
+export function sanitizePaneList(value: unknown): MuxBasePane[] | null {
   if (!Array.isArray(value)) {
     return null;
   }
 
-  return value.filter(isAumxPane);
+  return value.filter(isMuxBasePane);
 }
 
 export function sanitizePaneActivitySnapshot(value: unknown): ActivitySnapshot | null {

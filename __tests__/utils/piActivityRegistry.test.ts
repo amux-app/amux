@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-const fakeHome = mkdtempSync(join(tmpdir(), 'aumx-pi-activity-home-'));
+const fakeHome = mkdtempSync(join(tmpdir(), 'muxbase-pi-activity-home-'));
 
 vi.mock('os', async (importOriginal) => {
   const actual = await importOriginal<typeof import('os')>();
@@ -29,8 +29,8 @@ describe('ensurePiActivityExtension', () => {
     expect(extension).toContain('agent_start');
     expect(extension).toContain('agent_settled');
     expect(extension).not.toContain('agent_end');
-    expect(extension).toContain('AUMX_ACTIVITY_JOURNAL');
-    expect(extension).toContain('AUMX_ACTIVITY_ADAPTER');
+    expect(extension).toContain('MUXBASE_ACTIVITY_JOURNAL');
+    expect(extension).toContain('MUXBASE_ACTIVITY_ADAPTER');
     expect(extension).toContain('existsSync');
     expect(extension).toContain('randomUUID');
     expect(extension).not.toContain('turnNumber');
@@ -47,7 +47,7 @@ describe('ensurePiActivityExtension', () => {
 
   it('removes only its owned extension and revokes the writer-side consent gate', () => {
     const extensionPath = ensurePiActivityExtension();
-    const consentPath = join(fakeHome, '.pi', 'agent', 'aumx-activity.enabled');
+    const consentPath = join(fakeHome, '.pi', 'agent', 'muxbase-activity.enabled');
     expect(existsSync(consentPath)).toBe(true);
 
     expect(removePiActivityExtension()).toBe(true);

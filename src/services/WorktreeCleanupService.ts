@@ -1,6 +1,6 @@
 import { spawn } from 'child_process';
 import type { WorktreeInfo } from '../actions/merge/types.js';
-import type { AumxPane } from '../types.js';
+import type { MuxBasePane } from '../types.js';
 import { getPaneBranchName } from '../utils/git.js';
 import { triggerHook } from '../utils/hooks.js';
 import { detectAllWorktrees } from '../utils/worktreeDiscovery.js';
@@ -11,7 +11,7 @@ import {
 } from '../utils/conflictMergeTransaction.js';
 
 interface WorktreeCleanupJob {
-  pane: AumxPane;
+  pane: MuxBasePane;
   paneProjectRoot: string;
   mainRepoPath: string;
   deleteBranch: boolean;
@@ -143,7 +143,7 @@ export class WorktreeCleanupService {
     );
   }
 
-  private async detectWorktrees(pane: AumxPane): Promise<WorktreeInfo[]> {
+  private async detectWorktrees(pane: MuxBasePane): Promise<WorktreeInfo[]> {
     if (!pane.worktreePath) {
       return [];
     }
@@ -162,7 +162,7 @@ export class WorktreeCleanupService {
   }
 
   private getBranchDeletionTargets(
-    pane: AumxPane,
+    pane: MuxBasePane,
     mainRepoPath: string,
     detectedWorktrees: WorktreeInfo[]
   ): BranchDeletionTarget[] {
@@ -180,7 +180,7 @@ export class WorktreeCleanupService {
   }
 
   private getWorktreeRemovalTargets(
-    pane: AumxPane,
+    pane: MuxBasePane,
     mainRepoPath: string,
     detectedWorktrees: WorktreeInfo[]
   ): WorktreeRemovalTarget[] {

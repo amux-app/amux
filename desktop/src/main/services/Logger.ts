@@ -14,7 +14,7 @@ const LEVEL_PRIORITY: Record<LogLevel, number> = {
 const IMMEDIATE_FLUSH_LEVEL: LogLevel = 'warn';
 const LOG_RETENTION_DAYS = 30;
 const THROTTLE_WINDOW_MS = 5000;
-const DAILY_LOG_FILE_PATTERN = /^aumx-desktop-(\d{4}-\d{2}-\d{2})\.log(?:\.\d+)?$/;
+const DAILY_LOG_FILE_PATTERN = /^muxbase-desktop-(\d{4}-\d{2}-\d{2})\.log(?:\.\d+)?$/;
 /** Backstop for the per-file cap: bounds the whole log directory, not just one day. */
 export const MAX_LOG_DIR_BYTES = 100 * 1024 * 1024;
 /** Cannot occur in a tag or message, so tag+message keys are unambiguous. */
@@ -76,7 +76,7 @@ class DesktopLogger {
     }
 
     const today = new Date().toISOString().slice(0, 10);
-    this.logFile = join(this.logDir, `aumx-desktop-${today}.log`);
+    this.logFile = join(this.logDir, `muxbase-desktop-${today}.log`);
 
     this.deleteExpiredDailyLogs();
     this.enforceSizeCap();

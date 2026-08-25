@@ -3,7 +3,7 @@ import { mergePane } from '../../src/actions/implementations/mergeAction.js';
 import { buildMergeQueue } from '../../src/actions/merge/multiMergeOrchestrator.js';
 import type { MergeQueueItem, WorktreeInfo } from '../../src/actions/merge/types.js';
 import type { ActionContext } from '../../src/actions/types.js';
-import type { AumxPane } from '../../src/types.js';
+import type { MuxBasePane } from '../../src/types.js';
 import { validateMerge } from '../../src/utils/mergeValidation.js';
 import type { MergeValidationResult } from '../../src/utils/mergeValidation.js';
 import { detectAllWorktrees } from '../../src/utils/worktreeDiscovery.js';
@@ -50,8 +50,8 @@ describe('mergePane', () => {
   });
 
   it('uses pane project metadata as the main repo path', async () => {
-    const pane: AumxPane = {
-      id: 'aumx-1',
+    const pane: MuxBasePane = {
+      id: 'muxbase-1',
       slug: 'fix-auth',
       prompt: 'test',
       paneId: '%1',
@@ -62,7 +62,7 @@ describe('mergePane', () => {
       panes: [pane],
       projectName: 'main-project',
       savePanes: vi.fn(),
-      sessionName: 'aumx-main-project',
+      sessionName: 'muxbase-main-project',
     };
     const rootWorktree: WorktreeInfo = {
       branch: 'fix-auth',
@@ -96,8 +96,8 @@ describe('mergePane', () => {
   });
 
   it('rejects merging a review pane without inspecting worktrees', async () => {
-    const pane: AumxPane = {
-      id: 'aumx-review-1',
+    const pane: MuxBasePane = {
+      id: 'muxbase-review-1',
       slug: 'review-fix-auth',
       prompt: 'review',
       paneId: '%2',
@@ -109,7 +109,7 @@ describe('mergePane', () => {
       panes: [pane],
       projectName: 'main-project',
       savePanes: vi.fn(),
-      sessionName: 'aumx-main-project',
+      sessionName: 'muxbase-main-project',
     };
 
     const result = await mergePane(pane, context);

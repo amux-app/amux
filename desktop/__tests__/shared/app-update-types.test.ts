@@ -59,7 +59,7 @@ describe('app update contract', () => {
 
   it('builds release-note links only for validated stable semantic versions', () => {
     expect(buildCanonicalReleaseNotesUrl('0.2.0')).toBe(
-      'https://github.com/amux-app/amux/releases/tag/v0.2.0',
+      'https://github.com/muxbase-app/muxbase/releases/tag/v0.2.0',
     );
     expect(buildCanonicalReleaseNotesUrl('0.2.0-beta.1')).toBeNull();
     expect(buildCanonicalReleaseNotesUrl('not-a-version')).toBeNull();

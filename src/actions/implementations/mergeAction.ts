@@ -5,7 +5,7 @@
  * Supports multi-merge: detects sub-worktrees and merges them all sequentially.
  */
 
-import type { AumxPane } from '../../types.js';
+import type { MuxBasePane } from '../../types.js';
 import type { ActionResult, ActionContext } from '../types.js';
 import type { MergeIssue, MergeValidationResult } from '../../utils/mergeValidation.js';
 import { triggerHook } from '../../utils/hooks.js';
@@ -34,7 +34,7 @@ import {
  * Supports multi-merge: if sub-worktrees exist, merges all of them sequentially.
  */
 export async function mergePane(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   _params?: { mainBranch?: string }
 ): Promise<ActionResult> {
@@ -140,7 +140,7 @@ export async function mergePane(
  * Execute single root worktree merge (original flow, backwards compatible)
  */
 async function executeSingleRootMerge(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   worktreePath: string
 ): Promise<ActionResult> {
@@ -162,7 +162,7 @@ async function executeSingleRootMerge(
     onConfirm: async () => {
       // Trigger pre_merge hook before starting merge
       await triggerHook('pre_merge', mainRepoPath, pane, {
-        AUMX_TARGET_BRANCH: validation.mainBranch,
+        MUXBASE_TARGET_BRANCH: validation.mainBranch,
       });
       return executeMerge(pane, context, validation.mainBranch, mainRepoPath);
     },
@@ -180,7 +180,7 @@ async function executeSingleRootMerge(
  * Handle detected merge issues by delegating to specialized handlers
  */
 async function handleMergeIssues(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   validation: MergeValidationResult,
   mainRepoPath: string

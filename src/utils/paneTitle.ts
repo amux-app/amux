@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
 import path from 'path';
-import type { AumxPane } from '../types.js';
+import type { MuxBasePane } from '../types.js';
 import { getPaneProjectName, getPaneProjectRoot } from './paneProject.js';
 
 function getProjectTag(projectRoot: string, projectName: string): string {
@@ -17,7 +17,7 @@ function getProjectTag(projectRoot: string, projectName: string): string {
  * worktree panes so duplicate slugs across projects do not collide.
  */
 export function getPaneTmuxTitle(
-  pane: AumxPane,
+  pane: MuxBasePane,
   fallbackProjectRoot?: string,
   fallbackProjectName?: string
 ): string {
@@ -48,7 +48,7 @@ export function getPaneTmuxTitle(
  * Includes legacy slug-only title for backward compatibility.
  */
 export function getPaneTitleCandidates(
-  pane: AumxPane,
+  pane: MuxBasePane,
   fallbackProjectRoot?: string,
   fallbackProjectName?: string
 ): string[] {

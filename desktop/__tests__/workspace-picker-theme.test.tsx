@@ -72,7 +72,7 @@ function renderPicker(): { orbs: HTMLElement[]; wordmark: HTMLElement } {
   const layer = container.querySelector('.pointer-events-none.overflow-hidden');
   return {
     orbs: Array.from(layer?.children ?? []) as HTMLElement[],
-    wordmark: screen.getByText('Amux'),
+    wordmark: screen.getByText('MuxBase'),
   };
 }
 

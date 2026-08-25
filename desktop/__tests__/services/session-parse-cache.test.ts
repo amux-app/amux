@@ -97,7 +97,7 @@ afterEach(() => {
 describe('SessionParseCache', () => {
   it('returns the memoized session without invoking the parser when the file identity is unchanged', async () => {
     // Arrange
-    const dir = createTempDir('aumx-parse-cache-hit-');
+    const dir = createTempDir('muxbase-parse-cache-hit-');
     const filePath = join(dir, 'session.jsonl');
     writeFileSync(filePath, 'line one\n');
     const parser = countingParser(new SessionParseCache());
@@ -113,7 +113,7 @@ describe('SessionParseCache', () => {
 
   it('re-parses when only the size changed', async () => {
     // Arrange
-    const dir = createTempDir('aumx-parse-cache-size-');
+    const dir = createTempDir('muxbase-parse-cache-size-');
     const filePath = join(dir, 'session.jsonl');
     writeFileSync(filePath, 'line one\n');
     utimesSync(filePath, FIXED_MTIME, FIXED_MTIME);
@@ -132,7 +132,7 @@ describe('SessionParseCache', () => {
 
   it('re-parses when only the mtime changed', async () => {
     // Arrange
-    const dir = createTempDir('aumx-parse-cache-mtime-');
+    const dir = createTempDir('muxbase-parse-cache-mtime-');
     const filePath = join(dir, 'session.jsonl');
     writeFileSync(filePath, 'line one\n');
     utimesSync(filePath, FIXED_MTIME, FIXED_MTIME);
@@ -150,7 +150,7 @@ describe('SessionParseCache', () => {
 
   it('re-parses when the file was replaced at the same path, size and mtime', async () => {
     // Arrange
-    const dir = createTempDir('aumx-parse-cache-ino-');
+    const dir = createTempDir('muxbase-parse-cache-ino-');
     const filePath = join(dir, 'session.jsonl');
     writeFileSync(filePath, 'line one\n');
     utimesSync(filePath, FIXED_MTIME, FIXED_MTIME);
@@ -175,7 +175,7 @@ describe('SessionParseCache', () => {
 
   it('re-parses an in-place rewrite with the same inode, size and mtime', async () => {
     // Arrange
-    const dir = createTempDir('aumx-parse-cache-ctime-');
+    const dir = createTempDir('muxbase-parse-cache-ctime-');
     const filePath = join(dir, 'session.jsonl');
     writeFileSync(filePath, 'line one\n');
     utimesSync(filePath, FIXED_MTIME, FIXED_MTIME);
@@ -199,7 +199,7 @@ describe('SessionParseCache', () => {
 
   it('serves fresh content for an appended file instead of a stale session', async () => {
     // Arrange
-    const dir = createTempDir('aumx-parse-cache-floor-');
+    const dir = createTempDir('muxbase-parse-cache-floor-');
     const filePath = join(dir, 'session.jsonl');
     writeFileSync(filePath, 'line one\n');
     const parser = countingParser(new SessionParseCache());
@@ -216,7 +216,7 @@ describe('SessionParseCache', () => {
 
   it('keeps parses of one file apart when the callers use different keys', async () => {
     // Arrange: two panes read the same OpenCode database bound to different sessions.
-    const dir = createTempDir('aumx-parse-cache-key-');
+    const dir = createTempDir('muxbase-parse-cache-key-');
     const filePath = join(dir, 'shared.db');
     writeFileSync(filePath, 'line one\n');
     const parser = countingParser(new SessionParseCache());
@@ -234,7 +234,7 @@ describe('SessionParseCache', () => {
 
   it('bounds retained entries to maxEntries', async () => {
     // Arrange
-    const dir = createTempDir('aumx-parse-cache-bound-');
+    const dir = createTempDir('muxbase-parse-cache-bound-');
     const paths = ['a', 'b', 'c'].map((name) => join(dir, `${name}.jsonl`));
     for (const path of paths) writeFileSync(path, 'line one\n');
     const parser = countingParser(new SessionParseCache(2));
@@ -250,7 +250,7 @@ describe('SessionParseCache', () => {
 
   it('drops the entry for a removed file', async () => {
     // Arrange
-    const dir = createTempDir('aumx-parse-cache-removed-');
+    const dir = createTempDir('muxbase-parse-cache-removed-');
     const filePath = join(dir, 'session.jsonl');
     writeFileSync(filePath, 'line one\n');
     const parser = countingParser(new SessionParseCache());
@@ -271,7 +271,7 @@ describe('SessionParseCache', () => {
 describe('ClaudeLogParser parse memoization', () => {
   it('produces output identical to an uncached parse and reuses it for an unchanged file', async () => {
     // Arrange
-    const dir = createTempDir('aumx-claude-cache-');
+    const dir = createTempDir('muxbase-claude-cache-');
     const filePath = join(dir, 'cached-session.jsonl');
     writeJsonl(filePath, claudeFixture());
     const cachedParser = new ClaudeLogParser();
@@ -293,7 +293,7 @@ describe('ClaudeLogParser parse memoization', () => {
 
   it('reflects appended entries on the next parse', async () => {
     // Arrange
-    const dir = createTempDir('aumx-claude-cache-append-');
+    const dir = createTempDir('muxbase-claude-cache-append-');
     const filePath = join(dir, 'growing-session.jsonl');
     writeJsonl(filePath, claudeFixture());
     const parser = new ClaudeLogParser();

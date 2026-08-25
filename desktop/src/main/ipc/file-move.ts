@@ -229,7 +229,7 @@ async function publishReservedDirectory(sourceAbs: string, targetAbs: string): P
  * leak a partial final destination. Publication uses only no-clobber primitives.
  */
 async function copyThenPublish(operation: PlannedMoveOperation): Promise<MoveOutcome> {
-  const stagingRoot = await mkdtemp(join(dirname(operation.targetAbs), '.aumx-copy-'));
+  const stagingRoot = await mkdtemp(join(dirname(operation.targetAbs), '.muxbase-copy-'));
   const stagingAbs = join(stagingRoot, basename(operation.targetAbs));
 
   try {

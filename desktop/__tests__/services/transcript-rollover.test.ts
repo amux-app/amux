@@ -30,7 +30,7 @@ vi.mock('../../src/main/services/Logger.js', () => ({
 const tempDirs: string[] = [];
 
 function createTempTranscript(content: string): string {
-  const dir = mkdtempSync(join(tmpdir(), 'aumx-rollover-'));
+  const dir = mkdtempSync(join(tmpdir(), 'muxbase-rollover-'));
   tempDirs.push(dir);
   const transcriptPath = join(dir, 'pane.ansi');
   writeFileSync(transcriptPath, content);

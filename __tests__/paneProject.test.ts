@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { deriveProjectRootFromWorktreePath, getPaneProjectName, getPaneProjectRoot } from '../src/utils/paneProject.js';
-import type { AumxPane } from '../src/types.js';
+import type { MuxBasePane } from '../src/types.js';
 
 describe('paneProject helpers', () => {
   const fallbackRoot = '/workspace/root-a';
 
   it('uses pane metadata root when available', () => {
-    const pane: AumxPane = {
-      id: 'aumx-1',
+    const pane: MuxBasePane = {
+      id: 'muxbase-1',
       slug: 'feature-a',
       prompt: 'test',
       paneId: '%1',
@@ -18,12 +18,12 @@ describe('paneProject helpers', () => {
   });
 
   it('derives root from worktree path when metadata is missing', () => {
-    const pane: AumxPane = {
-      id: 'aumx-1',
+    const pane: MuxBasePane = {
+      id: 'muxbase-1',
       slug: 'feature-a',
       prompt: 'test',
       paneId: '%1',
-      worktreePath: '/workspace/root-c/.aumx/worktrees/feature-a',
+      worktreePath: '/workspace/root-c/.muxbase/worktrees/feature-a',
     };
 
     expect(getPaneProjectRoot(pane, fallbackRoot)).toBe('/workspace/root-c');
@@ -31,8 +31,8 @@ describe('paneProject helpers', () => {
   });
 
   it('uses pane metadata before deriving from worktree path', () => {
-    const pane: AumxPane = {
-      id: 'aumx-1',
+    const pane: MuxBasePane = {
+      id: 'muxbase-1',
       slug: 'feature-a',
       prompt: 'test',
       paneId: '%1',
@@ -44,8 +44,8 @@ describe('paneProject helpers', () => {
   });
 
   it('falls back to session project root', () => {
-    const pane: AumxPane = {
-      id: 'aumx-1',
+    const pane: MuxBasePane = {
+      id: 'muxbase-1',
       slug: 'feature-a',
       prompt: 'test',
       paneId: '%1',
@@ -55,20 +55,20 @@ describe('paneProject helpers', () => {
   });
 
   it('resolves project display names', () => {
-    const namedPane: AumxPane = {
-      id: 'aumx-1',
+    const namedPane: MuxBasePane = {
+      id: 'muxbase-1',
       slug: 'feature-a',
       prompt: 'test',
       paneId: '%1',
       projectName: 'project-z',
       projectRoot: '/workspace/project-z',
     };
-    const derivedNamePane: AumxPane = {
-      id: 'aumx-2',
+    const derivedNamePane: MuxBasePane = {
+      id: 'muxbase-2',
       slug: 'feature-b',
       prompt: 'test',
       paneId: '%2',
-      worktreePath: '/workspace/project-y/.aumx/worktrees/feature-b',
+      worktreePath: '/workspace/project-y/.muxbase/worktrees/feature-b',
     };
 
     expect(getPaneProjectName(namedPane, fallbackRoot, 'fallback')).toBe('project-z');

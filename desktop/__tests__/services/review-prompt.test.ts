@@ -165,15 +165,15 @@ describe('prompt-injection hardening', () => {
 
 describe('buildReviewLaunchMessage', () => {
   it('is a reviewer-friendly brief that makes the strict review skill visible and mandatory', () => {
-    const msg = buildReviewLaunchMessage(SAMPLE, '.aumx/review/REVIEW.md');
+    const msg = buildReviewLaunchMessage(SAMPLE, '.muxbase/review/REVIEW.md');
 
     expect(msg).toContain('You are reviewing a local repo at /Users/example/project. Do NOT edit files. Review only.');
     expect(msg).toContain('Context:');
     expect(msg).toContain('Files to inspect:');
     expect(msg).toContain('Review skill: Strict Review Rubric');
-    expect(msg).toContain('Source: .aumx/review/REVIEW.md');
+    expect(msg).toContain('Source: .muxbase/review/REVIEW.md');
     expect(msg).toContain('Must read this file before reviewing or reporting findings.');
-    expect(msg).toContain('Review skill loaded: .aumx/review/REVIEW.md');
+    expect(msg).toContain('Review skill loaded: .muxbase/review/REVIEW.md');
     expect(msg).toContain('Workflow:');
     expect(msg).toMatch(/evidence gate/i);
     expect(msg).toMatch(/self-refutation/i);
@@ -181,7 +181,7 @@ describe('buildReviewLaunchMessage', () => {
     expect(msg).toContain('Branch: main');
     expect(msg).toContain('src/Header.tsx');
     expect(msg).toContain('git diff main...HEAD');
-    expect(msg).toContain('.aumx/review/REVIEW.md');
+    expect(msg).toContain('.muxbase/review/REVIEW.md');
     expect(msg).toMatch(/read it first/i);
     expect(msg).not.toContain('Questions:');
     // Does NOT contain the heavy rubric body (that lives in the file).

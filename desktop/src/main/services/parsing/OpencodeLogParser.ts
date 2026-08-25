@@ -1,7 +1,7 @@
 import { execFile } from 'child_process';
 import { existsSync } from 'fs';
 import { basename, dirname } from 'path';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { AgentLogParser } from './AgentLogParser.js';
 import type {
   CompactionEvent,
@@ -53,14 +53,14 @@ export class OpencodeLogParser implements AgentLogParser {
   private databaseDirsByRoot = new Map<string, string>();
   private databaseFileNames = new Set<string>();
 
-  getSessionDirectory(_pane: AumxPane, _projectRoot: string): string | null {
+  getSessionDirectory(_pane: MuxBasePane, _projectRoot: string): string | null {
     return null;
   }
 
   // Every session in the project shares one database, so there is no per-pane
   // directory to watch — but a write to that database is the earliest possible
   // signal that this pane's session now exists.
-  getDiscoveryWatchDirectory(_pane: AumxPane, projectRoot: string): string | null {
+  getDiscoveryWatchDirectory(_pane: MuxBasePane, projectRoot: string): string | null {
     return this.databaseDirsByRoot.get(projectRoot) ?? null;
   }
 
@@ -76,7 +76,7 @@ export class OpencodeLogParser implements AgentLogParser {
   }
 
   async findSessionFile(
-    pane: AumxPane,
+    pane: MuxBasePane,
     projectRoot: string,
     _excludePaths?: Set<string>,
   ): Promise<string | null> {
@@ -191,7 +191,7 @@ export class OpencodeLogParser implements AgentLogParser {
 
   private selectSession(
     rows: OpencodeSessionRow[],
-    pane: AumxPane,
+    pane: MuxBasePane,
     projectRoot: string,
     paneCreatedMs: number | null,
   ): OpencodeSessionRow | null {

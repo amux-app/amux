@@ -9,7 +9,7 @@ import { execAsyncWithStatus, execFileAsync } from './execAsync.js';
 import { getCurrentBranchAsync } from './git.js';
 import { shQuote } from './shellEscape.js';
 
-const AUMX_METADATA_PATHS = ['.amux', '.amux-hooks', '.aumx', '.aumx-hooks'];
+const MUXBASE_METADATA_PATHS = ['.muxbase', '.muxbase-hooks'];
 const GIT_COMMIT_TIMEOUT_MS = 5 * 60 * 1000;
 
 export interface MergeValidationResult {
@@ -66,19 +66,19 @@ function parseGitStatusPath(line: string): string {
   return spaceIndex >= 0 ? trimmed.slice(spaceIndex + 1).trim() : trimmed;
 }
 
-function isAumxMetadataPath(filePath: string): boolean {
+function isMuxBaseMetadataPath(filePath: string): boolean {
   const normalized = filePath.replace(/\\/g, '/').replace(/^"|"$/g, '');
-  return AUMX_METADATA_PATHS.some((metadataPath) => (
+  return MUXBASE_METADATA_PATHS.some((metadataPath) => (
     normalized === metadataPath
     || normalized === `${metadataPath}/`
     || normalized.startsWith(`${metadataPath}/`)
   ));
 }
 
-function isAumxMetadataStatusPath(filePath: string): boolean {
+function isMuxBaseMetadataStatusPath(filePath: string): boolean {
   return filePath
     .split(' -> ')
-    .every((statusPath) => isAumxMetadataPath(statusPath));
+    .every((statusPath) => isMuxBaseMetadataPath(statusPath));
 }
 
 /**
@@ -97,7 +97,7 @@ export async function getGitStatus(repoPath: string): Promise<GitStatus> {
       LogService.getInstance().info(`Git status: "${line}" → "${filename}"`, 'mergeValidation');
       return filename;
     })
-    .filter((filename) => !isAumxMetadataStatusPath(filename));
+    .filter((filename) => !isMuxBaseMetadataStatusPath(filename));
 
   LogService.getInstance().info(`Final files for ${repoPath}: ${JSON.stringify(files)}`, 'mergeValidation');
 
@@ -294,7 +294,7 @@ export async function commitChanges(
  */
 export async function stashChanges(repoPath: string): Promise<{ success: boolean; error?: string }> {
   try {
-    await runGit(repoPath, ['stash', 'push', '-u', '-m', 'aumx: auto-stash before merge']);
+    await runGit(repoPath, ['stash', 'push', '-u', '-m', 'muxbase: auto-stash before merge']);
     return { success: true };
   } catch (error) {
     return {

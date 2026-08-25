@@ -1,38 +1,38 @@
 import { existsSync, readFileSync } from 'node:fs';
-import type { AumxConfig, AumxPane } from '../types.js';
+import type { MuxBaseConfig, MuxBasePane } from '../types.js';
 import { atomicWriteJsonSync } from './atomicWrite.js';
-import { parseAumxConfig } from './persistedStateValidation.js';
+import { parseMuxBaseConfig } from './persistedStateValidation.js';
 
-export type AumxConfigMutation = (config: AumxConfig) => void;
+export type MuxBaseConfigMutation = (config: MuxBaseConfig) => void;
 
-export function mutateAumxConfig(configPath: string, mutation: AumxConfigMutation): void {
-  if (!existsSync(configPath)) throw new Error(`Aumx config not found: ${configPath}`);
+export function mutateMuxBaseConfig(configPath: string, mutation: MuxBaseConfigMutation): void {
+  if (!existsSync(configPath)) throw new Error(`MuxBase config not found: ${configPath}`);
   const raw = readFileSync(configPath, 'utf8');
-  const config = parseAumxConfig(JSON.parse(raw));
+  const config = parseMuxBaseConfig(JSON.parse(raw));
   mutation(config);
   config.lastUpdated = new Date().toISOString();
   atomicWriteJsonSync(configPath, config);
 }
 
-export function upsertAumxPane(configPath: string, pane: AumxPane): void {
-  mutateAumxConfig(configPath, (config) => {
+export function upsertMuxBasePane(configPath: string, pane: MuxBasePane): void {
+  mutateMuxBaseConfig(configPath, (config) => {
     const index = config.panes.findIndex((candidate) => candidate.id === pane.id);
     if (index === -1) config.panes.push(pane);
     else config.panes[index] = pane;
   });
 }
 
-export function removeAumxPane(configPath: string, paneId: string): void {
-  mutateAumxConfig(configPath, (config) => {
+export function removeMuxBasePane(configPath: string, paneId: string): void {
+  mutateMuxBaseConfig(configPath, (config) => {
     config.panes = config.panes.filter((pane) => pane.id !== paneId);
   });
 }
 
-export function updateAumxControlFields(
+export function updateMuxBaseControlFields(
   configPath: string,
-  fields: Partial<Pick<AumxConfig, 'controlPaneId' | 'controlPaneSize'>>,
+  fields: Partial<Pick<MuxBaseConfig, 'controlPaneId' | 'controlPaneSize'>>,
 ): void {
-  mutateAumxConfig(configPath, (config) => {
+  mutateMuxBaseConfig(configPath, (config) => {
     if (Object.hasOwn(fields, 'controlPaneId')) {
       if (fields.controlPaneId === undefined) delete config.controlPaneId;
       else config.controlPaneId = fields.controlPaneId;
@@ -44,8 +44,8 @@ export function updateAumxControlFields(
   });
 }
 
-export function updateAumxWelcomePane(configPath: string, welcomePaneId: string | undefined): void {
-  mutateAumxConfig(configPath, (config) => {
+export function updateMuxBaseWelcomePane(configPath: string, welcomePaneId: string | undefined): void {
+  mutateMuxBaseConfig(configPath, (config) => {
     if (welcomePaneId === undefined) delete config.welcomePaneId;
     else config.welcomePaneId = welcomePaneId;
   });

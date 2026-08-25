@@ -3,16 +3,16 @@ import * as os from 'os';
 import path from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import type { TmuxService } from '../../src/services/TmuxService.js';
-import type { AumxSettings } from '../../src/types.js';
+import type { MuxBaseSettings } from '../../src/types.js';
 import { launchAgentInPane } from '../../src/utils/paneAgentLaunch.js';
 import { resolvePaneTerminalProfile } from '../../src/utils/paneTerminalProfile.js';
 
 vi.mock('../../src/utils/claudeSessionRegistry.js', () => ({
-  ensureClaudeSessionHookSettings: () => '/tmp/aumx-hook.settings.json',
-  ensureClaudeSessionShellWrapper: () => '/tmp/aumx-claude-bin',
+  ensureClaudeSessionHookSettings: () => '/tmp/muxbase-hook.settings.json',
+  ensureClaudeSessionShellWrapper: () => '/tmp/muxbase-claude-bin',
 }));
 
-const ensureCodexActivityHookSettingsMock = vi.hoisted(() => vi.fn(() => '/tmp/aumx-codex-hooks.json'));
+const ensureCodexActivityHookSettingsMock = vi.hoisted(() => vi.fn(() => '/tmp/muxbase-codex-hooks.json'));
 vi.mock('../../src/utils/codexActivityRegistry.js', () => ({
   ensureCodexActivityHookSettings: ensureCodexActivityHookSettingsMock,
 }));
@@ -51,18 +51,18 @@ function launch(
 describe('paneAgentLaunch', () => {
   it('installs the Codex lifecycle adapter only after explicit user consent', async () => {
     const tmuxService = createTmuxService();
-    const settings = { permissionMode: 'auto' } satisfies Pick<AumxSettings, 'permissionMode'>;
+    const settings = { permissionMode: 'auto' } satisfies Pick<MuxBaseSettings, 'permissionMode'>;
 
     await launch({
       agent: 'codex',
       agentPrompt: '',
-      aumxPaneId: 'aumx-codex',
-      activityJournal: '/tmp/aumx-codex.ndjson',
+      muxbasePaneId: 'muxbase-codex',
+      activityJournal: '/tmp/muxbase-codex.ndjson',
       activityIncarnationId: 'incarnation-1',
-      cwd: '/tmp/aumx-worktree',
+      cwd: '/tmp/muxbase-worktree',
       enableActivityAdapters: true,
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'task',
@@ -82,16 +82,16 @@ describe('paneAgentLaunch', () => {
     const tmuxService = createTmuxService();
     const settings = {
       permissionMode: 'auto',
-    } satisfies Pick<AumxSettings, 'permissionMode'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode'>;
 
     // Act
     await launch({
       agent,
       agentPrompt: '',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'task',
@@ -103,28 +103,28 @@ describe('paneAgentLaunch', () => {
     expect(respawnCommand).toMatch(/^sh -c /);
     expect(tmuxService.respawnPane).toHaveBeenCalledWith({
       command: expect.stringContaining(commandName),
-      cwd: '/tmp/aumx-worktree',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
     });
     expect(tmuxService.respawnPane).toHaveBeenCalledWith({
       command: expect.stringContaining('exec env -u NO_COLOR'),
-      cwd: '/tmp/aumx-worktree',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
     });
     expect(tmuxService.respawnPane).toHaveBeenCalledWith({
       command: expect.stringContaining('exec "${SHELL:-/bin/sh}"'),
-      cwd: '/tmp/aumx-worktree',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
     });
     if (agent === 'claude') {
-      expect(respawnCommand).toContain('export AUMX_PANE_ID=');
-      expect(respawnCommand).toContain('aumx-test');
-      expect(respawnCommand).toContain('AUMX_CLAUDE_ORIGINAL_PATH');
+      expect(respawnCommand).toContain('export MUXBASE_PANE_ID=');
+      expect(respawnCommand).toContain('muxbase-test');
+      expect(respawnCommand).toContain('MUXBASE_CLAUDE_ORIGINAL_PATH');
       expect(respawnCommand).toContain('export PATH=');
-      expect(respawnCommand).toContain('/tmp/aumx-claude-bin');
+      expect(respawnCommand).toContain('/tmp/muxbase-claude-bin');
       expect(respawnCommand).toContain('--settings');
     } else {
-      expect(respawnCommand).not.toContain('AUMX_PANE_ID');
+      expect(respawnCommand).not.toContain('MUXBASE_PANE_ID');
     }
     if (agent === 'codex') expect(respawnCommand).toContain('codex --no-alt-screen');
     if (agent === 'opencode') expect(respawnCommand).not.toContain('opencode --mini');
@@ -135,16 +135,16 @@ describe('paneAgentLaunch', () => {
   it('runs read-only codex review through the sandbox flags with the rubric prompt', async () => {
     // Arrange
     const tmuxService = createTmuxService();
-    const settings = { permissionMode: '' } satisfies Pick<AumxSettings, 'permissionMode'>;
+    const settings = { permissionMode: '' } satisfies Pick<MuxBaseSettings, 'permissionMode'>;
 
     // Act
     await launch({
       agent: 'codex',
       agentPrompt: 'review the changes',
-      aumxPaneId: 'aumx-review',
-      cwd: '/tmp/aumx-review-worktree',
+      muxbasePaneId: 'muxbase-review',
+      cwd: '/tmp/muxbase-review-worktree',
       paneId: '%2',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       readOnly: true,
       settings,
@@ -155,23 +155,23 @@ describe('paneAgentLaunch', () => {
     // Assert: read-only Codex (not the native `codex review` subcommand) WITH the prompt
     const respawnCommand = tmuxService.respawnPane.mock.calls[0]?.[0]?.command ?? '';
     expect(respawnCommand).toContain('--sandbox read-only --ask-for-approval never');
-    expect(respawnCommand).toContain('AUMX_PROMPT_CONTENT');
+    expect(respawnCommand).toContain('MUXBASE_PROMPT_CONTENT');
     expect(respawnCommand).not.toContain('codex review');
   });
 
   it('launches opencode reviews through the read-only plan agent', async () => {
     // Arrange
     const tmuxService = createTmuxService();
-    const settings = { permissionMode: '' } satisfies Pick<AumxSettings, 'permissionMode'>;
+    const settings = { permissionMode: '' } satisfies Pick<MuxBaseSettings, 'permissionMode'>;
 
     // Act
     await launch({
       agent: 'opencode',
       agentPrompt: 'review the changes',
-      aumxPaneId: 'aumx-review',
-      cwd: '/tmp/aumx-review-worktree',
+      muxbasePaneId: 'muxbase-review',
+      cwd: '/tmp/muxbase-review-worktree',
       paneId: '%2',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       readOnly: true,
       settings,
@@ -187,16 +187,16 @@ describe('paneAgentLaunch', () => {
   it('does not inject an mcp filesystem server into claude review panes', async () => {
     // Arrange
     const tmuxService = createTmuxService();
-    const settings = { permissionMode: '' } satisfies Pick<AumxSettings, 'permissionMode'>;
-    const worktreeDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'aumx-review-cwd-'));
-    const projectRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'aumx-review-project-'));
+    const settings = { permissionMode: '' } satisfies Pick<MuxBaseSettings, 'permissionMode'>;
+    const worktreeDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'muxbase-review-cwd-'));
+    const projectRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'muxbase-review-project-'));
 
     try {
       // Act
       await launch({
         agent: 'claude',
         agentPrompt: 'review the changes',
-        aumxPaneId: 'aumx-review',
+        muxbasePaneId: 'muxbase-review',
         cwd: worktreeDir,
         paneId: '%3',
         projectRoot,
@@ -213,8 +213,8 @@ describe('paneAgentLaunch', () => {
       const respawnCommand = tmuxService.respawnPane.mock.calls[0]?.[0]?.command ?? '';
       expect(respawnCommand).toContain('--permission-mode plan');
       expect(respawnCommand).not.toContain('--mcp-config');
-      expect(fs.existsSync(path.join(worktreeDir, '.aumx', 'mcp-config.json'))).toBe(false);
-      expect(fs.existsSync(path.join(projectRoot, '.aumx', 'mcp-config.json'))).toBe(false);
+      expect(fs.existsSync(path.join(worktreeDir, '.muxbase', 'mcp-config.json'))).toBe(false);
+      expect(fs.existsSync(path.join(projectRoot, '.muxbase', 'mcp-config.json'))).toBe(false);
     } finally {
       await fs.promises.rm(worktreeDir, { recursive: true, force: true });
       await fs.promises.rm(projectRoot, { recursive: true, force: true });
@@ -226,16 +226,16 @@ describe('paneAgentLaunch', () => {
     const tmuxService = createTmuxService();
     const settings = {
       permissionMode: 'auto',
-    } satisfies Pick<AumxSettings, 'permissionMode'>;
-    const worktreeDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'aumx-impl-cwd-'));
-    const projectRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'aumx-impl-project-'));
+    } satisfies Pick<MuxBaseSettings, 'permissionMode'>;
+    const worktreeDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'muxbase-impl-cwd-'));
+    const projectRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'muxbase-impl-project-'));
 
     try {
       // Act
       await launch({
         agent: 'claude',
         agentPrompt: '',
-        aumxPaneId: 'aumx-impl',
+        muxbasePaneId: 'muxbase-impl',
         cwd: worktreeDir,
         paneId: '%4',
         projectRoot,
@@ -248,8 +248,8 @@ describe('paneAgentLaunch', () => {
       // Assert: no --mcp-config flag, no mcp-config.json written under either root
       const respawnCommand = tmuxService.respawnPane.mock.calls[0]?.[0]?.command ?? '';
       expect(respawnCommand).not.toContain('--mcp-config');
-      expect(fs.existsSync(path.join(projectRoot, '.aumx', 'mcp-config.json'))).toBe(false);
-      expect(fs.existsSync(path.join(worktreeDir, '.aumx', 'mcp-config.json'))).toBe(false);
+      expect(fs.existsSync(path.join(projectRoot, '.muxbase', 'mcp-config.json'))).toBe(false);
+      expect(fs.existsSync(path.join(worktreeDir, '.muxbase', 'mcp-config.json'))).toBe(false);
     } finally {
       await fs.promises.rm(worktreeDir, { recursive: true, force: true });
       await fs.promises.rm(projectRoot, { recursive: true, force: true });
@@ -261,16 +261,16 @@ describe('paneAgentLaunch', () => {
     const tmuxService = createTmuxService();
     const settings = {
       permissionMode: 'auto',
-    } satisfies Pick<AumxSettings, 'permissionMode'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode'>;
 
     // Act
     await launch({
       agent: 'opencode',
       agentPrompt: 'fix the failing tests',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'fix-tests',
@@ -279,8 +279,8 @@ describe('paneAgentLaunch', () => {
 
     // Assert
     expect(tmuxService.respawnPane).toHaveBeenCalledWith({
-      command: expect.stringContaining('opencode run --interactive -- "$AUMX_PROMPT_CONTENT"'),
-      cwd: '/tmp/aumx-worktree',
+      command: expect.stringContaining('opencode run --interactive -- "$MUXBASE_PROMPT_CONTENT"'),
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
     });
   });
@@ -292,16 +292,16 @@ describe('paneAgentLaunch', () => {
       permissionMode: 'auto',
       claudeModel: 'opus',
       claudeEffort: 'high',
-    } satisfies Pick<AumxSettings, 'permissionMode' | 'claudeModel' | 'claudeEffort'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode' | 'claudeModel' | 'claudeEffort'>;
 
     // Act
     await launch({
       agent: 'claude',
       agentPrompt: '',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'task',
@@ -323,16 +323,16 @@ describe('paneAgentLaunch', () => {
       permissionMode: 'auto',
       claudeModel: 'sonnet',
       claudeEffort: 'max',
-    } satisfies Pick<AumxSettings, 'permissionMode' | 'claudeModel' | 'claudeEffort'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode' | 'claudeModel' | 'claudeEffort'>;
 
     // Act
     await launch({
       agent: 'claude',
       agentPrompt: 'do the thing',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'with-prompt',
@@ -347,23 +347,23 @@ describe('paneAgentLaunch', () => {
     expect(respawnCommand).toContain('max');
   });
 
-  it('translates claudeEffort=ultracode to --effort xhigh and exports AUMX_ULTRACODE=1', async () => {
+  it('translates claudeEffort=ultracode to --effort xhigh and exports MUXBASE_ULTRACODE=1', async () => {
     // Arrange
     const tmuxService = createTmuxService();
     const settings = {
       permissionMode: 'auto',
       claudeModel: 'opus',
       claudeEffort: 'ultracode',
-    } satisfies Pick<AumxSettings, 'permissionMode' | 'claudeModel' | 'claudeEffort'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode' | 'claudeModel' | 'claudeEffort'>;
 
     // Act
     await launch({
       agent: 'claude',
       agentPrompt: '',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'task',
@@ -375,26 +375,26 @@ describe('paneAgentLaunch', () => {
     expect(respawnCommand).toContain('--effort');
     expect(respawnCommand).toContain('xhigh');
     expect(respawnCommand).not.toContain("'ultracode'");
-    expect(respawnCommand).toContain('AUMX_ULTRACODE=');
+    expect(respawnCommand).toContain('MUXBASE_ULTRACODE=');
   });
 
-  it('does not export AUMX_ULTRACODE when effort is anything other than ultracode', async () => {
+  it('does not export MUXBASE_ULTRACODE when effort is anything other than ultracode', async () => {
     // Arrange
     const tmuxService = createTmuxService();
     const settings = {
       permissionMode: 'auto',
       claudeModel: 'opus',
       claudeEffort: 'high',
-    } satisfies Pick<AumxSettings, 'permissionMode' | 'claudeModel' | 'claudeEffort'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode' | 'claudeModel' | 'claudeEffort'>;
 
     // Act
     await launch({
       agent: 'claude',
       agentPrompt: '',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'task',
@@ -403,7 +403,7 @@ describe('paneAgentLaunch', () => {
 
     // Assert
     const respawnCommand = tmuxService.respawnPane.mock.calls[0]?.[0]?.command ?? '';
-    expect(respawnCommand).not.toContain('AUMX_ULTRACODE');
+    expect(respawnCommand).not.toContain('MUXBASE_ULTRACODE');
   });
 
   it('forces classic in both directions when the resolved test profile is classic', async () => {
@@ -413,16 +413,16 @@ describe('paneAgentLaunch', () => {
       permissionMode: 'auto',
       claudeModel: 'opus',
       claudeFullscreenRendering: false,
-    } satisfies Pick<AumxSettings, 'permissionMode' | 'claudeModel' | 'claudeFullscreenRendering'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode' | 'claudeModel' | 'claudeFullscreenRendering'>;
 
     // Act
     await launch({
       agent: 'claude',
       agentPrompt: '',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'task',
@@ -443,16 +443,16 @@ describe('paneAgentLaunch', () => {
       permissionMode: 'auto',
       claudeModel: 'opus',
       claudeFullscreenRendering: true,
-    } satisfies Pick<AumxSettings, 'permissionMode' | 'claudeModel' | 'claudeFullscreenRendering'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode' | 'claudeModel' | 'claudeFullscreenRendering'>;
 
     // Act
     await launch({
       agent: 'claude',
       agentPrompt: '',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'task',
@@ -474,8 +474,8 @@ describe('paneAgentLaunch', () => {
     await launch({
       agent: 'claude',
       agentPrompt: 'inspect the project',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
       projectRoot: '/dev/null',
       promptMode: 'argument',
@@ -495,16 +495,16 @@ describe('paneAgentLaunch', () => {
     const settings = {
       permissionMode: 'auto',
       claudeModel: 'opus',
-    } satisfies Pick<AumxSettings, 'permissionMode' | 'claudeModel'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode' | 'claudeModel'>;
 
     // Act
     await launch({
       agent: 'claude',
       agentPrompt: '',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'task',
@@ -517,16 +517,16 @@ describe('paneAgentLaunch', () => {
   });
 
   it.each([
-    ['prompt-file', '/tmp/aumx-project', 'argument'],
+    ['prompt-file', '/tmp/muxbase-project', 'argument'],
     ['inline-fallback', '/dev/null', 'argument'],
-    ['interactive-input', '/tmp/aumx-project', 'input'],
+    ['interactive-input', '/tmp/muxbase-project', 'input'],
   ] as const)('unsets TMUX for Claude in the %s launch path', async (_path, projectRoot, promptMode) => {
     const tmuxService = createTmuxService();
 
     await launch({
       agent: 'claude',
       agentPrompt: 'keep truecolor in every path',
-      aumxPaneId: 'aumx-test',
+      muxbasePaneId: 'muxbase-test',
       cwd: '/tmp',
       paneId: '%1',
       projectRoot,
@@ -547,7 +547,7 @@ describe('paneAgentLaunch', () => {
       await launch({
         agent,
         agentPrompt: 'preserve native tmux behavior',
-        aumxPaneId: 'aumx-test',
+        muxbasePaneId: 'muxbase-test',
         cwd: '/tmp',
         paneId: '%1',
         projectRoot: '/tmp',
@@ -572,16 +572,16 @@ describe('paneAgentLaunch', () => {
     const settings = {
       permissionMode: 'auto',
       opencodeScrollbackMode: true,
-    } satisfies Pick<AumxSettings, 'permissionMode' | 'opencodeScrollbackMode'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode' | 'opencodeScrollbackMode'>;
 
     // Act
     await launch({
       agent: 'opencode',
       agentPrompt: 'inspect the project',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'input',
       settings,
       slug: 'task',
@@ -600,16 +600,16 @@ describe('paneAgentLaunch', () => {
       permissionMode: 'auto',
       claudeModel: 'opus',
       claudeFullscreenRendering: false,
-    } satisfies Pick<AumxSettings, 'permissionMode' | 'claudeModel' | 'claudeFullscreenRendering'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode' | 'claudeModel' | 'claudeFullscreenRendering'>;
 
     // Act
     await launch({
       agent: 'claude',
       agentPrompt: '',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'task',
@@ -630,16 +630,16 @@ describe('paneAgentLaunch', () => {
       permissionMode: 'auto',
       claudeModel: '',
       claudeEffort: '',
-    } satisfies Pick<AumxSettings, 'permissionMode' | 'claudeModel' | 'claudeEffort'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode' | 'claudeModel' | 'claudeEffort'>;
 
     // Act
     await launch({
       agent: 'claude',
       agentPrompt: '',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'task',
@@ -659,16 +659,16 @@ describe('paneAgentLaunch', () => {
       permissionMode: 'auto',
       codexModel: 'gpt-5-codex',
       codexEffort: 'high',
-    } satisfies Pick<AumxSettings, 'permissionMode' | 'codexModel' | 'codexEffort'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode' | 'codexModel' | 'codexEffort'>;
 
     // Act
     await launch({
       agent: 'codex',
       agentPrompt: '',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'task',
@@ -692,16 +692,16 @@ describe('paneAgentLaunch', () => {
       permissionMode: 'auto',
       codexModel: '',
       codexEffort: '',
-    } satisfies Pick<AumxSettings, 'permissionMode' | 'codexModel' | 'codexEffort'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode' | 'codexModel' | 'codexEffort'>;
 
     // Act
     await launch({
       agent: 'codex',
       agentPrompt: '',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'task',
@@ -721,16 +721,16 @@ describe('paneAgentLaunch', () => {
       permissionMode: 'auto',
       opencodeModel: 'openai/gpt-5.5-fast',
       opencodeVariant: 'high',
-    } satisfies Pick<AumxSettings, 'permissionMode' | 'opencodeModel' | 'opencodeVariant'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode' | 'opencodeModel' | 'opencodeVariant'>;
 
     // Act
     await launch({
       agent: 'opencode',
       agentPrompt: '',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'task',
@@ -742,7 +742,7 @@ describe('paneAgentLaunch', () => {
     expect(respawnCommand).toContain('--model');
     expect(respawnCommand).toContain('openai/gpt-5.5-fast');
     expect(respawnCommand).not.toContain('--variant');
-    // aumx must NOT pass codex/claude effort spellings to opencode
+    // muxbase must NOT pass codex/claude effort spellings to opencode
     expect(respawnCommand).not.toContain('--effort');
     expect(respawnCommand).not.toContain('model_reasoning_effort');
   });
@@ -753,15 +753,15 @@ describe('paneAgentLaunch', () => {
       permissionMode: 'auto',
       opencodeModel: 'openai/gpt-5.5-fast',
       opencodeVariant: 'high',
-    } satisfies Pick<AumxSettings, 'permissionMode' | 'opencodeModel' | 'opencodeVariant'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode' | 'opencodeModel' | 'opencodeVariant'>;
 
     await launch({
       agent: 'opencode',
       agentPrompt: 'inspect the project',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'task',
@@ -783,16 +783,16 @@ describe('paneAgentLaunch', () => {
       permissionMode: 'auto',
       opencodeModel: '',
       opencodeVariant: '',
-    } satisfies Pick<AumxSettings, 'permissionMode' | 'opencodeModel' | 'opencodeVariant'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode' | 'opencodeModel' | 'opencodeVariant'>;
 
     // Act
     await launch({
       agent: 'opencode',
       agentPrompt: '',
-      aumxPaneId: 'aumx-test',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-test',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%1',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'task',
@@ -811,15 +811,15 @@ describe('paneAgentLaunch', () => {
       permissionMode: 'auto',
       piModel: 'openai/gpt-5.5',
       piThinking: 'high',
-    } satisfies Pick<AumxSettings, 'permissionMode' | 'piModel' | 'piThinking'>;
+    } satisfies Pick<MuxBaseSettings, 'permissionMode' | 'piModel' | 'piThinking'>;
 
     await launch({
       agent: 'pi',
       agentPrompt: 'inspect the project safely',
-      aumxPaneId: 'aumx-pi',
-      cwd: '/tmp/aumx-worktree',
+      muxbasePaneId: 'muxbase-pi',
+      cwd: '/tmp/muxbase-worktree',
       paneId: '%4',
-      projectRoot: '/tmp/aumx-project',
+      projectRoot: '/tmp/muxbase-project',
       promptMode: 'argument',
       settings,
       slug: 'pi-task',
@@ -832,7 +832,7 @@ describe('paneAgentLaunch', () => {
     expect(command).toContain('openai/gpt-5.5');
     expect(command).toContain('--thinking');
     expect(command).toContain('high');
-    expect(command).toContain('AUMX_PROMPT_CONTENT');
+    expect(command).toContain('MUXBASE_PROMPT_CONTENT');
     expect(command).not.toContain('--permission-mode');
     expect(command).not.toContain('--sandbox');
     expect(command).not.toContain('--agent plan');
@@ -842,13 +842,13 @@ describe('paneAgentLaunch', () => {
     'passes syntax-sensitive Pi prompt %s as prompt content instead of CLI syntax',
     async (agentPrompt) => {
       const tmuxService = createTmuxService();
-      const projectRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'aumx-pi-prompt-'));
+      const projectRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-prompt-'));
 
       try {
         await launch({
           agent: 'pi',
           agentPrompt,
-          aumxPaneId: 'aumx-pi',
+          muxbasePaneId: 'muxbase-pi',
           cwd: projectRoot,
           paneId: '%4',
           projectRoot,
@@ -859,12 +859,12 @@ describe('paneAgentLaunch', () => {
         });
 
         const command = tmuxService.respawnPane.mock.calls[0]?.[0]?.command ?? '';
-        const promptDirectory = path.join(projectRoot, '.amux', 'prompts');
+        const promptDirectory = path.join(projectRoot, '.muxbase', 'prompts');
         const [promptFile] = await fs.promises.readdir(promptDirectory);
         expect(await fs.promises.readFile(path.join(promptDirectory, promptFile), 'utf8'))
           .toBe(` ${agentPrompt}`);
-        expect(command).toContain('rm -f "$AUMX_PROMPT_FILE"');
-        expect(command).toContain('"$AUMX_PROMPT_CONTENT"');
+        expect(command).toContain('rm -f "$MUXBASE_PROMPT_FILE"');
+        expect(command).toContain('"$MUXBASE_PROMPT_CONTENT"');
         expect(command).not.toContain(agentPrompt);
       } finally {
         await fs.promises.rm(projectRoot, { recursive: true, force: true });

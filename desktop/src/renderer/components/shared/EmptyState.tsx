@@ -56,7 +56,7 @@ export function EmptyState({ title, description, action, onAction, secondaryActi
               fontVariantNumeric: 'tabular-nums',
             }}
           >
-            Amux
+            MuxBase
           </span>
           <p
             className="text-[13px] font-normal tracking-[0.18em] uppercase"

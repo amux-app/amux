@@ -1,4 +1,4 @@
-import type { AumxPane } from '../../src/types.js';
+import type { MuxBasePane } from '../../src/types.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('legacy Claude renderer settings migration', () => {
@@ -12,13 +12,15 @@ describe('legacy Claude renderer settings migration', () => {
       id: 'existing-classic-pane',
       claudeRenderer: 'classic',
       terminalFixedCols: 100,
-    } as Pick<AumxPane, 'id' | 'claudeRenderer' | 'terminalFixedCols'>;
+    } as Pick<MuxBasePane, 'id' | 'claudeRenderer' | 'terminalFixedCols'>;
     const writeFileSync = vi.fn();
     vi.doMock('fs', async (importOriginal) => {
       const actual = await importOriginal<typeof import('fs')>();
       return {
         ...actual,
-        existsSync: vi.fn((filePath: string) => filePath.endsWith('/.aumx.global.json')),
+        existsSync: vi.fn((filePath: string) => (
+          filePath.endsWith('/.muxbase/settings.json') && !filePath.includes('/test-project/')
+        )),
         readFileSync: vi.fn(() => JSON.stringify({ claudeFullscreenRendering: false })),
         writeFileSync,
         mkdirSync: vi.fn(),

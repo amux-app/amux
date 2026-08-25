@@ -1,7 +1,7 @@
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type {
   AppInfoResult,
   SupportBundlePreview,
@@ -15,7 +15,7 @@ const MAX_ROTATED_LOG_FILES = 3;
 const MAX_LOG_FALLBACK_FILES = 8;
 const MAX_TRANSCRIPT_FILES = 8;
 const MAX_TRANSCRIPT_BYTES = 5 * 1024 * 1024;
-const SUPPORT_LOG_FILE_PATTERN = /^aumx-desktop-\d{4}-\d{2}-\d{2}\.log(?:\.\d+)?$/;
+const SUPPORT_LOG_FILE_PATTERN = /^muxbase-desktop-\d{4}-\d{2}-\d{2}\.log(?:\.\d+)?$/;
 const METADATA_ENTRY_NAME = 'metadata/session.json';
 const MANIFEST_ENTRY_NAME = 'redaction-manifest.json';
 const README_ENTRY_NAME = 'README.txt';
@@ -29,7 +29,7 @@ interface SupportBundleOptions {
   logFile?: string | null;
   now?: Date;
   outputDir: string;
-  panes: AumxPane[];
+  panes: MuxBasePane[];
   projectName: string;
   projectRoot: string;
   sessionName: string;
@@ -52,11 +52,11 @@ interface SourceFile {
 }
 
 /** Matches the file name produced below; callers use it to authorize a bundle path. */
-export const SUPPORT_BUNDLE_FILE_PATTERN = /^aumx-support-\d{4}-\d{2}-\d{2}-\d{6}\.zip$/;
+export const SUPPORT_BUNDLE_FILE_PATTERN = /^muxbase-support-\d{4}-\d{2}-\d{2}-\d{6}\.zip$/;
 
 export async function createSupportBundle(options: SupportBundleOptions): Promise<SupportBundleResult> {
   const now = options.now ?? new Date();
-  const outputPath = join(options.outputDir, `aumx-support-${formatTimestampForFile(now)}.zip`);
+  const outputPath = join(options.outputDir, `muxbase-support-${formatTimestampForFile(now)}.zip`);
   mkdirSync(dirname(outputPath), { recursive: true });
 
   const tokenize = buildTokenizer(options);
@@ -129,7 +129,7 @@ function collectSourceFiles(options: SupportBundleOptions): SourceFile[] {
 
 function buildTokenizer(options: SupportBundleOptions): Tokenizer {
   const worktrees = options.panes
-    .filter((pane): pane is AumxPane & { worktreePath: string } => Boolean(pane.worktreePath))
+    .filter((pane): pane is MuxBasePane & { worktreePath: string } => Boolean(pane.worktreePath))
     .map((pane) => ({ path: pane.worktreePath, slug: pane.slug }));
   return buildPathTokenizer({ homeDir: homedir(), projectRoot: options.projectRoot, worktrees });
 }
@@ -223,7 +223,7 @@ function collectLogFiles(logDir: string | null | undefined, logFile: string | nu
     }));
 }
 
-function collectTranscriptFiles(logDir: string | null | undefined, panes: AumxPane[]): SourceFile[] {
+function collectTranscriptFiles(logDir: string | null | undefined, panes: MuxBasePane[]): SourceFile[] {
   const paths = new Set<string>();
   for (const pane of panes) {
     if (pane.terminalTranscriptPath) paths.add(pane.terminalTranscriptPath);

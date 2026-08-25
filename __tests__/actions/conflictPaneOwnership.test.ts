@@ -77,7 +77,7 @@ describe('managed conflict pane ownership', () => {
       panes: [],
       projectName: 'main',
       savePanes,
-      sessionName: 'aumx-main',
+      sessionName: 'muxbase-main',
     };
     registerManagedConflictPane(transaction, { context, creation, stopMonitoring });
 

@@ -8,8 +8,8 @@ import { promisify } from 'node:util';
 const execFileAsync = promisify(execFile);
 const tmuxBin = getFlagValue('--tmux-bin') ?? 'tmux';
 const expectedVersion = getFlagValue('--expected-version');
-const socketPath = `/tmp/aumx-tmux-smoke-${process.pid}-${randomUUID().slice(0, 8)}.sock`;
-const target = 'aumx-compat:0.0';
+const socketPath = `/tmp/muxbase-tmux-smoke-${process.pid}-${randomUUID().slice(0, 8)}.sock`;
+const target = 'muxbase-compat:0.0';
 
 try {
   const version = await run(['-V']);
@@ -17,7 +17,7 @@ try {
     throw new Error(`Expected tmux ${expectedVersion}, got ${version || 'no version output'}`);
   }
 
-  await run(['-f', '/dev/null', 'new-session', '-d', '-s', 'aumx-compat', '-x', '80', '-y', '24']);
+  await run(['-f', '/dev/null', 'new-session', '-d', '-s', 'muxbase-compat', '-x', '80', '-y', '24']);
   expectEqual(await run(['display-message', '-p', '-t', target, '#{alternate_on}']), '0', 'alternate-screen probe');
   expectEqual(
     await run([

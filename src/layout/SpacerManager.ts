@@ -18,7 +18,7 @@ function resolveSpacerScriptPath(): string {
 }
 
 // Spacer pane identifier
-const SPACER_PANE_TITLE = 'aumx-spacer';
+const SPACER_PANE_TITLE = 'muxbase-spacer';
 const MIN_SPACER_WIDTH = 20; // Minimum width for spacer pane (tmux may reject layouts with tiny panes)
 
 /**

@@ -116,11 +116,11 @@ describe('WorkspacePicker new project flow', () => {
     // Arrange — this is the packaged-app startup state from the incident log:
     // projects are discoverable, but no project session is active.
     const project = {
-      configPath: '/Users/me/projects/example-rag/.aumx/aumx.config.json',
+      configPath: '/Users/me/projects/example-rag/.muxbase/muxbase.config.json',
       name: 'example-rag',
       paneCount: 0,
       root: '/Users/me/projects/example-rag',
-      sessionName: 'aumx-example-rag',
+      sessionName: 'muxbase-example-rag',
     };
     let finishSwitch: () => void = () => {};
     vi.mocked(workspaceApi.listHistory).mockResolvedValue([{
@@ -169,11 +169,11 @@ describe('WorkspacePicker new project flow', () => {
   it('uses a browsed folder as the workspace for the first pane', async () => {
     // Arrange
     const project = {
-      configPath: '/Users/me/projects/from-folder/.aumx/aumx.config.json',
+      configPath: '/Users/me/projects/from-folder/.muxbase/muxbase.config.json',
       name: 'from-folder',
       paneCount: 0,
       root: '/Users/me/projects/from-folder',
-      sessionName: 'aumx-from-folder',
+      sessionName: 'muxbase-from-folder',
     };
     vi.mocked(workspaceApi.listHistory).mockResolvedValue([]);
     vi.mocked(workspaceApi.openFolderDialog).mockResolvedValue({
@@ -245,11 +245,11 @@ describe('WorkspacePicker new project flow', () => {
   it('keeps the dialog open when pane creation fails', async () => {
     // Arrange
     const project = {
-      configPath: '/Users/me/projects/app/.aumx/aumx.config.json',
+      configPath: '/Users/me/projects/app/.muxbase/muxbase.config.json',
       name: 'app',
       paneCount: 0,
       root: '/Users/me/projects/app',
-      sessionName: 'aumx-app',
+      sessionName: 'muxbase-app',
     };
     useProjectStore.setState({
       activeProject: project,
@@ -280,11 +280,11 @@ describe('WorkspacePicker new project flow', () => {
   it('keeps the dialog open with one actionable error when workspace activation fails', async () => {
     // Arrange
     const project = {
-      configPath: '/Users/me/projects/unavailable/.aumx/aumx.config.json',
+      configPath: '/Users/me/projects/unavailable/.muxbase/muxbase.config.json',
       name: 'unavailable',
       paneCount: 0,
       root: '/Users/me/projects/unavailable',
-      sessionName: 'aumx-unavailable',
+      sessionName: 'muxbase-unavailable',
     };
     vi.mocked(workspaceApi.listHistory).mockResolvedValue([{
       lastOpened: 200,
@@ -320,11 +320,11 @@ describe('WorkspacePicker new project flow', () => {
 
   it('stops the workspace-picker flow and reports a rejected project switch', async () => {
     const project = {
-      configPath: '/Users/me/projects/current/.amux/aumx.config.json',
+      configPath: '/Users/me/projects/current/.muxbase/muxbase.config.json',
       name: 'current',
       paneCount: 0,
       root: '/Users/me/projects/current',
-      sessionName: 'aumx-current',
+      sessionName: 'muxbase-current',
     };
     useWorkspacePickerStore.setState({
       activeProjects: [project],
@@ -365,11 +365,11 @@ describe('WorkspacePicker new project flow', () => {
     vi.mocked(workspaceApi.createSession).mockResolvedValue({
       success: true,
       project: {
-        configPath: '/Users/me/projects/example-rag/.aumx/aumx.config.json',
+        configPath: '/Users/me/projects/example-rag/.muxbase/muxbase.config.json',
         name: 'example-rag',
         paneCount: 0,
         root: '/Users/me/projects/example-rag',
-        sessionName: 'aumx-example-rag',
+        sessionName: 'muxbase-example-rag',
       },
     });
     vi.mocked(workspaceApi.touchHistory).mockResolvedValue([]);
@@ -378,11 +378,11 @@ describe('WorkspacePicker new project flow', () => {
         finishSwitch = () => resolve({
           success: true,
           project: {
-            configPath: '/Users/me/projects/example-rag/.aumx/aumx.config.json',
+            configPath: '/Users/me/projects/example-rag/.muxbase/muxbase.config.json',
             name: 'example-rag',
             paneCount: 0,
             root: '/Users/me/projects/example-rag',
-            sessionName: 'aumx-example-rag',
+            sessionName: 'muxbase-example-rag',
           },
         });
       }),
@@ -416,22 +416,22 @@ describe('WorkspacePicker new project flow', () => {
     vi.mocked(workspaceApi.createSession).mockResolvedValue({
       success: true,
       project: {
-        configPath: '/Users/me/projects/existing-app/.aumx/aumx.config.json',
+        configPath: '/Users/me/projects/existing-app/.muxbase/muxbase.config.json',
         name: 'existing-app',
         paneCount: 4,
         root: '/Users/me/projects/existing-app',
-        sessionName: 'aumx-existing-app',
+        sessionName: 'muxbase-existing-app',
       },
     });
     vi.mocked(workspaceApi.touchHistory).mockResolvedValue([]);
     vi.mocked(projectApi.switchProject).mockResolvedValue({
       success: true,
       project: {
-        configPath: '/Users/me/projects/existing-app/.aumx/aumx.config.json',
+        configPath: '/Users/me/projects/existing-app/.muxbase/muxbase.config.json',
         name: 'existing-app',
         paneCount: 0,
         root: '/Users/me/projects/existing-app',
-        sessionName: 'aumx-existing-app',
+        sessionName: 'muxbase-existing-app',
       },
     });
     vi.mocked(projectApi.listProjects).mockResolvedValue([]);
@@ -462,22 +462,22 @@ describe('WorkspacePicker new project flow', () => {
     vi.mocked(workspaceApi.createSession).mockResolvedValue({
       success: true,
       project: {
-        configPath: '/Users/me/projects/existing-app/.aumx/aumx.config.json',
+        configPath: '/Users/me/projects/existing-app/.muxbase/muxbase.config.json',
         name: 'existing-app',
         paneCount: 2,
         root: '/Users/me/projects/existing-app',
-        sessionName: 'aumx-existing-app',
+        sessionName: 'muxbase-existing-app',
       },
     });
     vi.mocked(workspaceApi.touchHistory).mockResolvedValue([]);
     vi.mocked(projectApi.switchProject).mockResolvedValue({
       success: true,
       project: {
-        configPath: '/Users/me/projects/existing-app/.aumx/aumx.config.json',
+        configPath: '/Users/me/projects/existing-app/.muxbase/muxbase.config.json',
         name: 'existing-app',
         paneCount: 2,
         root: '/Users/me/projects/existing-app',
-        sessionName: 'aumx-existing-app',
+        sessionName: 'muxbase-existing-app',
       },
     });
     vi.mocked(projectApi.listProjects).mockResolvedValue([]);
@@ -487,7 +487,7 @@ describe('WorkspacePicker new project flow', () => {
       paneId: '%1',
       prompt: 'old work',
       slug: 'old-pane',
-    } as AumxPane]);
+    } as MuxBasePane]);
 
     // Act
     render(<WorkspacePicker />);
@@ -517,11 +517,11 @@ describe('WorkspacePicker new project flow', () => {
         finishSession = () => resolve({
           success: true,
           project: {
-            configPath: '/Users/me/projects/example-rag/.aumx/aumx.config.json',
+            configPath: '/Users/me/projects/example-rag/.muxbase/muxbase.config.json',
             name: 'example-rag',
             paneCount: 0,
             root: '/Users/me/projects/example-rag',
-            sessionName: 'aumx-example-rag',
+            sessionName: 'muxbase-example-rag',
           },
         });
       }),
@@ -530,11 +530,11 @@ describe('WorkspacePicker new project flow', () => {
     vi.mocked(projectApi.switchProject).mockResolvedValue({
       success: true,
       project: {
-        configPath: '/Users/me/projects/example-rag/.aumx/aumx.config.json',
+        configPath: '/Users/me/projects/example-rag/.muxbase/muxbase.config.json',
         name: 'example-rag',
         paneCount: 0,
         root: '/Users/me/projects/example-rag',
-        sessionName: 'aumx-example-rag',
+        sessionName: 'muxbase-example-rag',
       },
     });
     vi.mocked(projectApi.listProjects).mockResolvedValue([]);
@@ -568,11 +568,11 @@ describe('WorkspacePicker new project flow', () => {
       async () => ({
         success: true,
         project: {
-          configPath: '/Users/me/projects/example-rag/.aumx/aumx.config.json',
+          configPath: '/Users/me/projects/example-rag/.muxbase/muxbase.config.json',
           name: 'example-rag',
           paneCount: 0,
           root: '/Users/me/projects/example-rag',
-          sessionName: 'aumx-example-rag',
+          sessionName: 'muxbase-example-rag',
         },
       }),
     );
@@ -580,11 +580,11 @@ describe('WorkspacePicker new project flow', () => {
     vi.mocked(projectApi.switchProject).mockResolvedValue({
       success: true,
       project: {
-        configPath: '/Users/me/projects/example-rag/.aumx/aumx.config.json',
+        configPath: '/Users/me/projects/example-rag/.muxbase/muxbase.config.json',
         name: 'example-rag',
         paneCount: 0,
         root: '/Users/me/projects/example-rag',
-        sessionName: 'aumx-example-rag',
+        sessionName: 'muxbase-example-rag',
       },
     });
     vi.mocked(projectApi.listProjects).mockResolvedValue([]);

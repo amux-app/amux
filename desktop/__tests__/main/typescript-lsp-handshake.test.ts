@@ -10,7 +10,7 @@ const TEST_TIMEOUT_MS = 25_000;
 describe('bundled TypeScript 7 language server', () => {
   it.skipIf(!supportedHost)('completes a real tsc --lsp --stdio initialization handshake', async () => {
     const rootUri = new URL(`file://${process.cwd()}/`).href;
-    const fileUri = new URL('__aumx_lsp_probe.ts', rootUri).href;
+    const fileUri = new URL('__muxbase_lsp_probe.ts', rootUri).href;
     const content = 'export const value = Math.ma';
     let resolveCompletion: ((value: unknown) => void) | undefined;
     const completion = new Promise((resolve) => {

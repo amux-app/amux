@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".github/assets/amux-banner.svg" alt="Amux" width="660" />
+  <img src=".github/assets/muxbase-banner.svg" alt="MuxBase" width="660" />
 </p>
 
 <h3 align="center">Open-source mission control for AI coding agents.</h3>
@@ -14,13 +14,13 @@
   <a href="#quick-start"><strong>Quick Start</strong></a> &nbsp;·&nbsp;
   <a href="#features"><strong>Features</strong></a> &nbsp;·&nbsp;
   <a href="#agent-compatibility"><strong>Compatibility</strong></a> &nbsp;·&nbsp;
-  <a href="https://github.com/amux-app/amux/issues"><strong>Issues</strong></a>
+  <a href="https://github.com/muxbase-app/muxbase/issues"><strong>Issues</strong></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/amux-app/amux/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/amux-app/amux/ci.yml?branch=main&style=flat-square&label=CI" alt="CI status" /></a>
+  <a href="https://github.com/muxbase-app/muxbase/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/muxbase-app/muxbase/ci.yml?branch=main&style=flat-square&label=CI" alt="CI status" /></a>
   &nbsp;
-  <a href="https://github.com/amux-app/amux/releases/latest"><img src="https://img.shields.io/github/v/release/amux-app/amux?display_name=tag&style=flat-square&label=release" alt="Latest release" /></a>
+  <a href="https://github.com/muxbase-app/muxbase/releases/latest"><img src="https://img.shields.io/github/v/release/muxbase-app/muxbase?display_name=tag&style=flat-square&label=release" alt="Latest release" /></a>
   &nbsp;
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-1a1a1a?style=flat-square" alt="MIT license" /></a>
   &nbsp;
@@ -31,41 +31,41 @@
 
 ---
 
-<img src=".github/assets/amux-demo.webp" alt="Amux managing multiple AI coding agents in Fleet view" width="100%" />
+<img src=".github/assets/muxbase-demo.webp" alt="MuxBase managing multiple AI coding agents in Fleet view" width="100%" />
 
-## Why Amux
+## Why MuxBase
 
 One AI coding agent is a conversation. A fleet is an operations problem: scattered terminals, unclear status, overlapping edits, and no single place to review what changed.
 
-Amux gives you one window for the whole workflow. Watch agents run in project-scoped `tmux` panes, steer any session, inspect its activity and diff, and merge completed work without leaving the app. For implementation tasks, enable worktree isolation so concurrent agents edit separate branches and working directories until you deliberately integrate them.
+MuxBase gives you one window for the whole workflow. Watch agents run in project-scoped `tmux` panes, steer any session, inspect its activity and diff, and merge completed work without leaving the app. For implementation tasks, enable worktree isolation so concurrent agents edit separate branches and working directories until you deliberately integrate them.
 
 ## Install
 
-Amux supports macOS 13 or newer on Apple silicon and Intel Macs.
+MuxBase supports macOS 13 or newer on Apple silicon and Intel Macs.
 
 ### Homebrew
 
 For published releases, Homebrew is the recommended installation path:
 
 ```bash
-brew tap amux-app/amux
+brew tap muxbase-app/muxbase
 brew install tmux
-brew install --cask amux
+brew install --cask muxbase
 ```
 
-Amux requires tmux 3.7b or newer. Installing tmux explicitly ensures Homebrew upgrades an older linked version before installing the Cask. After an upgrade, save and close active tmux sessions and restart tmux completely.
+MuxBase requires tmux 3.7b or newer. Installing tmux explicitly ensures Homebrew upgrades an older linked version before installing the Cask. After an upgrade, save and close active tmux sessions and restart tmux completely.
 
 ### Direct download
 
-Signed and notarized DMGs are attached to [GitHub Releases](https://github.com/amux-app/amux/releases/latest). The application checks the same tmux minimum at first launch.
+Signed and notarized DMGs are attached to [GitHub Releases](https://github.com/muxbase-app/muxbase/releases/latest). The application checks the same tmux minimum at first launch.
 
 ### Build from source
 
 If a published release is not yet available, or you are contributing locally:
 
 ```bash
-git clone https://github.com/amux-app/amux.git
-cd amux
+git clone https://github.com/muxbase-app/muxbase.git
+cd muxbase
 make install
 ```
 
@@ -74,7 +74,7 @@ Source installation requires Host Node.js >= 22.13 and a `pnpm` command. The rep
 ## Quick Start
 
 1. Install and authenticate at least one supported agent CLI: `claude`, `codex`, `opencode`, or `pi`. Shell panes require no agent CLI.
-2. Open Amux and choose a Git project.
+2. Open MuxBase and choose a Git project.
 3. Select **New Pane**, choose an agent, and enter a prompt.
 4. Enable **Git Worktree** when the task should run on an isolated branch and working directory.
 5. Watch progress in **Fleet**, or open **Focus** to inspect one session in detail.
@@ -130,11 +130,11 @@ Source installation requires Host Node.js >= 22.13 and a `pnpm` command. The rep
 | Read-only review agent       |     Yes     |  Yes  |   Yes    | No  |  No   |
 | Marketplace MCP target       |     Yes     |  Yes  |   Yes    | No  |  No   |
 
-Capabilities also depend on the relevant CLI being installed and authenticated. Amux detects available agents locally and only presents compatible actions.
+Capabilities also depend on the relevant CLI being installed and authenticated. MuxBase detects available agents locally and only presents compatible actions.
 
 ## Local-First and Network Behavior
 
-Amux requires no Amux account, Amux-hosted backend, or background daemon. Pane definitions, settings, and metadata are stored under `<projectRoot>/.amux/aumx.config.json`; projects that already use `.aumx/aumx.config.json` remain supported.
+MuxBase requires no MuxBase account, MuxBase-hosted backend, or background daemon. Pane definitions, settings, and metadata are stored under `<projectRoot>/.muxbase/muxbase.config.json`.
 
 Network access is limited to the features you use:
 
@@ -142,7 +142,7 @@ Network access is limited to the features you use:
 - User-invoked AI helpers may send the relevant prompt, conversation, repository context, or diff to OpenRouter when `OPENROUTER_API_KEY` is configured. Where supported, local CLI or manual fallbacks remain available.
 - Model and provider health displays request public benchmark and status data. **Settings → Advanced → Disable external network requests** disables these background health checks.
 - Marketplace actions fetch only the HTTPS Git sources you explicitly configure.
-- Claude cost tracking receives telemetry on localhost; Amux does not require a hosted telemetry service.
+- Claude cost tracking receives telemetry on localhost; MuxBase does not require a hosted telemetry service.
 
 The Electron renderer runs with `contextIsolation`, `sandbox`, and `nodeIntegration: false`. A narrow typed preload API is the only renderer-to-main bridge.
 
@@ -169,8 +169,8 @@ Optional environment variables:
 | Variable                 | Used for                                                               |
 | ------------------------ | ---------------------------------------------------------------------- |
 | `OPENROUTER_API_KEY`     | User-invoked decomposition, recap, naming, and commit-message helpers. |
-| `AUMX_INSTALL_DIR`       | Override the `make install` destination.                               |
-| `AUMX_INSTALL_NO_LAUNCH` | Set to `1` to skip automatic launch after a source install.            |
+| `MUXBASE_INSTALL_DIR`       | Override the `make install` destination.                               |
+| `MUXBASE_INSTALL_NO_LAUNCH` | Set to `1` to skip automatic launch after a source install.            |
 
 ## Development
 
@@ -187,10 +187,10 @@ Run `make help` for the full command list. See [CONTRIBUTING.md](CONTRIBUTING.md
 
 ## Architecture
 
-Amux is a pnpm workspace with two main packages:
+MuxBase is a pnpm workspace with two main packages:
 
-- **`aumx`** — the Electron-independent Node.js core for tmux integration, Git worktrees, pane state, agent launch, and action orchestration.
-- **`aumx-desktop`** — the Electron app, with a main-process composition root, typed preload boundary, and React renderer.
+- **`muxbase`** — the Electron-independent Node.js core for tmux integration, Git worktrees, pane state, agent launch, and action orchestration.
+- **`muxbase-desktop`** — the Electron app, with a main-process composition root, typed preload boundary, and React renderer.
 
 ```text
 src/        core TypeScript library
@@ -214,8 +214,8 @@ Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) and follow th
 
 ## Support and Security
 
-Use [GitHub Issues](https://github.com/amux-app/amux/issues) for bugs and feature requests. Report vulnerabilities privately by following [SECURITY.md](SECURITY.md).
+Use [GitHub Issues](https://github.com/muxbase-app/muxbase/issues) for bugs and feature requests. Report vulnerabilities privately by following [SECURITY.md](SECURITY.md).
 
 ## License
 
-[MIT](LICENSE) © Amux contributors.
+[MIT](LICENSE) © MuxBase contributors.

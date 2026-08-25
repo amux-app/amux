@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FileTabsStrip } from '../src/renderer/components/dashboard/PaneCellTabs';
@@ -34,7 +34,7 @@ vi.mock('../src/renderer/lib/feature-flags', () => ({
   isReviewAgentEnabled: () => true,
 }));
 
-const PANE: AumxPane = {
+const PANE: MuxBasePane = {
   agent: 'claude',
   id: 'pane-1',
   paneId: '%1',
@@ -59,7 +59,7 @@ function renderInPanel(node: React.ReactNode) {
   return render(<div data-testid="panel" style={{ overflow: 'hidden' }}>{node}</div>);
 }
 
-function renderActionsMenu(pane: AumxPane = PANE, onRename = vi.fn()) {
+function renderActionsMenu(pane: MuxBasePane = PANE, onRename = vi.fn()) {
   renderInPanel(<PaneActionsMenu onRename={onRename} pane={pane} status="idle" />);
   const trigger = screen.getByRole('button', { name: 'Pane actions' });
   fireEvent.click(trigger);

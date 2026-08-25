@@ -11,11 +11,11 @@ import {
 } from '../src/utils/promptStore.js';
 
 async function makeTempProjectRoot(): Promise<string> {
-  return fs.mkdtemp(path.join(os.tmpdir(), 'aumx-prompt-store-'));
+  return fs.mkdtemp(path.join(os.tmpdir(), 'muxbase-prompt-store-'));
 }
 
 describe('promptStore', () => {
-  it('writes prompt files under .aumx/prompts', async () => {
+  it('writes prompt files under .muxbase/prompts', async () => {
     const projectRoot = await makeTempProjectRoot();
     const promptPath = await writePromptFile(projectRoot, 'feature/test', 'hello world');
 
@@ -42,9 +42,9 @@ describe('promptStore', () => {
     const quoted = shellQuote(`/tmp/o'clock`);
     expect(quoted).toBe(`'/tmp/o'\\''clock'`);
 
-    const snippet = buildPromptReadAndDeleteSnippet('/tmp/aumx prompt.txt');
-    expect(snippet).toContain('AUMX_PROMPT_FILE=');
-    expect(snippet).toContain('cat "$AUMX_PROMPT_FILE"');
-    expect(snippet).toContain('rm -f "$AUMX_PROMPT_FILE"');
+    const snippet = buildPromptReadAndDeleteSnippet('/tmp/muxbase prompt.txt');
+    expect(snippet).toContain('MUXBASE_PROMPT_FILE=');
+    expect(snippet).toContain('cat "$MUXBASE_PROMPT_FILE"');
+    expect(snippet).toContain('rm -f "$MUXBASE_PROMPT_FILE"');
   });
 });

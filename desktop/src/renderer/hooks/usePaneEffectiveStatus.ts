@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { PaneActivityState } from '../../shared/pane-activity';
 import { getEffectivePaneStatus } from '../lib/pane-attention';
 import { useAgentSessionStore } from '../stores/agent-session.store';
@@ -10,7 +10,7 @@ import { usePaneActivityStore } from '../stores/pane-activity.store';
  * Activity is authoritative; missing activity remains unknown until the main
  * process publishes a snapshot for this project epoch.
  */
-export function usePaneEffectiveStatus(pane: AumxPane | null | undefined): PaneActivityState {
+export function usePaneEffectiveStatus(pane: MuxBasePane | null | undefined): PaneActivityState {
   const activity = usePaneActivityStore((s) => (pane ? s.activityByPaneId[pane.id] : undefined));
   return useAgentSessionStore((s) => (pane ? getEffectivePaneStatus(pane, s.sessions[pane.id], activity) : 'unknown'));
 }

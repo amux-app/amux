@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { execFileSync, spawn, spawnSync, type ChildProcessWithoutNullStreams } from 'child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { request } from 'http';
@@ -29,28 +29,28 @@ const HAI_PROXY_PORT = 6655;
 const TERMINAL_TIMEOUT_MS = 30_000;
 const SOAK_DURATION_MS = Math.max(
   1_200_000,
-  Number.parseInt(process.env.AUMX_E2E_SOAK_DURATION_MS ?? '1200000', 10),
+  Number.parseInt(process.env.MUXBASE_E2E_SOAK_DURATION_MS ?? '1200000', 10),
 );
-const SOAK_ENABLED = process.env.AUMX_E2E_SOAK === '1';
+const SOAK_ENABLED = process.env.MUXBASE_E2E_SOAK === '1';
 const SOAK_SCREENSHOTS_DIR = resolve(ROOT, 'out', 'e2e-live-soak');
-const KEEP_E2E_ARTIFACTS = process.env.AUMX_E2E_KEEP_ARTIFACTS === '1';
+const KEEP_E2E_ARTIFACTS = process.env.MUXBASE_E2E_KEEP_ARTIFACTS === '1';
 const LIVE_SCROLL_TEST_ENABLED =
-  process.env.AUMX_E2E === '1' && process.env.AUMX_E2E_LIVE_AGENTS === '1';
-const CLEAN_TERMINAL_FORBIDDEN_PATTERNS = [/AUMX_PROMPT_FILE/, /AUMX_PROMPT_CONTENT/, /--dangerously-skip-permissions/, /\u001b/, /\uFFFD/];
+  process.env.MUXBASE_E2E === '1' && process.env.MUXBASE_E2E_LIVE_AGENTS === '1';
+const CLEAN_TERMINAL_FORBIDDEN_PATTERNS = [/MUXBASE_PROMPT_FILE/, /MUXBASE_PROMPT_CONTENT/, /--dangerously-skip-permissions/, /\u001b/, /\uFFFD/];
 const TERMINAL_OSC_SEQUENCE = /\x1b\][^\x07]*(?:\x07|\x1b\\)/g;
 const TERMINAL_CSI_SEQUENCE = /\x1b\[[0-?]*[ -/]*[@-~]/g;
 const TERMINAL_CONTROL_CHARS = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
 
 type AgentName = 'claude' | 'opencode';
 
-interface AumxStoreApi<TState> {
+interface MuxBaseStoreApi<TState> {
   getState: () => TState;
 }
 
 interface PaneStoreState {
-  panes: AumxPane[];
+  panes: MuxBasePane[];
   selectPane: (paneId: string | null) => void;
-  setPanes: (panes: AumxPane[]) => void;
+  setPanes: (panes: MuxBasePane[]) => void;
 }
 
 interface UiStoreState {
@@ -60,8 +60,8 @@ interface UiStoreState {
 }
 
 interface E2EStores {
-  pane?: AumxStoreApi<PaneStoreState>;
-  ui?: AumxStoreApi<UiStoreState>;
+  pane?: MuxBaseStoreApi<PaneStoreState>;
+  ui?: MuxBaseStoreApi<UiStoreState>;
 }
 
 interface TerminalDebugInfo {
@@ -116,15 +116,15 @@ interface TerminalDebugDataEvent {
 }
 
 interface E2EWindow {
-  __AUMX_E2E?: boolean;
-  __aumxStores?: E2EStores;
-  __aumxTerminalDebug?: TerminalDebugApi;
-  aumx: { invoke: (channel: string, ...args: unknown[]) => Promise<unknown> };
+  __MUXBASE_E2E?: boolean;
+  __muxbaseStores?: E2EStores;
+  __muxbaseTerminalDebug?: TerminalDebugApi;
+  muxbase: { invoke: (channel: string, ...args: unknown[]) => Promise<unknown> };
 }
 
 interface TerminalSnapshot { info: TerminalDebugInfo; lines: string[]; visibleLines: string[] }
 
-interface AgentScenario { agent: AgentName; pane: AumxPane; finalMarker: string; initialMarker: string }
+interface AgentScenario { agent: AgentName; pane: MuxBasePane; finalMarker: string; initialMarker: string }
 interface CompletedAgentScenario extends AgentScenario { completionProbe: string }
 interface ClaudeExactTable {
   doneMarker: string;
@@ -137,7 +137,7 @@ interface ClaudeExactTable {
 }
 interface TmuxPaneSize { cols: number; rows: number }
 interface TerminalLayoutMetrics { rootWidth: number; screenWidth: number }
-interface SoakTrackedPane { agent: AgentName; label: string; markers: string[]; pane: AumxPane }
+interface SoakTrackedPane { agent: AgentName; label: string; markers: string[]; pane: MuxBasePane }
 interface SoakInvariantState { baseY?: number; droppedEventCount?: number; transcriptBytes?: number }
 
 interface HaiProxyHandle { stop: () => Promise<void> }
@@ -235,7 +235,7 @@ async function invoke<T>(page: Page, channel: string, request?: unknown): Promis
   return page.evaluate(
     async ({ ipcArgs, ipcChannel }) => {
       const e2eWindow = window as unknown as E2EWindow;
-      return e2eWindow.aumx.invoke(ipcChannel, ...ipcArgs);
+      return e2eWindow.muxbase.invoke(ipcChannel, ...ipcArgs);
     },
     { ipcArgs: args, ipcChannel: channel },
   ) as Promise<T>;
@@ -318,7 +318,7 @@ async function startHaiProxy(): Promise<HaiProxyHandle> {
   return { stop: () => stopChildProcess(child) };
 }
 
-async function createAgentPane(page: Page, prompt: string, projectRoot: string, agent: AgentName): Promise<AumxPane> {
+async function createAgentPane(page: Page, prompt: string, projectRoot: string, agent: AgentName): Promise<MuxBasePane> {
   const response = await invoke<PaneCreateResponse>(page, IPC.PANE_CREATE, {
     agent,
     projectRoot,
@@ -334,7 +334,7 @@ async function createAgentPane(page: Page, prompt: string, projectRoot: string, 
   return pane;
 }
 
-async function createShellPane(page: Page, projectRoot: string): Promise<AumxPane> {
+async function createShellPane(page: Page, projectRoot: string): Promise<MuxBasePane> {
   const response = await invoke<PaneCreateResponse>(page, IPC.PANE_CREATE, {
     projectRoot,
     prompt: '',
@@ -346,11 +346,11 @@ async function createShellPane(page: Page, projectRoot: string): Promise<AumxPan
   return response.pane!;
 }
 
-async function syncRendererPanes(page: Page): Promise<AumxPane[]> {
+async function syncRendererPanes(page: Page): Promise<MuxBasePane[]> {
   const panes = await getPanes(page);
   await page.evaluate((nextPanes) => {
     const e2eWindow = window as unknown as E2EWindow;
-    e2eWindow.__aumxStores?.pane?.getState().setPanes(nextPanes);
+    e2eWindow.__muxbaseStores?.pane?.getState().setPanes(nextPanes);
   }, panes);
   return panes;
 }
@@ -362,7 +362,7 @@ async function focusPane(page: Page, paneId: string): Promise<void> {
 
 async function focusPaneInCurrentStore(page: Page, paneId: string): Promise<void> {
   await page.evaluate((id) => {
-    const stores = (window as unknown as E2EWindow).__aumxStores;
+    const stores = (window as unknown as E2EWindow).__muxbaseStores;
     stores?.ui?.getState().setActiveView('dashboard');
     stores?.pane?.getState().selectPane(id);
     stores?.ui?.getState().focusPane(id);
@@ -373,9 +373,9 @@ async function focusPaneInCurrentStore(page: Page, paneId: string): Promise<void
   });
 }
 
-async function injectPaneIntoRenderer(page: Page, pane: AumxPane): Promise<void> {
+async function injectPaneIntoRenderer(page: Page, pane: MuxBasePane): Promise<void> {
   await page.evaluate((nextPane) => {
-    const stores = (window as unknown as E2EWindow).__aumxStores;
+    const stores = (window as unknown as E2EWindow).__muxbaseStores;
     const paneStore = stores?.pane?.getState();
     const currentPanes = paneStore?.panes ?? [];
     paneStore?.setPanes([...currentPanes.filter((p) => p.id !== nextPane.id), nextPane]);
@@ -388,7 +388,7 @@ async function injectPaneIntoRenderer(page: Page, pane: AumxPane): Promise<void>
 
 async function unmountTerminalSurfaces(page: Page): Promise<void> {
   await page.evaluate(() => {
-    const stores = (window as unknown as E2EWindow).__aumxStores;
+    const stores = (window as unknown as E2EWindow).__muxbaseStores;
     stores?.ui?.getState().setActiveView('settings');
   });
   await page.waitForFunction(
@@ -415,7 +415,7 @@ async function waitForTerminalDebug(page: Page, paneId: string): Promise<Termina
 
 async function getTerminalSnapshot(page: Page, paneId: string): Promise<TerminalSnapshot | null> {
   return page.evaluate((id) => {
-    const debug = (window as unknown as E2EWindow).__aumxTerminalDebug;
+    const debug = (window as unknown as E2EWindow).__muxbaseTerminalDebug;
     const info = debug?.getViewportInfo(id);
     if (!debug || !info) return null;
     return {
@@ -428,7 +428,7 @@ async function getTerminalSnapshot(page: Page, paneId: string): Promise<Terminal
 
 async function getTerminalFontSize(page: Page, paneId: string): Promise<number | null> {
   return page.evaluate(
-    (id) => (window as unknown as E2EWindow).__aumxTerminalDebug?.getFontSize(id) ?? null,
+    (id) => (window as unknown as E2EWindow).__muxbaseTerminalDebug?.getFontSize(id) ?? null,
     paneId,
   );
 }
@@ -448,7 +448,7 @@ async function waitForTerminalFontSize(
   );
 }
 
-async function waitForTranscriptAssistantMarker(pane: AumxPane, marker: string): Promise<string> {
+async function waitForTranscriptAssistantMarker(pane: MuxBasePane, marker: string): Promise<string> {
   expect(pane.terminalTranscriptPath).toBeTruthy();
   return pollUntil(
     async () => {
@@ -465,7 +465,7 @@ async function waitForTranscriptAssistantMarker(pane: AumxPane, marker: string):
   );
 }
 
-async function waitForSessionAssistantMarker(page: Page, pane: AumxPane, marker: string): Promise<void> {
+async function waitForSessionAssistantMarker(page: Page, pane: MuxBasePane, marker: string): Promise<void> {
   await pollUntil(
     async () => {
       const session = await getNormalizedSession(page, pane.id);
@@ -483,7 +483,7 @@ async function waitForSessionAssistantMarker(page: Page, pane: AumxPane, marker:
   );
 }
 
-async function waitForTranscriptIncludes(pane: AumxPane, marker: string, timeout = TERMINAL_TIMEOUT_MS): Promise<string> {
+async function waitForTranscriptIncludes(pane: MuxBasePane, marker: string, timeout = TERMINAL_TIMEOUT_MS): Promise<string> {
   expect(pane.terminalTranscriptPath).toBeTruthy();
   return pollUntil(
     async () => {
@@ -500,12 +500,12 @@ async function waitForTranscriptIncludes(pane: AumxPane, marker: string, timeout
   );
 }
 
-function readAgentTranscript(pane: AumxPane): string {
+function readAgentTranscript(pane: MuxBasePane): string {
   expect(pane.terminalTranscriptPath).toBeTruthy();
   return readFileSync(pane.terminalTranscriptPath!, 'utf8');
 }
 
-function getTranscriptByteLength(pane: AumxPane): number {
+function getTranscriptByteLength(pane: MuxBasePane): number {
   if (!pane.terminalTranscriptPath || !existsSync(pane.terminalTranscriptPath)) return 0;
   return readFileSync(pane.terminalTranscriptPath).byteLength;
 }
@@ -541,7 +541,7 @@ function captureTmuxScrollback(tmuxPaneId: string): string {
 // pinned at 0, so history retention is proven by markers being present in BOTH
 // the tmux full scrollback and the rendered xterm buffer after a scroll-to-top.
 function assertClassicHistoryRetained(
-  pane: AumxPane,
+  pane: MuxBasePane,
   renderedText: string,
   markers: string[],
   context: string,
@@ -579,7 +579,7 @@ async function getTerminalLayoutMetrics(page: Page, paneId: string): Promise<Ter
 
 async function waitForLiveTerminalGeometry(
   page: Page,
-  pane: AumxPane,
+  pane: MuxBasePane,
   predicate: (cols: number) => boolean,
   label: string,
 ): Promise<{ metrics: TerminalLayoutMetrics; snapshot: TerminalSnapshot; tmuxSize: TmuxPaneSize }> {
@@ -621,7 +621,7 @@ async function waitForLiveTerminalGeometry(
   }
 }
 
-async function acceptTrustPromptIfVisible(page: Page, pane: AumxPane, timeoutMs = 5_000): Promise<void> {
+async function acceptTrustPromptIfVisible(page: Page, pane: MuxBasePane, timeoutMs = 5_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const result = await invoke<{ content?: string }>(page, IPC.PANE_GET_CONTENT, { paneId: pane.id });
@@ -711,7 +711,7 @@ async function wheelFleetTerminalUntilMarker(
 
 async function runLocalShellCommand(
   page: Page,
-  pane: AumxPane,
+  pane: MuxBasePane,
   command: string,
   composeMarker: string,
   outputMarker: string,
@@ -890,7 +890,7 @@ async function assertScrollableCleanAgentPane(page: Page, scenario: CompletedAge
 
 async function assertClaudeChatHistoryVisible(
   page: Page,
-  pane: AumxPane,
+  pane: MuxBasePane,
   markers: string[],
   requiredVisibleMarker: string,
 ): Promise<void> {
@@ -915,7 +915,7 @@ async function assertClaudeChatHistoryVisible(
   assertCleanTerminalText(renderedText);
 }
 
-async function assertClaudeActivityConversationRenders(page: Page, pane: AumxPane, markers: string[]): Promise<void> {
+async function assertClaudeActivityConversationRenders(page: Page, pane: MuxBasePane, markers: string[]): Promise<void> {
   await focusPane(page, pane.id);
   await page.locator('button[role="tab"]:has-text("Activity")').first().click();
   await page.locator('button:has-text("Conversation")').first().waitFor({
@@ -937,7 +937,7 @@ async function assertClaudeActivityConversationRenders(page: Page, pane: AumxPan
 async function showFleet(page: Page): Promise<void> {
   await syncRendererPanes(page);
   await page.evaluate(() => {
-    const stores = (window as unknown as E2EWindow).__aumxStores;
+    const stores = (window as unknown as E2EWindow).__muxbaseStores;
     stores?.ui?.getState().setActiveView('dashboard');
     stores?.ui?.getState().setViewMode('fleet');
   });
@@ -1037,7 +1037,7 @@ function makeClaudeExactTable(stage: string, desiredLineWidth: number): ClaudeEx
   };
 }
 
-async function assertAssistantContainsExactTableRow(page: Page, pane: AumxPane, row: string, label: string): Promise<void> {
+async function assertAssistantContainsExactTableRow(page: Page, pane: MuxBasePane, row: string, label: string): Promise<void> {
   const session = await getNormalizedSession(page, pane.id);
   const assistantHasRow = session?.messages.some((message) => (
     message.type === 'assistant' && message.content.includes(row)
@@ -1047,7 +1047,7 @@ async function assertAssistantContainsExactTableRow(page: Page, pane: AumxPane, 
 
 async function assertClaudeTableRenderedAtCurrentWidth(
   page: Page,
-  pane: AumxPane,
+  pane: MuxBasePane,
   table: ClaudeExactTable,
   label: string,
 ): Promise<TerminalSnapshot> {
@@ -1124,7 +1124,7 @@ async function stressFleetPaneResize(page: Page, paneId: string, turn: number): 
 
 async function assertSoakState(
   page: Page,
-  pane: AumxPane,
+  pane: MuxBasePane,
   markers: string[],
   turn: number,
 ): Promise<void> {
@@ -1177,7 +1177,7 @@ async function assertTrackedPaneTerminalState(page: Page, target: SoakTrackedPan
 
 async function assertSoakInvariants(
   page: Page,
-  pane: AumxPane,
+  pane: MuxBasePane,
   label: string,
   state: SoakInvariantState,
   turn: number,
@@ -1230,7 +1230,7 @@ async function assertTerminalUsesWebgl(page: Page, paneId: string, label: string
   expect(usesWebgl, `${label}: terminal is not using the WebGL renderer`).toBe(true);
 }
 
-async function assertRendererColsMatchTmux(page: Page, pane: AumxPane, label: string): Promise<void> {
+async function assertRendererColsMatchTmux(page: Page, pane: MuxBasePane, label: string): Promise<void> {
   let lastSnap: TerminalSnapshot | null = null;
   let lastTw = -1;
   let lastTh = -1;
@@ -1259,7 +1259,7 @@ const DUPLICATE_STATUS_PATTERN = /(Smooshing|Crunching|Thinking|Pondering|Cogita
 // TUI chrome that agents repeat by design — skip them in dedup checks.
 const MEANINGFUL_CONTENT_PATTERN = /[\p{L}\p{N}]{3,}/u;
 
-const createdPanesRegistry = new Map<string, AumxPane>();
+const createdPanesRegistry = new Map<string, MuxBasePane>();
 
 function extractEvidenceStrings(evidence: unknown): string[] {
   if (!evidence) return [];
@@ -1456,7 +1456,7 @@ function writeControlledRedrawScript(projectRoot: string, runId: string): string
   return scriptPath;
 }
 
-async function createControlledTranscriptPane(page: Page, projectRoot: string, sessionName: string, runId: string): Promise<AumxPane> {
+async function createControlledTranscriptPane(page: Page, projectRoot: string, sessionName: string, runId: string): Promise<MuxBasePane> {
   const scriptPath = writeControlledRedrawScript(projectRoot, runId);
   const transcriptPath = join(projectRoot, `controlled-redraw-${runId}.ansi`);
   writeFileSync(transcriptPath, '', 'utf8');
@@ -1474,7 +1474,7 @@ async function createControlledTranscriptPane(page: Page, projectRoot: string, s
   ]).trim();
   runTmux(['pipe-pane', '-t', tmuxPaneId, `cat >> ${shellQuote(transcriptPath)}`]);
 
-  const pane: AumxPane = {
+  const pane: MuxBasePane = {
     agent: 'claude',
     agentStatus: 'idle',
     id: `controlled-${runId}`,
@@ -1502,7 +1502,7 @@ function countTokenInTerminalEvents(events: TerminalDebugDataEvent[] | undefined
 
 async function waitForTranscriptMarkerWhileStressing(
   page: Page,
-  pane: AumxPane,
+  pane: MuxBasePane,
   marker: string,
   turn: number,
   stressPaneIds: string[] = [pane.id],
@@ -1543,7 +1543,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
   let page: Page;
   let projectRoot: string;
   let sessionName: string;
-  const createdPanes: AumxPane[] = [];
+  const createdPanes: MuxBasePane[] = [];
 
   beforeAll(async () => {
     expect(existsSync(MAIN_ENTRY), `Build output missing: ${MAIN_ENTRY}`).toBe(true);
@@ -1552,12 +1552,12 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
     expectCommandOnPath('opencode');
     haiProxy = await startHaiProxy();
 
-    projectRoot = realpathSync(mkdtempSync(join(tmpdir(), 'aumx-live-scroll-e2e-')));
+    projectRoot = realpathSync(mkdtempSync(join(tmpdir(), 'muxbase-live-scroll-e2e-')));
     writeFileSync(join(projectRoot, 'README.md'), '# Live terminal scroll E2E\n', 'utf8');
     execFileSync('git', ['init'], { cwd: projectRoot, stdio: 'ignore' });
     execFileSync('git', ['add', 'README.md'], { cwd: projectRoot, stdio: 'ignore' });
-    execFileSync('git', ['-c', 'user.email=e2e@aumx.local', '-c', 'user.name=Aumx E2E', 'commit', '-m', 'initial'], { cwd: projectRoot, stdio: 'ignore' });
-    sessionName = `aumx-${basename(projectRoot)}`;
+    execFileSync('git', ['-c', 'user.email=e2e@muxbase.local', '-c', 'user.name=MuxBase E2E', 'commit', '-m', 'initial'], { cwd: projectRoot, stdio: 'ignore' });
+    sessionName = `muxbase-${basename(projectRoot)}`;
     killTmuxSession(sessionName);
 
     app = await electron.launch({
@@ -1565,15 +1565,15 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
       cwd: projectRoot,
       env: {
         ...process.env,
-        AUMX_DEV: 'true',
-        AUMX_E2E: '1',
+        MUXBASE_DEV: 'true',
+        MUXBASE_E2E: '1',
         NODE_ENV: 'test',
       },
     });
 
     page = await getAppWindow(app);
     await app.context().addInitScript(() => {
-      (window as unknown as E2EWindow).__AUMX_E2E = true;
+      (window as unknown as E2EWindow).__MUXBASE_E2E = true;
     });
     await page.reload();
     await page.setViewportSize({ height: 980, width: 1440 });
@@ -1605,7 +1605,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
   }, APP_SHUTDOWN_TIMEOUT_MS);
 
   it('clears the boot overlay once the Claude TUI is ready', async () => {
-    const token = `AUMX-BOOT-${Date.now()}`;
+    const token = `MUXBASE-BOOT-${Date.now()}`;
     const prompt = `Reply with exactly ${token}-A. Do not modify files.`;
     const pane = await createAgentPane(page, prompt, projectRoot, 'claude');
     createdPanes.push(pane);
@@ -1635,7 +1635,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
       opencodeMousePassthrough: boolean;
       terminalTransport: 'classic' | 'control' | 'pty';
     }>(page, IPC.ELECTRON_SETTINGS_GET);
-    const ownedPanes: AumxPane[] = [];
+    const ownedPanes: MuxBasePane[] = [];
     onTestFinished(async () => {
       for (const pane of [...ownedPanes].reverse()) {
         await closePaneBestEffort(page, pane);
@@ -1692,7 +1692,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
     // Isolate exactly the two live agents in Fleet. Do not call showFleet()
     // after this point: it re-syncs every pane retained by earlier live tests.
     await page.evaluate((panes) => {
-      const stores = (window as unknown as E2EWindow).__aumxStores;
+      const stores = (window as unknown as E2EWindow).__muxbaseStores;
       const paneStore = stores?.pane?.getState();
       paneStore?.setPanes(panes);
       paneStore?.selectPane(panes[0].id);
@@ -1828,7 +1828,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
     // fixture is deterministic, does not call a model, and exercises the same
     // rendering and scroll paths users interact with in Claude and OpenCode.
     for (const pane of [claude, opencode]) {
-      const scrollToken = `AUMX-REAL-SCROLL-${pane.agent.toUpperCase()}-${Date.now()}`;
+      const scrollToken = `MUXBASE-REAL-SCROLL-${pane.agent.toUpperCase()}-${Date.now()}`;
       const topMarker = `${scrollToken}-TOP`;
       const bottomMarker = `${scrollToken}-BOTTOM`;
       const screen = page.locator(`${terminalSelector(pane.id)} .xterm-screen`);
@@ -1843,7 +1843,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
           const blockId = String(block).padStart(2, '0');
           const blockStart = block === 0 ? topMarker : `${scrollToken}-BLOCK-${blockId}-START`;
           const blockEnd = block === 7 ? bottomMarker : `${scrollToken}-BLOCK-${blockId}-END`;
-          const composeMarker = `AUMX_COMPOSED_${scrollToken.replace(/[^A-Za-z0-9]/g, '_')}_BLOCK_${blockId}`;
+          const composeMarker = `MUXBASE_COMPOSED_${scrollToken.replace(/[^A-Za-z0-9]/g, '_')}_BLOCK_${blockId}`;
           const startSuffix = blockStart.slice(scrollToken.length);
           const endSuffix = blockEnd.slice(scrollToken.length);
           const command = `awk -v p='${scrollToken}' -v s='${startSuffix}' -v e='${endSuffix}' 'BEGIN { print p s; for (i = 0; i < 5; i += 1) printf "%s-BLOCK-${blockId}-LINE-%02d\\n", p, i; print p e }'; : ${composeMarker}`;
@@ -1859,7 +1859,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
         expect(latestSnapshot).not.toBeNull();
         bottomSnapshot = latestSnapshot!;
       } else {
-        const composeMarker = `AUMX_COMPOSED_${scrollToken.replace(/[^A-Za-z0-9]/g, '_')}`;
+        const composeMarker = `MUXBASE_COMPOSED_${scrollToken.replace(/[^A-Za-z0-9]/g, '_')}`;
         const command = `awk -v p='${scrollToken}' 'BEGIN { print p "-TOP"; for (i = 0; i < 160; i += 1) printf "%s-LINE-%03d\\n", p, i; print p "-BOTTOM" }'; : ${composeMarker}`;
         bottomSnapshot = await runLocalShellCommand(
           page,
@@ -1917,7 +1917,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
   }, 300_000);
 
   it('keeps Claude and OpenCode scrollback complete, deduplicated, and clean after pane switching', async () => {
-    const token = `AUMX-LIVE-SCROLL-${Date.now()}`;
+    const token = `MUXBASE-LIVE-SCROLL-${Date.now()}`;
 
     const claude = await runAgentScenario(page, projectRoot, 'claude', token);
     createdPanes.push(claude.pane);
@@ -1942,7 +1942,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
   }, 600_000);
 
   it('keeps Claude startup scrollback deduplicated after pane switching', async () => {
-    const token = `AUMX-LIVE-CLAUDE-DEDUP-${Date.now()}`;
+    const token = `MUXBASE-LIVE-CLAUDE-DEDUP-${Date.now()}`;
 
     const claude = await runAgentScenario(page, projectRoot, 'claude', token);
     createdPanes.push(claude.pane);
@@ -1983,7 +1983,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
         });
       }
     });
-    const token = `AUMX-LIVE-CHAT-${Date.now()}`;
+    const token = `MUXBASE-LIVE-CHAT-${Date.now()}`;
     const q1 = `${token}-Q1-HUMAN-PROMPT`;
     const a1 = `${token}-A1-DONE`;
     const q2 = `${token}-Q2-HUMAN-PROMPT`;
@@ -2079,7 +2079,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
   }, 600_000);
 
   it('keeps Claude scrollback intact after settings round-trip mid-conversation (Symptom 1)', async () => {
-    const token = `AUMX-FONT-${Date.now()}`;
+    const token = `MUXBASE-FONT-${Date.now()}`;
     const q1 = `${token}-Q1`;
     const a1 = `${token}-A1`;
     const pane = await createAgentPane(
@@ -2123,7 +2123,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
   }, 360_000);
 
   it('keeps multi-turn Claude chat visible after a mid-conversation terminal remount (Symptom 1)', async () => {
-    const token = `AUMX-REMOUNT-${Date.now()}`;
+    const token = `MUXBASE-REMOUNT-${Date.now()}`;
     const q1 = `${token}-Q1`;
     const a1 = `${token}-A1`;
     const q2 = `${token}-Q2`;
@@ -2176,7 +2176,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
   }, 420_000);
 
   it('renderer cols/rows stay in sync with tmux across rapid resizes (Symptom 2)', async () => {
-    const token = `AUMX-COLS-${Date.now()}`;
+    const token = `MUXBASE-COLS-${Date.now()}`;
     const pane = await createAgentPane(
       page,
       `${token}-Q1 Reply with exactly ${token}-A1 and nothing else. Do not modify files.`,
@@ -2207,7 +2207,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
   }, 360_000);
 
   it('classic Claude: composer under banner, terracotta logo, constant 100-col width, single banner across resizes', async () => {
-    const token = `AUMX-CLASSIC-${Date.now()}`;
+    const token = `MUXBASE-CLASSIC-${Date.now()}`;
     const pane = await createAgentPane(
       page,
       `${token}-Q1 Reply with exactly ${token}-A1 and nothing else. Do not modify files.`,
@@ -2269,7 +2269,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
     // PR3 hard-locks classic Claude to 100 cols (fitFixedWidthTerminal), so width
     // can NO LONGER change across fleet resizes. The invariant this test now proves:
     // a bordered table stays clean and at the locked width through a resize storm.
-    const token = `AUMX-CLAUDE-TABLE-${Date.now()}`;
+    const token = `MUXBASE-CLAUDE-TABLE-${Date.now()}`;
     const shortToken = token.slice(-6);
     const table = makeClaudeExactTable(`T${shortToken}`, 82);
     const pane = await createAgentPane(
@@ -2313,7 +2313,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
   }, 600_000);
 
   it('does not duplicate Claude TUI status lines across rapid resizes during streaming (Symptom 3)', async () => {
-    const token = `AUMX-OVERPRINT-${Date.now()}`;
+    const token = `MUXBASE-OVERPRINT-${Date.now()}`;
     const q1 = `${token}-Q1`;
     const a1 = `${token}-A1`;
     const pane = await createAgentPane(
@@ -2342,7 +2342,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
       if (iteration % 5 === 0) {
         const mode = iteration % 10 === 0 ? 'fleet' : 'focus';
         await page.evaluate((m) => {
-          const stores = (window as unknown as E2EWindow).__aumxStores;
+          const stores = (window as unknown as E2EWindow).__muxbaseStores;
           stores?.ui?.getState().setViewMode(m);
         }, mode).catch(() => {});
       }
@@ -2373,7 +2373,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
   }, 540_000);
 
   it('renderer keeps cols/rows synced and content clean across resize-during-streaming (Symptom 2 deep)', async () => {
-    const token = `AUMX-RESIZE-STREAM-${Date.now()}`;
+    const token = `MUXBASE-RESIZE-STREAM-${Date.now()}`;
     const q1 = `${token}-Q1`;
     const a1 = `${token}-A1`;
     const pane = await createAgentPane(
@@ -2418,7 +2418,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
   }, 480_000);
 
   it('preserves every numbered line in xterm scrollback across a resize storm (Symptom 1 deep)', async () => {
-    const token = `AUMX-LINES-${Date.now()}`;
+    const token = `MUXBASE-LINES-${Date.now()}`;
     const q1 = `${token}-Q1`;
     const a1 = `${token}-A1`;
     const lineCount = 60;
@@ -2543,7 +2543,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
   }, 180_000);
 
   it.runIf(SOAK_ENABLED)('soaks a live Claude and OpenCode workday with chat, tab switching, resizing, and screenshots', async () => {
-    const token = `AUMX-SOAK-${Date.now()}`;
+    const token = `MUXBASE-SOAK-${Date.now()}`;
     const screenshots: string[] = [];
     const consoleIssues: string[] = [];
     const observedFailures: string[] = [];
@@ -2554,7 +2554,7 @@ describe.runIf(LIVE_SCROLL_TEST_ENABLED)('Live agent terminal scroll fidelity E2
     const opencodeInvariantStates = new Map<string, SoakInvariantState>();
     const opencodeTargets: SoakTrackedPane[] = [];
     const reportPath = resolve(SOAK_SCREENSHOTS_DIR, 'soak-status.json');
-    let claudePane: AumxPane | null = null;
+    let claudePane: MuxBasePane | null = null;
     let completedTurns = 0;
     let interactionStartMs = Date.now();
     let interactionElapsedMs = 0;

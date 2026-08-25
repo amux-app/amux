@@ -4,12 +4,12 @@ import { createE2EUpdateHarness } from '../../src/main/services/E2EUpdateClient'
 describe('createE2EUpdateHarness', () => {
   it('cannot be enabled without both test-mode guards', () => {
     expect(createE2EUpdateHarness({
-      AUMX_E2E: '1',
-      AUMX_E2E_UPDATE_SCENARIO: 'ready',
+      MUXBASE_E2E: '1',
+      MUXBASE_E2E_UPDATE_SCENARIO: 'ready',
       NODE_ENV: 'production',
     })).toBeNull();
     expect(createE2EUpdateHarness({
-      AUMX_E2E_UPDATE_SCENARIO: 'ready',
+      MUXBASE_E2E_UPDATE_SCENARIO: 'ready',
       NODE_ENV: 'test',
     })).toBeNull();
   });
@@ -17,9 +17,9 @@ describe('createE2EUpdateHarness', () => {
   it('emits a deterministic complete download only for the selected E2E scenario', async () => {
     vi.useFakeTimers();
     const harness = createE2EUpdateHarness({
-      AUMX_E2E: '1',
-      AUMX_E2E_UPDATE_SCENARIO: 'ready',
-      AUMX_E2E_UPDATE_VERSION: '1.2.3',
+      MUXBASE_E2E: '1',
+      MUXBASE_E2E_UPDATE_SCENARIO: 'ready',
+      MUXBASE_E2E_UPDATE_VERSION: '1.2.3',
       NODE_ENV: 'test',
     });
     expect(harness).not.toBeNull();
@@ -37,8 +37,8 @@ describe('createE2EUpdateHarness', () => {
 
   it('models the Applications-folder gate without invoking a feed', () => {
     const harness = createE2EUpdateHarness({
-      AUMX_E2E: '1',
-      AUMX_E2E_UPDATE_SCENARIO: 'not-in-applications',
+      MUXBASE_E2E: '1',
+      MUXBASE_E2E_UPDATE_SCENARIO: 'not-in-applications',
       NODE_ENV: 'test',
     });
     expect(harness?.inApplicationsFolder).toBe(false);

@@ -5,14 +5,14 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const APP_NAME = 'Amux';
+const APP_NAME = 'MuxBase';
 const APP_BUNDLE = `${APP_NAME}.app`;
 const ARM_ARCH = 'arm64';
-const CASK_PATH = 'packaging/homebrew/Casks/amux.rb';
+const CASK_PATH = 'packaging/homebrew/Casks/muxbase.rb';
 const INTEL_ARCH = 'x64';
-const RELEASE_DOWNLOAD_URL = 'https://github.com/amux-app/amux/releases/download/v#{version}/Amux-#{version}-#{arch}.dmg';
-const REPO_HOMEPAGE = 'https://github.com/amux-app/amux';
-const REPO_VERIFIED_HOST = 'github.com/amux-app/amux/';
+const RELEASE_DOWNLOAD_URL = 'https://github.com/muxbase-app/muxbase/releases/download/v#{version}/MuxBase-#{version}-#{arch}.dmg';
+const REPO_HOMEPAGE = 'https://github.com/muxbase-app/muxbase';
+const REPO_VERIFIED_HOST = 'github.com/muxbase-app/muxbase/';
 const ROOT_DIR = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const TMUX_MINIMUM = readTmuxMinimum();
 
@@ -34,7 +34,7 @@ function assertFileExists(path, flag) {
 
 function buildCask(packageVersion, armSha256, intelSha256) {
   return [
-    'cask "amux" do',
+    'cask "muxbase" do',
     '  arch arm: "arm64", intel: "x64"',
     '',
     `  version "${packageVersion}"`,
@@ -63,11 +63,11 @@ function buildCask(packageVersion, armSha256, intelSha256) {
     ...buildCaveats(),
     '',
     '  zap trash: [',
-    '    "~/Library/Application Support/Amux",',
-    '    "~/Library/Caches/app.amux.desktop",',
-    '    "~/Library/Logs/Amux",',
-    '    "~/Library/Preferences/app.amux.desktop.plist",',
-    '    "~/Library/Saved Application State/app.amux.desktop.savedState",',
+    '    "~/Library/Application Support/MuxBase",',
+    '    "~/Library/Caches/app.muxbase.desktop",',
+    '    "~/Library/Logs/MuxBase",',
+    '    "~/Library/Preferences/app.muxbase.desktop.plist",',
+    '    "~/Library/Saved Application State/app.muxbase.desktop.savedState",',
     '  ]',
     'end',
     '',
@@ -81,11 +81,11 @@ function buildTmuxPreflight() {
     '    probe = system_command tmux_bin, args: ["-V"], print_stderr: false',
     '    raw = probe.stdout.strip',
     `    match = raw.match(/\\A(?:tmux\\s+)?(\\d+)\\.(\\d+)([a-z])?\\z/)`,
-    `    odie "Amux requires tmux ${TMUX_MINIMUM} or newer, but 'tmux -V' returned: #{raw.empty? ? "nothing" : raw}" unless match`,
+    `    odie "MuxBase requires tmux ${TMUX_MINIMUM} or newer, but 'tmux -V' returned: #{raw.empty? ? "nothing" : raw}" unless match`,
     '    installed = [match[1].to_i, match[2].to_i, (match[3] || "").empty? ? 0 : match[3].ord - 96]',
     `    required = ${buildRequiredTuple(TMUX_MINIMUM)}`,
     `    detected = "#{match[1]}.#{match[2]}#{match[3]}"`,
-    `    odie "Amux requires tmux ${TMUX_MINIMUM} or newer, but tmux #{detected} is installed. Run: brew upgrade tmux" if (installed <=> required) < 0`,
+    `    odie "MuxBase requires tmux ${TMUX_MINIMUM} or newer, but tmux #{detected} is installed. Run: brew upgrade tmux" if (installed <=> required) < 0`,
     '  end',
   ];
 }
@@ -93,8 +93,8 @@ function buildTmuxPreflight() {
 function buildCaveats() {
   return [
     '  caveats <<~EOS',
-    `    Amux requires tmux ${TMUX_MINIMUM} or newer.`,
-    '    Recommended install: brew install tmux && brew install --cask amux',
+    `    MuxBase requires tmux ${TMUX_MINIMUM} or newer.`,
+    '    Recommended install: brew install tmux && brew install --cask muxbase',
     '    After upgrading tmux, save and close active tmux sessions and restart tmux completely.',
     '  EOS',
   ];

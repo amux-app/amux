@@ -1,4 +1,4 @@
-import type { AgentName } from 'aumx/core';
+import type { AgentName } from 'muxbase/core';
 import { cn } from '../../lib/cn';
 
 const SI_ANTHROPIC_PATH =

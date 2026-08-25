@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const execAsyncMock = vi.hoisted(() => vi.fn());
 
-vi.mock('aumx/core', () => ({
+vi.mock('muxbase/core', () => ({
   execAsync: execAsyncMock,
   shQuote: (value: string) => `'${value.replace(/'/g, "'\\''")}'`,
 }));
@@ -89,34 +89,34 @@ describe('TerminalPtyService', () => {
       onExit,
       paneId: 'pane-1',
       rows: 34,
-      sessionName: 'aumx-demo',
+      sessionName: 'muxbase-demo',
       streamId: 44,
       tmuxPaneId: '%3',
       windowId: '@7',
     });
 
     expect(execAsyncMock).toHaveBeenCalledWith(
-      "tmux kill-session -t '=aumx-demo--view-pane-1'",
+      "tmux kill-session -t '=muxbase-demo--view-pane-1'",
       { timeout: 5000 },
     );
     expect(execAsyncMock).toHaveBeenCalledWith(
-      "tmux new-session -d -s 'aumx-demo--view-pane-1' -n '__aumx_view_bootstrap__' 'sleep 86400' ';' set -t 'aumx-demo--view-pane-1' @aumx_view_session 1",
+      "tmux new-session -d -s 'muxbase-demo--view-pane-1' -n '__muxbase_view_bootstrap__' 'sleep 86400' ';' set -t 'muxbase-demo--view-pane-1' @muxbase_view_session 1",
       { timeout: 5000 },
     );
     expect(execAsyncMock).toHaveBeenCalledWith(
-      "tmux set-option -t 'aumx-demo--view-pane-1' status off",
+      "tmux set-option -t 'muxbase-demo--view-pane-1' status off",
       { timeout: 5000 },
     );
     expect(execAsyncMock).toHaveBeenCalledWith(
-      "tmux link-window -s '=aumx-demo:@7' -t '=aumx-demo--view-pane-1:'",
+      "tmux link-window -s '=muxbase-demo:@7' -t '=muxbase-demo--view-pane-1:'",
       { timeout: 5000 },
     );
     expect(execAsyncMock).toHaveBeenCalledWith(
-      "tmux kill-window -t '=aumx-demo--view-pane-1:__aumx_view_bootstrap__'",
+      "tmux kill-window -t '=muxbase-demo--view-pane-1:__muxbase_view_bootstrap__'",
       { timeout: 5000 },
     );
     expect(execAsyncMock).toHaveBeenCalledWith(
-      "tmux select-window -t '=aumx-demo--view-pane-1:@7'",
+      "tmux select-window -t '=muxbase-demo--view-pane-1:@7'",
       { timeout: 5000 },
     );
     const setupCommands = execAsyncMock.mock.calls.map((call) => call[0] as string);
@@ -128,7 +128,7 @@ describe('TerminalPtyService', () => {
       'RGB,hyperlinks,usstyle,overline,strikethrough,sync,clipboard',
       'attach-session',
       '-t',
-      '=aumx-demo--view-pane-1',
+      '=muxbase-demo--view-pane-1',
     ], expect.objectContaining({
       cols: 120,
       name: 'xterm-256color',
@@ -145,7 +145,7 @@ describe('TerminalPtyService', () => {
     expect(process.write).toHaveBeenCalledWith('x');
     expect(process.resize).toHaveBeenCalledWith(132, 40);
     expect(process.kill).toHaveBeenCalledTimes(1);
-    expect(killViewSession).toHaveBeenCalledWith('aumx-demo--view-pane-1');
+    expect(killViewSession).toHaveBeenCalledWith('muxbase-demo--view-pane-1');
 
     process.emitExit();
     expect(onExit).not.toHaveBeenCalled();
@@ -159,7 +159,7 @@ describe('TerminalPtyService', () => {
       onData: vi.fn(),
       paneId: 'pane-1',
       rows: 24,
-      sessionName: 'aumx-demo',
+      sessionName: 'muxbase-demo',
       streamId: 1,
       tmuxPaneId: '%3',
       windowId: '@7',
@@ -179,14 +179,14 @@ describe('TerminalPtyService', () => {
       onData: vi.fn(),
       paneId: 'pane-1',
       rows: 24,
-      sessionName: 'aumx-demo',
+      sessionName: 'muxbase-demo',
       streamId: 1,
       tmuxPaneId: '%3',
       windowId: '@7',
     });
 
     const commands = execAsyncMock.mock.calls.map((call) => call[0] as string);
-    expect(commands[0]).toBe("tmux kill-session -t '=aumx-demo--view-pane-1'");
+    expect(commands[0]).toBe("tmux kill-session -t '=muxbase-demo--view-pane-1'");
     expect(commands.some((command) => command.includes('new-session'))).toBe(true);
   });
 
@@ -198,7 +198,7 @@ describe('TerminalPtyService', () => {
       onData: vi.fn(),
       paneId: 'pane-1',
       rows: 24,
-      sessionName: 'aumx-demo',
+      sessionName: 'muxbase-demo',
       streamId: 1,
       tmuxPaneId: '%3',
       windowId: '@7',
@@ -211,16 +211,16 @@ describe('TerminalPtyService', () => {
       onData: vi.fn(),
       paneId: 'pane-1',
       rows: 24,
-      sessionName: 'aumx-demo',
+      sessionName: 'muxbase-demo',
       streamId: 2,
       tmuxPaneId: '%3',
       windowId: '@7',
     });
 
     const commands = execAsyncMock.mock.calls.map((call) => call[0] as string);
-    expect(commands[0]).toBe("tmux kill-session -t '=aumx-demo--view-pane-1'");
+    expect(commands[0]).toBe("tmux kill-session -t '=muxbase-demo--view-pane-1'");
     expect(spawn).toHaveBeenCalledWith('tmux', expect.arrayContaining([
-      '=aumx-demo--view-pane-1',
+      '=muxbase-demo--view-pane-1',
     ]), expect.anything());
   });
 
@@ -232,7 +232,7 @@ describe('TerminalPtyService', () => {
       onData: vi.fn(),
       paneId: 'pane-1',
       rows: 24,
-      sessionName: 'aumx-demo',
+      sessionName: 'muxbase-demo',
       streamId: 1,
       tmuxPaneId: '%3',
       windowId: '@7',
@@ -251,19 +251,19 @@ describe('TerminalPtyService', () => {
       onData: vi.fn(),
       paneId: 'pane-1',
       rows: 24,
-      sessionName: 'aumx-demo',
+      sessionName: 'muxbase-demo',
       streamId: 1,
       tmuxPaneId: '%3',
       windowId: '@7',
     });
 
     expect(execAsyncMock).toHaveBeenCalledWith(
-      "tmux set-option -t 'aumx-demo--view-pane-1' mouse on",
+      "tmux set-option -t 'muxbase-demo--view-pane-1' mouse on",
       { timeout: 5000 },
     );
     await handle.setMouse(false);
     expect(execAsyncMock).toHaveBeenCalledWith(
-      "tmux set-option -t 'aumx-demo--view-pane-1' mouse off",
+      "tmux set-option -t 'muxbase-demo--view-pane-1' mouse off",
       { timeout: 5000 },
     );
     expect(execAsyncMock.mock.calls.flat().join(' ')).not.toContain(' -g ');
@@ -280,7 +280,7 @@ describe('TerminalPtyService', () => {
       onScreenReaderDetected,
       paneId: 'pane-1',
       rows: 24,
-      sessionName: 'aumx-demo',
+      sessionName: 'muxbase-demo',
       streamId: 1,
       tmuxPaneId: '%3',
       windowId: '@7',
@@ -291,7 +291,7 @@ describe('TerminalPtyService', () => {
     process.emitData('settings]\u001b[0m\r\n');
     await vi.waitFor(() => {
       expect(execAsyncMock).toHaveBeenCalledWith(
-        "tmux set-option -t 'aumx-demo--view-pane-1' mouse off",
+        "tmux set-option -t 'muxbase-demo--view-pane-1' mouse off",
         { timeout: 5000 },
       );
     });
@@ -311,7 +311,7 @@ describe('TerminalPtyService', () => {
       onScreenReaderDetected,
       paneId: 'pane-1',
       rows: 24,
-      sessionName: 'aumx-demo',
+      sessionName: 'muxbase-demo',
       streamId: 1,
       tmuxPaneId: '%3',
       windowId: '@7',
@@ -338,7 +338,7 @@ describe('TerminalPtyService', () => {
       onData: vi.fn(),
       paneId: 'pane-1',
       rows: 24,
-      sessionName: 'aumx-demo',
+      sessionName: 'muxbase-demo',
       streamId: 1,
       tmuxPaneId: '%3',
       windowId: '@7',
@@ -348,7 +348,7 @@ describe('TerminalPtyService', () => {
     process.emitData(`${marker}\r\n`);
 
     await vi.waitFor(() => expect(execAsyncMock).toHaveBeenCalledWith(
-      "tmux set-option -t 'aumx-demo--view-pane-1' mouse off",
+      "tmux set-option -t 'muxbase-demo--view-pane-1' mouse off",
       { timeout: 5000 },
     ));
   });
@@ -365,7 +365,7 @@ describe('TerminalPtyService', () => {
       onData: vi.fn(),
       paneId: 'pane-1',
       rows: 24,
-      sessionName: 'aumx-demo',
+      sessionName: 'muxbase-demo',
       streamId: 1,
       tmuxPaneId: '%3',
       windowId: '@7',
@@ -388,7 +388,7 @@ describe('TerminalPtyService', () => {
       onData: vi.fn(),
       paneId: 'pane-1',
       rows: 24,
-      sessionName: 'aumx-demo',
+      sessionName: 'muxbase-demo',
       streamId: 1,
       tmuxPaneId: '%3',
       windowId: '@7',
@@ -408,20 +408,20 @@ describe('TerminalPtyService', () => {
       onData: vi.fn(),
       paneId: 'pane-1',
       rows: 24,
-      sessionName: 'aumx-demo',
+      sessionName: 'muxbase-demo',
       streamId: 7,
       tmuxPaneId: '%3',
       windowId: '@7',
     })).rejects.toThrow('pty spawn failed');
 
-    expect(killViewSession).toHaveBeenCalledWith('aumx-demo--view-pane-1');
+    expect(killViewSession).toHaveBeenCalledWith('muxbase-demo--view-pane-1');
   });
 
   it('cleans detached pty view sessions without touching attached clients or unmarked sessions', async () => {
     execAsyncMock.mockResolvedValue([
-      'aumx-demo|0|',
-      'aumx-demo--view-pane-1|0|1',
-      'aumx-demo--view-pane-2|1|1',
+      'muxbase-demo|0|',
+      'muxbase-demo--view-pane-1|0|1',
+      'muxbase-demo--view-pane-2|1|1',
       'user-session--view-main|0|',
       'other-session|0|',
     ].join('\n'));
@@ -430,15 +430,15 @@ describe('TerminalPtyService', () => {
 
     expect(cleaned).toBe(1);
     expect(execAsyncMock).toHaveBeenCalledWith(
-      'tmux list-sessions -F "#{session_name}|#{session_attached}|#{@aumx_view_session}"',
+      'tmux list-sessions -F "#{session_name}|#{session_attached}|#{@muxbase_view_session}"',
       { silent: true },
     );
     expect(execAsyncMock).toHaveBeenCalledWith(
-      "tmux kill-session -t '=aumx-demo--view-pane-1'",
+      "tmux kill-session -t '=muxbase-demo--view-pane-1'",
       { silent: true },
     );
     expect(execAsyncMock).not.toHaveBeenCalledWith(
-      "tmux kill-session -t '=aumx-demo--view-pane-2'",
+      "tmux kill-session -t '=muxbase-demo--view-pane-2'",
       expect.anything(),
     );
     expect(execAsyncMock).not.toHaveBeenCalledWith(
@@ -448,16 +448,16 @@ describe('TerminalPtyService', () => {
   });
 
   it('generates bounded tmux-safe view session names', () => {
-    expect(makeTerminalPtyViewSessionName('aumx-demo', 'pane 1 / strange')).toBe('aumx-demo--view-pane-1-strange');
-    expect(makeTerminalPtyViewSessionName('aumx-demo', 'x'.repeat(120)).length).toBeLessThanOrEqual(80);
+    expect(makeTerminalPtyViewSessionName('muxbase-demo', 'pane 1 / strange')).toBe('muxbase-demo--view-pane-1-strange');
+    expect(makeTerminalPtyViewSessionName('muxbase-demo', 'x'.repeat(120)).length).toBeLessThanOrEqual(80);
     expect(makeTerminalPtyViewSessionName('s'.repeat(120), 'x'.repeat(120)).length).toBeLessThanOrEqual(80);
-    expect(isTerminalPtyViewSessionName('aumx-demo--view-pane-1')).toBe(true);
-    expect(isTerminalPtyViewSessionName('aumx-demo')).toBe(false);
+    expect(isTerminalPtyViewSessionName('muxbase-demo--view-pane-1')).toBe(true);
+    expect(isTerminalPtyViewSessionName('muxbase-demo')).toBe(false);
   });
 
   it('still recognizes legacy stream-suffixed view session names from older builds so the boot reaper can reap them', () => {
-    expect(isTerminalPtyViewSessionName('aumx-demo--view-pane-1')).toBe(true);
-    expect(isTerminalPtyViewSessionName('aumx-demo--view-pane-1-44')).toBe(true);
-    expect(isTerminalPtyViewSessionName('aumx-demo--view-pane-1-9007199254740991')).toBe(true);
+    expect(isTerminalPtyViewSessionName('muxbase-demo--view-pane-1')).toBe(true);
+    expect(isTerminalPtyViewSessionName('muxbase-demo--view-pane-1-44')).toBe(true);
+    expect(isTerminalPtyViewSessionName('muxbase-demo--view-pane-1-9007199254740991')).toBe(true);
   });
 });

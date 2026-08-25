@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useRef, useCallback, useState } from 'react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { NormalizedSession } from '../../shared/agent-session-types';
 import type { BacklogItem, DoneItem } from '../../shared/kanban-types';
 import { getPaneKanbanActivityState, getPaneKanbanNextTransitionTime } from '../../shared/kanban-pane-activity';
@@ -31,12 +31,12 @@ export interface KanbanColumn {
 
 export type KanbanColumnItem =
   | { type: 'backlog'; data: BacklogItem }
-  | { type: 'pane'; data: AumxPane }
+  | { type: 'pane'; data: MuxBasePane }
   | { type: 'done'; data: DoneItem }
   | { type: 'launching'; data: BacklogItem };
 
 function isNeedsAttentionPane(
-  pane: AumxPane,
+  pane: MuxBasePane,
   status: PaneActivityState,
   forceNeedsAttentionPaneIds: ReadonlySet<string> | undefined,
 ): boolean {
@@ -45,7 +45,7 @@ function isNeedsAttentionPane(
 }
 
 function getNaturalColumn(
-  pane: AumxPane,
+  pane: MuxBasePane,
   status: PaneActivityState,
   options?: {
     forceInProgressPaneIds?: ReadonlySet<string>;
@@ -60,7 +60,7 @@ function getNaturalColumn(
 }
 
 export function computeEffectiveStatusByPaneId(
-  panes: AumxPane[],
+  panes: MuxBasePane[],
   sessions: Record<string, NormalizedSession>,
   paneActivityById: Record<string, PaneActivity>,
 ): Record<string, PaneActivityState> {
@@ -129,7 +129,7 @@ export function useKanbanColumns(): {
   }, [nextKanbanRefreshAt]);
 
   const checkDirtyState = useCallback(
-    async (pane: AumxPane) => {
+    async (pane: MuxBasePane) => {
       if (!pane.worktreePath || pendingChecks.current.has(pane.id)) return;
       pendingChecks.current.add(pane.id);
       try {
@@ -261,7 +261,7 @@ export function useKanbanColumns(): {
 }
 
 export function deriveKanbanColumns(
-  panes: AumxPane[],
+  panes: MuxBasePane[],
   backlog: BacklogItem[],
   done: DoneItem[],
   dirtyMap: Record<string, boolean>,
@@ -274,10 +274,10 @@ export function deriveKanbanColumns(
 ): KanbanColumn[] {
   const sortedBacklog = [...backlog].sort((a, b) => a.order - b.order);
 
-  const inProgress: AumxPane[] = [];
-  const needsAttention: AumxPane[] = [];
-  const review: AumxPane[] = [];
-  const donePanes: AumxPane[] = [];
+  const inProgress: MuxBasePane[] = [];
+  const needsAttention: MuxBasePane[] = [];
+  const review: MuxBasePane[] = [];
+  const donePanes: MuxBasePane[] = [];
 
   for (const pane of panes) {
     const override = options?.columnOverrides?.[pane.id];

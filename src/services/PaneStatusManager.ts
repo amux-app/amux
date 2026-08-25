@@ -1,4 +1,4 @@
-import { NO_INITIAL_PROMPT, type AumxPane } from '../types.js';
+import { NO_INITIAL_PROMPT, type MuxBasePane } from '../types.js';
 import type { AgentName } from '../utils/agentLaunch.js';
 import type { PaneWindowCapture } from '../utils/paneCapture.js';
 import { LogService } from './LogService.js';
@@ -62,7 +62,7 @@ export class PaneStatusManager {
     this.captureScheduler.resumeFast(paneId);
   }
 
-  updateAnalyzers(panes: AumxPane[]): void {
+  updateAnalyzers(panes: MuxBasePane[]): void {
     if (this.stopped) return;
     const currentPaneIds = new Set(panes.map((pane) => pane.id));
 
@@ -117,7 +117,7 @@ export class PaneStatusManager {
     this.analyzers.clear();
   }
 
-  private addAnalyzer(pane: AumxPane): void {
+  private addAnalyzer(pane: MuxBasePane): void {
     const config: AnalyzerConfig = {
       agent: pane.agent,
       recognizeInitialInputReady: this.shouldRecognizeInitialInputReady(pane),
@@ -132,7 +132,7 @@ export class PaneStatusManager {
     this.captureScheduler.add(config);
   }
 
-  private shouldRecognizeInitialInputReady(pane: AumxPane): boolean {
+  private shouldRecognizeInitialInputReady(pane: MuxBasePane): boolean {
     if (pane.agent !== 'pi') return false;
     // New panes carry launch-input provenance explicitly because `prompt` can
     // be display/naming metadata while `agentPrompt` is intentionally empty.

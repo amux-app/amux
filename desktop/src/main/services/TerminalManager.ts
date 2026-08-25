@@ -1,4 +1,4 @@
-import { execAsync, execFileAsync, getStatusDetector, shQuote } from 'aumx/core';
+import { execAsync, execFileAsync, getStatusDetector, shQuote } from 'muxbase/core';
 import { BrowserWindow } from 'electron';
 import { existsSync } from 'fs';
 import type {
@@ -1303,7 +1303,7 @@ export class TerminalManager {
             line2: l2,
           });
         }
-        if (content.includes('AUMX_PROMPT_FILE=') || content.includes('AUMX_PROMPT_CONTENT=')) {
+        if (content.includes('MUXBASE_PROMPT_FILE=') || content.includes('MUXBASE_PROMPT_CONTENT=')) {
           log.debug('terminal', 'Startup signature in capture — blanking frame', {
             paneId: stream.paneId,
             alternateOn: stream.alternateOn,

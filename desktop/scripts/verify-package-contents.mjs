@@ -28,7 +28,7 @@ const FORBIDDEN_ARCHIVE_ENTRIES = [
 const REQUIRED_ARCHIVE_ENTRIES = [
   '/node_modules/debug/src/index.js',
   '/node_modules/node-pty/build/Release/pty.node',
-  '/node_modules/aumx/config/system-requirements.json',
+  '/node_modules/muxbase/config/system-requirements.json',
 ];
 
 function lspFrame(message) {
@@ -163,7 +163,7 @@ function verifyArchive(archivePath) {
         failures.push('packaged TypeScript 7 LSP binary is missing from extraResources');
       }
       const binaries = [
-        ['app executable', join(appPath, 'Contents', 'MacOS', 'Amux')],
+        ['app executable', join(appPath, 'Contents', 'MacOS', 'MuxBase')],
         ['node-pty native module', nativeModule],
         [
           'node-pty spawn helper',

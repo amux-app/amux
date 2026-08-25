@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, statSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
-import { SettingsManager } from 'aumx/core';
+import { SettingsManager } from 'muxbase/core';
 import type { AgentDefaultSlice } from '../../../shared/ipc-types.js';
 
 const CLAUDE_SETTINGS_PATH = join(homedir(), '.claude', 'settings.json');
@@ -62,9 +62,9 @@ function readSettingsModel(projectRoot?: string): string | undefined {
 
 export function readClaudeDefaults(projectRoot?: string): AgentDefaultSlice {
   const envModel = aliasFromModelId(process.env.ANTHROPIC_MODEL);
-  // Priority: (1) amux settings (claudeModel), (2) process.env ANTHROPIC_MODEL,
+  // Priority: (1) muxbase settings (claudeModel), (2) process.env ANTHROPIC_MODEL,
   // (3) ~/.claude/settings.json ANTHROPIC_MODEL, (4) opus as final fallback.
-  // Mirrors the same amux-first priority already used for effort below.
+  // Mirrors the same muxbase-first priority already used for effort below.
   const model = readSettingsModel(projectRoot) ?? envModel ?? readClaudeSettingsModel() ?? OPUS;
   const effort = readSettingsEffort(projectRoot) ?? 'ultracode';
   return { model, effort };

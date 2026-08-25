@@ -16,16 +16,16 @@ function seedRelease(): void {
   const entries: Array<{ sha512: string; size: number; url: string }> = [];
   for (const arch of ['arm64', 'x64']) {
     const payload = Buffer.from(arch);
-    writeFileSync(join(releaseDir, `Amux-${version}-${arch}.dmg`), arch);
-    writeFileSync(join(releaseDir, `Amux-${version}-${arch}.zip`), payload);
+    writeFileSync(join(releaseDir, `MuxBase-${version}-${arch}.dmg`), arch);
+    writeFileSync(join(releaseDir, `MuxBase-${version}-${arch}.zip`), payload);
     entries.push({
       sha512: createHash('sha512').update(payload).digest('base64'),
       size: payload.length,
-      url: `Amux-${version}-${arch}.zip`,
+      url: `MuxBase-${version}-${arch}.zip`,
     });
   }
   writeFileSync(join(releaseDir, 'SHA256SUMS'), 'checksums');
-  writeFileSync(join(releaseDir, 'amux-sbom.cdx.json'), '{}');
+  writeFileSync(join(releaseDir, 'muxbase-sbom.cdx.json'), '{}');
   writeFileSync(
     join(releaseDir, 'latest-mac.yml'),
     [
@@ -44,7 +44,7 @@ function seedRelease(): void {
 
 describe('macOS release metadata verification', () => {
   beforeEach(() => {
-    releaseDir = mkdtempSync(join(tmpdir(), 'amux-release-metadata-'));
+    releaseDir = mkdtempSync(join(tmpdir(), 'muxbase-release-metadata-'));
     seedRelease();
   });
 
@@ -56,13 +56,13 @@ describe('macOS release metadata verification', () => {
     expect(validateReleaseMetadata(releaseDir, version)).toEqual([
       {
         arch: 'arm64',
-        dmgPath: join(releaseDir, `Amux-${version}-arm64.dmg`),
-        zipPath: join(releaseDir, `Amux-${version}-arm64.zip`),
+        dmgPath: join(releaseDir, `MuxBase-${version}-arm64.dmg`),
+        zipPath: join(releaseDir, `MuxBase-${version}-arm64.zip`),
       },
       {
         arch: 'x64',
-        dmgPath: join(releaseDir, `Amux-${version}-x64.dmg`),
-        zipPath: join(releaseDir, `Amux-${version}-x64.zip`),
+        dmgPath: join(releaseDir, `MuxBase-${version}-x64.dmg`),
+        zipPath: join(releaseDir, `MuxBase-${version}-x64.zip`),
       },
     ]);
   });
@@ -70,7 +70,7 @@ describe('macOS release metadata verification', () => {
   it('fails when one architecture is absent from updater metadata', () => {
     writeFileSync(
       join(releaseDir, 'latest-mac.yml'),
-      `version: ${version}\nfiles:\n  - url: Amux-${version}-arm64.zip\n`,
+      `version: ${version}\nfiles:\n  - url: MuxBase-${version}-arm64.zip\n`,
     );
 
     expect(() => validateReleaseMetadata(releaseDir, version)).toThrow(
@@ -79,13 +79,13 @@ describe('macOS release metadata verification', () => {
   });
 
   it('fails when an expected signed artifact is missing', () => {
-    rmSync(join(releaseDir, `Amux-${version}-x64.dmg`));
+    rmSync(join(releaseDir, `MuxBase-${version}-x64.dmg`));
 
     expect(() => validateReleaseMetadata(releaseDir, version)).toThrow('Missing release artifact');
   });
 
   it('fails when the release SBOM is missing', () => {
-    rmSync(join(releaseDir, 'amux-sbom.cdx.json'));
+    rmSync(join(releaseDir, 'muxbase-sbom.cdx.json'));
 
     expect(() => validateReleaseMetadata(releaseDir, version)).toThrow('Missing release artifact');
   });

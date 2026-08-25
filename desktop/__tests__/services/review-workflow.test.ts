@@ -1,4 +1,4 @@
-import type { AgentName, AumxPane } from 'aumx/core';
+import type { AgentName, MuxBasePane } from 'muxbase/core';
 import { existsSync, rmSync, writeFileSync } from 'fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PaneActivity, ReadinessToken } from '../../src/shared/pane-activity.js';
@@ -59,7 +59,7 @@ const readinessToken: ReadinessToken = {
   revision: 1,
 };
 
-function makeSource(overrides: Partial<AumxPane> = {}): AumxPane {
+function makeSource(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'claude',
     id: 'source',
@@ -72,7 +72,7 @@ function makeSource(overrides: Partial<AumxPane> = {}): AumxPane {
   };
 }
 
-function makeReview(overrides: Partial<AumxPane> = {}): AumxPane {
+function makeReview(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'claude',
     id: 'review',
@@ -92,7 +92,7 @@ function makeReview(overrides: Partial<AumxPane> = {}): AumxPane {
   };
 }
 
-function makeHarness(initialPanes: AumxPane[] = [makeSource()]) {
+function makeHarness(initialPanes: MuxBasePane[] = [makeSource()]) {
   let panes = initialPanes;
   const createPane = vi.fn(async () => ({ success: true, pane: makeReview() }));
   const sendPromptToPane = vi.fn(async () => undefined);
@@ -105,7 +105,7 @@ function makeHarness(initialPanes: AumxPane[] = [makeSource()]) {
     getPanes: vi.fn(() => panes),
     getProjectRoot: vi.fn(() => '/project'),
     getSession: vi.fn(() => null),
-    replacePanesBestEffort: vi.fn((next: AumxPane[]) => { panes = next; }),
+    replacePanesBestEffort: vi.fn((next: MuxBasePane[]) => { panes = next; }),
     revalidateReadinessOrReject: vi.fn((pane, _token, blockReason, notFoundReason) => {
       if (!pane) return { ok: false as const, reason: notFoundReason };
       const reason = blockReason(pane);

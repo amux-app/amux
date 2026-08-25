@@ -24,12 +24,12 @@ describe('merge validation git status', () => {
     execAsyncWithStatusMock.mockReset();
   });
 
-  it('ignores Amux metadata paths when detecting uncommitted files', async () => {
+  it('ignores MuxBase metadata paths when detecting uncommitted files', async () => {
     execFileAsyncMock.mockResolvedValue([
-      '?? .aumx/',
-      '?? .aumx-hooks/',
-      ' M .aumx/settings.json',
-      ' M .aumx-hooks/worktree_created',
+      '?? .muxbase/',
+      '?? .muxbase-hooks/',
+      ' M .muxbase/settings.json',
+      ' M .muxbase-hooks/worktree_created',
       ' M src/index.ts',
     ].join('\n'));
 
@@ -39,10 +39,10 @@ describe('merge validation git status', () => {
     expect(status.files).toEqual(['src/index.ts']);
   });
 
-  it('does not report changes when only Amux metadata is dirty', async () => {
+  it('does not report changes when only MuxBase metadata is dirty', async () => {
     execFileAsyncMock.mockResolvedValue([
-      '?? .aumx/',
-      ' M .aumx-hooks/worktree_created',
+      '?? .muxbase/',
+      ' M .muxbase-hooks/worktree_created',
     ].join('\n'));
 
     const status = await getGitStatus('/repo');

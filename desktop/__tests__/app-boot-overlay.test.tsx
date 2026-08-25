@@ -22,7 +22,7 @@ describe('AppBootOverlay', () => {
       <AppBootOverlay state={{ phase: 'starting', revision: 0 }} />,
     );
 
-    expect(getByRole('status', { name: 'Starting Amux' })).toBeTruthy();
+    expect(getByRole('status', { name: 'Starting MuxBase' })).toBeTruthy();
     expect(queryByRole('heading')).toBeNull();
     expect(queryByText(/preparing your workspace/i)).toBeNull();
     expect(queryByText(/connecting to tmux/i)).toBeNull();

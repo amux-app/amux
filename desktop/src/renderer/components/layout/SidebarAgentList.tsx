@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFlipReorder } from '../../hooks/useFlipReorder';
 import { cn } from '../../lib/cn';
@@ -27,7 +27,7 @@ interface SidebarAgentListProps {
   onDelete: (paneId: string) => Promise<boolean>;
   onRename: (paneId: string, name: string) => void | Promise<void>;
   onSelect: (paneId: string) => void;
-  panes: AumxPane[];
+  panes: MuxBasePane[];
   selectedPaneId: string | null;
   statusOf: SidebarStatusLookup;
   titleOf: ReadonlyMap<string, string>;

@@ -42,17 +42,17 @@ jobs:
       - name: Static verification
         run: pnpm run verify:static
         env:
-          AUMX_PRIVATE_REF_PATTERNS: ${{ secrets.INTERNAL_REF_PATTERNS }}
-          AUMX_REQUIRE_PRIVATE_REFS: '0'
+          MUXBASE_PRIVATE_REF_PATTERNS: ${{ secrets.INTERNAL_REF_PATTERNS }}
+          MUXBASE_REQUIRE_PRIVATE_REFS: '0'
 
       - name: Desktop type check
-        run: pnpm --filter aumx-desktop typecheck
+        run: pnpm --filter muxbase-desktop typecheck
 
       - name: Core coverage
         run: pnpm test:coverage
 
       - name: Desktop coverage
-        run: xvfb-run -a pnpm --filter aumx-desktop test:coverage
+        run: xvfb-run -a pnpm --filter muxbase-desktop test:coverage
 
   desktop-smoke:
     runs-on: macos-latest
@@ -79,7 +79,7 @@ jobs:
 
       - name: Configure isolated tmux server
         run: |
-          socket_dir="$RUNNER_TEMP/aumx-tmux-ci/socket"
+          socket_dir="$RUNNER_TEMP/muxbase-tmux-ci/socket"
           mkdir -p "$socket_dir"
           echo "TMUX_TMPDIR=$socket_dir" >> "$GITHUB_ENV"
 
@@ -95,7 +95,7 @@ jobs:
           pnpm --dir desktop build
 
       - name: Desktop smoke test
-        run: pnpm --filter aumx-desktop test:smoke
+        run: pnpm --filter muxbase-desktop test:smoke
 
       - name: Tear down isolated tmux server
         if: always()

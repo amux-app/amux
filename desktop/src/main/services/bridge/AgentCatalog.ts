@@ -3,7 +3,7 @@ import {
   getAgentsWithCapability,
   type AgentCapability,
   type AgentName,
-} from 'aumx/core';
+} from 'muxbase/core';
 
 export class AgentCatalog {
   private agents: AgentName[] = [];

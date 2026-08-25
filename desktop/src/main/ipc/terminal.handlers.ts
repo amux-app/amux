@@ -1,4 +1,4 @@
-import { hasValidPaneTerminalProfile } from 'aumx/core';
+import { hasValidPaneTerminalProfile } from 'muxbase/core';
 import { IPC } from '../../shared/ipc-channels.js';
 import type {
   TerminalAttachRequest,
@@ -10,7 +10,7 @@ import type {
   TerminalWriteRequest,
   TerminalUnlockStdinRequest,
 } from '../../shared/ipc-types.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { log } from '../services/Logger.js';
 import { getTerminalManager } from '../services/TerminalStreamService.js';
 import { isTerminalPaneMissingError } from '../services/terminal-pane-dimensions.js';
@@ -57,7 +57,7 @@ function resolveTranscriptPath(
   return authorizeTranscriptPath(paneId, rendererPath);
 }
 
-export function registerTerminalHandlers(bridge: AumxBridge): void {
+export function registerTerminalHandlers(bridge: MuxBaseBridge): void {
   secureHandle(IPC.TERMINAL_ATTACH, async (_event, request: TerminalAttachRequest) => {
     const pane = bridge.getPanes().find((candidate) => candidate.id === request.paneId);
     if (!pane) {

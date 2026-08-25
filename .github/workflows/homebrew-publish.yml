@@ -79,32 +79,32 @@ jobs:
         run: |
           node scripts/generate-homebrew-cask.mjs \
             --version "$RELEASE_VERSION" \
-            --arm-dmg "desktop/release/Amux-${RELEASE_VERSION}-arm64.dmg" \
-            --intel-dmg "desktop/release/Amux-${RELEASE_VERSION}-x64.dmg" \
-            --output "packaging/homebrew/Casks/amux.rb"
+            --arm-dmg "desktop/release/MuxBase-${RELEASE_VERSION}-arm64.dmg" \
+            --intel-dmg "desktop/release/MuxBase-${RELEASE_VERSION}-x64.dmg" \
+            --output "packaging/homebrew/Casks/muxbase.rb"
 
       - name: Checkout Homebrew tap repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # This checkout must retain its dedicated, least-privilege tap token for git push.
           persist-credentials: true
-          repository: amux-app/homebrew-amux
+          repository: muxbase-app/homebrew-muxbase
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           path: homebrew-tap
 
       - name: Update tap with new cask
         run: |
           mkdir -p homebrew-tap/Casks
-          cp packaging/homebrew/Casks/amux.rb homebrew-tap/Casks/amux.rb
+          cp packaging/homebrew/Casks/muxbase.rb homebrew-tap/Casks/muxbase.rb
           cd homebrew-tap
-          git config user.name 'amux-release-bot'
-          git config user.email 'release-bot@amux.dev'
-          if git diff --quiet -- Casks/amux.rb; then
+          git config user.name 'muxbase-release-bot'
+          git config user.email 'release-bot@muxbase.dev'
+          if git diff --quiet -- Casks/muxbase.rb; then
             echo 'Cask unchanged; nothing to commit.'
             exit 0
           fi
-          git add Casks/amux.rb
-          git commit -m "chore: bump amux to ${RELEASE_TAG}"
+          git add Casks/muxbase.rb
+          git commit -m "chore: bump muxbase to ${RELEASE_TAG}"
           git push origin HEAD
 
   cask-smoke:
@@ -123,9 +123,9 @@ jobs:
       - name: Install tmux and the published Cask
         run: |
           set -euo pipefail
-          brew tap amux-app/amux
+          brew tap muxbase-app/muxbase
           brew install tmux
-          brew install --cask amux
+          brew install --cask muxbase
 
       - name: Verify resolved tmux meets the floor
         run: |
@@ -136,16 +136,16 @@ jobs:
       - name: Verify Cask dependency and payload
         run: |
           set -euo pipefail
-          brew missing amux && echo 'no missing dependencies'
-          test -d "/Applications/Amux.app"
+          brew missing muxbase && echo 'no missing dependencies'
+          test -d "/Applications/MuxBase.app"
 
       - name: Verify published app reaches ready state
         run: |
           set -euo pipefail
-          smoke_root="$(mktemp -d "$RUNNER_TEMP/amux-cask-smoke.XXXXXX")"
+          smoke_root="$(mktemp -d "$RUNNER_TEMP/muxbase-cask-smoke.XXXXXX")"
           mkdir -p "$smoke_root/tmux" "$smoke_root/user-data"
           git init -q "$smoke_root/project"
-          log_file="$HOME/Library/Logs/Amux/.log/aumx-desktop-$(date -u +%F).log"
+          log_file="$HOME/Library/Logs/MuxBase/.log/muxbase-desktop-$(date -u +%F).log"
 
           cleanup() {
             if [ -n "${app_pid:-}" ]; then
@@ -158,20 +158,20 @@ jobs:
           trap cleanup EXIT
 
           cd "$smoke_root/project"
-          AUMX_USER_DATA_DIR="$smoke_root/user-data" \
+          MUXBASE_USER_DATA_DIR="$smoke_root/user-data" \
             TMUX_TMPDIR="$smoke_root/tmux" \
-            /Applications/Amux.app/Contents/MacOS/Amux >"$smoke_root/app.stdout.log" 2>&1 &
+            /Applications/MuxBase.app/Contents/MacOS/MuxBase >"$smoke_root/app.stdout.log" 2>&1 &
           app_pid=$!
 
           for _ in {1..30}; do
             kill -0 "$app_pid"
-            if [ -f "$log_file" ] && grep -q '"msg":"AumxBridge initialized successfully"' "$log_file"; then
+            if [ -f "$log_file" ] && grep -q '"msg":"MuxBaseBridge initialized successfully"' "$log_file"; then
               exit 0
             fi
             sleep 1
           done
 
-          echo 'Published Amux did not report a ready boot state.'
+          echo 'Published MuxBase did not report a ready boot state.'
           test -f "$log_file" && tail -n 100 "$log_file"
           exit 1
 
@@ -179,5 +179,5 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          brew uninstall --cask amux || true
+          brew uninstall --cask muxbase || true
           test -x "$(command -v tmux)"

@@ -3,11 +3,11 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, resolve } from 'node:path';
-import { execAsync, parseTmuxVersion, validateSystemRequirements } from 'aumx/core';
+import { execAsync, parseTmuxVersion, validateSystemRequirements } from 'muxbase/core';
 import { IPC } from '../../shared/ipc-channels.js';
 import type { AppInfoResult, ListEditorsResponse, SessionInfoResult, SystemCheckResult } from '../../shared/ipc-types.js';
 import { readAppBuildInfo } from '../services/AppBuildInfo.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { detectAvailableEditors, resolveEditorById } from '../services/editorDetection.js';
 import { log } from '../services/Logger.js';
 import { createSupportBundle, previewSupportBundle, SUPPORT_BUNDLE_FILE_PATTERN } from '../services/SupportBundleService.js';
@@ -18,7 +18,7 @@ import { secureHandle } from './ipc-security.js';
 
 const UNAUTHORIZED_PATH_ERROR = 'Unauthorized path';
 
-export function registerSystemHandlers(bridge: AumxBridge): void {
+export function registerSystemHandlers(bridge: MuxBaseBridge): void {
   secureHandle(IPC.SYSTEM_APP_INFO, () => {
     return getAppInfo();
   });
@@ -162,7 +162,7 @@ export function registerSystemHandlers(bridge: AumxBridge): void {
 }
 
 function buildSupportBundleOptions(
-  bridge: AumxBridge,
+  bridge: MuxBaseBridge,
   systemCheck: SystemCheckResult | { error: string },
   includeTranscripts: boolean,
 ) {
@@ -243,7 +243,7 @@ function isSupportBundlePath(path: string): boolean {
     && SUPPORT_BUNDLE_FILE_PATTERN.test(basename(resolved));
 }
 
-function isRevealablePath(bridge: AumxBridge, path: string): boolean {
+function isRevealablePath(bridge: MuxBaseBridge, path: string): boolean {
   const logDir = log.getLogDir();
   if (logDir !== null && isPathWithinRoot(logDir, path)) return true;
   if (isSupportBundlePath(path)) return true;

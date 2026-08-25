@@ -20,7 +20,7 @@ describe('untracked file content', () => {
   let dir: string;
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'aumx-untracked-'));
+    dir = mkdtempSync(join(tmpdir(), 'muxbase-untracked-'));
   });
 
   afterEach(() => {

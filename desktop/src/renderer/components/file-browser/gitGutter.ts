@@ -69,7 +69,7 @@ class ChangeMarker extends GutterMarker {
 
   toDOM(): HTMLElement {
     const marker = document.createElement('span');
-    marker.className = `aumx-git-gutter-${this.kind}`;
+    marker.className = `muxbase-git-gutter-${this.kind}`;
     marker.setAttribute('aria-hidden', 'true');
     return marker;
   }
@@ -103,19 +103,19 @@ export function getGitGutterExtension(): Extension {
   return [
     gitGutterState,
     gutter({
-      class: 'aumx-git-gutter',
+      class: 'muxbase-git-gutter',
       markers: (view) => view.state.field(gitGutterState),
     }),
     EditorView.theme({
-      '.aumx-git-gutter': { width: '3px' },
-      '.aumx-git-gutter-added, .aumx-git-gutter-deleted, .aumx-git-gutter-modified': {
+      '.muxbase-git-gutter': { width: '3px' },
+      '.muxbase-git-gutter-added, .muxbase-git-gutter-deleted, .muxbase-git-gutter-modified': {
         display: 'block',
         height: '100%',
         width: '3px',
       },
-      '.aumx-git-gutter-added': { backgroundColor: 'var(--success)' },
-      '.aumx-git-gutter-deleted': { backgroundColor: 'var(--error)' },
-      '.aumx-git-gutter-modified': { backgroundColor: 'var(--warning)' },
+      '.muxbase-git-gutter-added': { backgroundColor: 'var(--success)' },
+      '.muxbase-git-gutter-deleted': { backgroundColor: 'var(--error)' },
+      '.muxbase-git-gutter-modified': { backgroundColor: 'var(--warning)' },
     }),
   ];
 }

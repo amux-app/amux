@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project uses release-please to update the changelog from Conventional Commit history.
 
+## MuxBase clean-break rename
+
+- Renamed the application, packages, runtime identifiers, filesystem namespace, Electron API, and release artifacts to MuxBase.
+- Fresh installations use `.muxbase`, `muxbase.config.json`, `~/.muxbase/settings.json`, `muxbase-*` tmux resources, and `MUXBASE_*` environment variables.
+- This is an intentional clean break: old application data is neither migrated nor modified.
+
 ## [0.1.0](https://github.com/amux-app/amux/compare/v0.0.1...v0.1.0) (2026-08-24)
 
 

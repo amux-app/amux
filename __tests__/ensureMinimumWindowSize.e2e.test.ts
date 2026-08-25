@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { execSync } from 'child_process';
 
-describe.runIf(process.env.AUMX_TMUX_E2E === '1')('ensureMinimumWindowSize (E2E tmux)', () => {
-  const TEST_SESSION = 'aumx-test-window-size';
+describe.runIf(process.env.MUXBASE_TMUX_E2E === '1')('ensureMinimumWindowSize (E2E tmux)', () => {
+  const TEST_SESSION = 'muxbase-test-window-size';
 
   function tmux(cmd: string): string {
     return execSync(`tmux ${cmd}`, { encoding: 'utf-8' }).trim();

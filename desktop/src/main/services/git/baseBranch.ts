@@ -1,4 +1,4 @@
-import { isValidBranchName, SettingsManager } from 'aumx/core';
+import { isValidBranchName, SettingsManager } from 'muxbase/core';
 import { HEAD_REF, REV_PARSE } from './gitArgs.js';
 import { safeGit } from './gitCommand.js';
 

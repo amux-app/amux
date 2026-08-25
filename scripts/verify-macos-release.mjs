@@ -19,12 +19,12 @@ import { pathToFileURL } from 'node:url';
 import { parse as parseYaml } from 'yaml';
 
 const ARCHITECTURES = ['arm64', 'x64'];
-const APP_NAME = 'Amux';
-const APP_EXECUTABLE = 'Amux';
+const APP_NAME = 'MuxBase';
+const APP_EXECUTABLE = 'MuxBase';
 const LAUNCH_STABILITY_MS = 3_000;
 const LAUNCH_TERMINATION_MS = 5_000;
 const MINIMUM_MACOS_VERSION = '13.0';
-const UPDATE_PROVIDER = Object.freeze({ owner: 'amux-app', provider: 'github', repo: 'amux' });
+const UPDATE_PROVIDER = Object.freeze({ owner: 'muxbase-app', provider: 'github', repo: 'muxbase' });
 
 export function validateReleaseMetadata(releaseDir, version) {
   if (!version?.trim()) throw new Error('A release version is required');
@@ -37,7 +37,7 @@ export function validateReleaseMetadata(releaseDir, version) {
     ...artifacts,
     'latest-mac.yml',
     'SHA256SUMS',
-    'amux-sbom.cdx.json',
+    'muxbase-sbom.cdx.json',
   ]) {
     const path = join(releaseDir, artifact);
     if (!existsSync(path)) throw new Error(`Missing release artifact: ${path}`);
@@ -113,7 +113,7 @@ async function verifyRelease(releaseDir, version) {
   run('shasum', ['-a', '256', '-c', 'SHA256SUMS'], releaseDir);
   validateChecksumCoverage(releaseDir, version);
 
-  const mountRoot = mkdtempSync(join(tmpdir(), 'amux-release-verify-'));
+  const mountRoot = mkdtempSync(join(tmpdir(), 'muxbase-release-verify-'));
   try {
     for (const { arch, dmgPath } of dmgs) {
       const mountPoint = join(mountRoot, arch);
@@ -151,7 +151,7 @@ function validateChecksumCoverage(releaseDir, version) {
       .filter(Boolean),
   );
   const required = [
-    'amux-sbom.cdx.json',
+    'muxbase-sbom.cdx.json',
     'latest-mac.yml',
     ...ARCHITECTURES.flatMap((arch) => [
       `${APP_NAME}-${version}-${arch}.dmg`,
@@ -261,7 +261,7 @@ export function verifyAppLaunch(appPath, arch) {
 
   return new Promise((resolvePromise, rejectPromise) => {
     const child = spawn(executable, [], {
-      env: { ...process.env, AUMX_E2E: '1', NODE_ENV: 'test' },
+      env: { ...process.env, MUXBASE_E2E: '1', NODE_ENV: 'test' },
       stdio: ['ignore', 'ignore', 'pipe'],
     });
     let stderr = '';

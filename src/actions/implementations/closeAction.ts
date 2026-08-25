@@ -4,7 +4,7 @@
 
 import { execFileSync } from 'child_process';
 import * as fs from 'fs';
-import type { AumxPane, AumxConfig } from '../../types.js';
+import type { MuxBasePane, MuxBaseConfig } from '../../types.js';
 import type { ActionResult, ActionContext, ActionOption } from '../types.js';
 import { StateManager } from '../../shared/StateManager.js';
 import { PaneLifecycleManager } from '../../services/PaneLifecycleManager.js';
@@ -39,7 +39,7 @@ const TMUX_DEFAULT_TIMEOUT_MS = 5000;
 const TMUX_INTERRUPT_TIMEOUT_MS = 2000;
 const TMUX_CLOSE_VERIFY_DELAY_MS = 100;
 
-function getTrackedPanes(pane: AumxPane, context: ActionContext): AumxPane[] {
+function getTrackedPanes(pane: MuxBasePane, context: ActionContext): MuxBasePane[] {
   const stateManager = StateManager.getInstance();
   if (typeof stateManager.getPanes !== 'function') return context.panes;
   const statePanes = stateManager.getPanes();
@@ -78,7 +78,7 @@ async function waitForTmux(ms: number): Promise<void> {
   await new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function closeTmuxPane(pane: AumxPane): Promise<void> {
+async function closeTmuxPane(pane: MuxBasePane): Promise<void> {
   if (!tmuxPaneExists(pane.paneId)) {
     LogService.getInstance().debug(`Pane ${pane.paneId} already gone, skipping kill`, 'paneActions');
     return;
@@ -118,10 +118,10 @@ function getSessionPaneIds(sessionName: string): string[] {
 function recalculateLayoutAfterClose(
   panesFile: string,
   sessionName: string,
-  updatedPanes: AumxPane[]
+  updatedPanes: MuxBasePane[]
 ): void {
   try {
-    const config: AumxConfig = JSON.parse(fs.readFileSync(panesFile, 'utf-8'));
+    const config: MuxBaseConfig = JSON.parse(fs.readFileSync(panesFile, 'utf-8'));
     if (!config.controlPaneId || updatedPanes.length === 0) {
       return;
     }
@@ -164,7 +164,7 @@ function recalculateLayoutAfterClose(
  * Close a pane - presents options for how to close
  */
 export async function closePane(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext
 ): Promise<ActionResult> {
   const trackedPanes = getTrackedPanes(pane, context);
@@ -308,7 +308,7 @@ export async function closePane(
  * Execute the selected close option
  */
 async function executeCloseOption(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   option: string
 ): Promise<ActionResult> {

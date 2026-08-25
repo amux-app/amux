@@ -8,7 +8,7 @@ const runner = join(process.cwd(), 'scripts', 'run-desktop-e2e.mjs');
 
 function runRunner(code, file) {
   return spawnSync(process.execPath, [runner, '--', process.execPath, '-e', code], {
-    env: { ...process.env, AUMX_E2E_RUNNER_TMPDIR_FILE: file },
+    env: { ...process.env, MUXBASE_E2E_RUNNER_TMPDIR_FILE: file },
     encoding: 'utf8',
   });
 }
@@ -25,7 +25,7 @@ describe('desktop E2E runner', () => {
   });
 
   it('runs each requested test file in a fresh tmux environment', () => {
-    const root = mkdtempSync(join(tmpdir(), 'aumx-runner-test-'));
+    const root = mkdtempSync(join(tmpdir(), 'muxbase-runner-test-'));
     const record = join(root, 'runs');
     const result = spawnSync(
       process.execPath,
@@ -37,10 +37,10 @@ describe('desktop E2E runner', () => {
         '--',
         process.execPath,
         '-e',
-        "require('node:fs').appendFileSync(process.env.AUMX_E2E_FILE_RECORD, `${process.env.TMUX_TMPDIR}|${process.argv[1]}\\n`)",
+        "require('node:fs').appendFileSync(process.env.MUXBASE_E2E_FILE_RECORD, `${process.env.TMUX_TMPDIR}|${process.argv[1]}\\n`)",
       ],
       {
-        env: { ...process.env, AUMX_E2E_FILE_RECORD: record },
+        env: { ...process.env, MUXBASE_E2E_FILE_RECORD: record },
         encoding: 'utf8',
       },
     );
@@ -57,7 +57,7 @@ describe('desktop E2E runner', () => {
   });
 
   it('cleans its private tmux directory after a passing command', () => {
-    const root = mkdtempSync(join(tmpdir(), 'aumx-runner-test-'));
+    const root = mkdtempSync(join(tmpdir(), 'muxbase-runner-test-'));
     const file = join(root, 'tmux-dir');
     const result = runRunner('process.exit(0)', file);
 
@@ -67,7 +67,7 @@ describe('desktop E2E runner', () => {
   });
 
   it('preserves the child failure code while still cleaning up', () => {
-    const root = mkdtempSync(join(tmpdir(), 'aumx-runner-test-'));
+    const root = mkdtempSync(join(tmpdir(), 'muxbase-runner-test-'));
     const file = join(root, 'tmux-dir');
     const result = runRunner('process.exit(7)', file);
 
@@ -77,7 +77,7 @@ describe('desktop E2E runner', () => {
   });
 
   it('does not inherit a caller tmux environment', () => {
-    const root = mkdtempSync(join(tmpdir(), 'aumx-runner-test-'));
+    const root = mkdtempSync(join(tmpdir(), 'muxbase-runner-test-'));
     const file = join(root, 'tmux-dir');
     const result = runRunner('process.exit(process.env.TMUX || process.env.TMUX_PANE ? 9 : 0)', file);
 
@@ -87,7 +87,7 @@ describe('desktop E2E runner', () => {
   });
 
   it('preserves the forwarded signal exit status and cleans up', () => {
-    const root = mkdtempSync(join(tmpdir(), 'aumx-runner-test-'));
+    const root = mkdtempSync(join(tmpdir(), 'muxbase-runner-test-'));
     const file = join(root, 'tmux-dir');
     const result = runRunner(
       "setTimeout(() => process.kill(process.ppid, 'SIGTERM'), 100); setInterval(() => {}, 1000)",

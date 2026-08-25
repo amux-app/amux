@@ -14,7 +14,7 @@ describe('tmux transcript setup', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    testRoot = mkdtempSync(join(tmpdir(), 'aumx-transcript-'));
+    testRoot = mkdtempSync(join(tmpdir(), 'muxbase-transcript-'));
   });
 
   afterEach(() => {

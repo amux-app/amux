@@ -6,10 +6,10 @@ import {
   SettingsManager,
   triggerHook,
   AgentName,
-  type AumxPane,
+  type MuxBasePane,
   type DuelMetadata,
   type ReviewMetadata,
-} from 'aumx/core';
+} from 'muxbase/core';
 import { basename } from 'path';
 import type { PaneCreateResponse } from '../../../shared/ipc-types.js';
 import { formatError } from '../../utils/formatError.js';
@@ -46,14 +46,14 @@ interface PaneLaunchWorkflowDependencies {
     options?: PaneLaunchOptions,
   ): Promise<PaneCreateResponse>;
   decorateCreatedPane(
-    pane: AumxPane,
+    pane: MuxBasePane,
     sourceBacklogId?: string,
     paneTitle?: string,
     localTitle?: string,
-  ): AumxPane;
+  ): MuxBasePane;
   detectAvailableAgents(): Promise<void>;
   emitEarlyPane(
-    pane: AumxPane,
+    pane: MuxBasePane,
     sourceBacklogId?: string,
     paneTitle?: string,
     localTitle?: string,
@@ -64,7 +64,7 @@ interface PaneLaunchWorkflowDependencies {
   getControlPaneId(): string | undefined;
   getInitialTerminalSize(): { cols: number; rows: number } | undefined;
   getOtlpEndpoint(): string | undefined;
-  getPanes(): AumxPane[];
+  getPanes(): MuxBasePane[];
   getProjectRoot(): string;
   getSessionName(): string;
   getTerminalTranscriptDir(): string | undefined;
@@ -77,7 +77,7 @@ interface PaneLaunchWorkflowDependencies {
   publishSessionColorHint(sessionName: string): Promise<void>;
   removeEarlyPane(paneId: string): void;
   resumePaneWatcher(): void;
-  savePane(pane: AumxPane): void;
+  savePane(pane: MuxBasePane): void;
   sendProgress(action: string, active: boolean): void;
   sendToast(message: string, type: 'error' | 'info' | 'success' | 'warning'): void;
   setPaneTitleSafe(paneId: string, title: string): Promise<void>;
@@ -86,8 +86,8 @@ interface PaneLaunchWorkflowDependencies {
     existingTranscriptPath?: string,
     filenamePrefix?: string,
   ): Promise<string | undefined>;
-  startPaneMonitor(panes: AumxPane[]): Promise<boolean>;
-  startSessionTracking(pane: AumxPane): void;
+  startPaneMonitor(panes: MuxBasePane[]): Promise<boolean>;
+  startSessionTracking(pane: MuxBasePane): void;
   suspendPaneWatcher(): void;
 }
 
@@ -353,8 +353,8 @@ export class PaneLaunchWorkflow {
         'shell',
       );
       await this.dependencies.setPaneTitleSafe(paneId, slug);
-      const pane: AumxPane = {
-        id: `aumx-${Date.now()}`,
+      const pane: MuxBasePane = {
+        id: `muxbase-${Date.now()}`,
         paneId,
         projectName: targetProjectName,
         projectRoot: targetProjectRoot,

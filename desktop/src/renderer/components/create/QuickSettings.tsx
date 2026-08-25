@@ -1,4 +1,4 @@
-import type { AgentName } from 'aumx/core';
+import type { AgentName } from 'muxbase/core';
 import { GitBranch } from 'lucide-react';
 import { cn } from '../../lib/cn';
 import { ToggleSwitch } from '../shared/ToggleSwitch';

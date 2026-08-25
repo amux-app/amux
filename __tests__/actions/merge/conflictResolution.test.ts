@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createConflictResolutionPaneForMerge } from '../../../src/actions/merge/conflictResolution.js';
-import type { AumxPane } from '../../../src/types.js';
+import type { MuxBasePane } from '../../../src/types.js';
 import type { ActionContext } from '../../../src/actions/types.js';
 
 // Mock agent detection
@@ -79,7 +79,7 @@ vi.mock('child_process', () => ({
 }));
 
 describe('Conflict Resolution', () => {
-  const mockPane: AumxPane = {
+  const mockPane: MuxBasePane = {
     id: 'test-1',
     slug: 'test-branch',
     prompt: 'test prompt',
@@ -90,7 +90,7 @@ describe('Conflict Resolution', () => {
 
   const mockContext: ActionContext = {
     projectName: 'test-project',
-    sessionName: 'aumx-test-project',
+    sessionName: 'muxbase-test-project',
     panes: [mockPane],
     otlpEndpoint: 'http://127.0.0.1:4318',
     savePanes: vi.fn(),

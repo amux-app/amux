@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
@@ -24,7 +24,7 @@ const LARGE_FILE_COUNT = 160;
 const execFileAsync = promisify(execFile);
 
 interface PaneStoreState {
-  setPanes: (panes: AumxPane[]) => void;
+  setPanes: (panes: MuxBasePane[]) => void;
   selectPane: (id: string | null) => void;
 }
 
@@ -38,10 +38,10 @@ interface E2EStores {
 }
 
 interface E2EWindow {
-  __AUMX_E2E?: boolean;
+  __MUXBASE_E2E?: boolean;
   __fileChangedEvents?: FileChangedEvent[];
-  __aumxStores?: E2EStores;
-  aumx?: {
+  __muxbaseStores?: E2EStores;
+  muxbase?: {
     on: (channel: string, callback: (event: FileChangedEvent) => void) => () => void;
   };
 }
@@ -70,11 +70,11 @@ async function seedProject(root: string): Promise<void> {
 async function installPane(page: Page, projectRoot: string): Promise<void> {
   await page.evaluate((root) => {
     const e2eWindow = window as unknown as E2EWindow;
-    const stores = e2eWindow.__aumxStores;
+    const stores = e2eWindow.__muxbaseStores;
     if (!stores) {
       throw new Error('E2E stores were not exposed');
     }
-    const pane: AumxPane = {
+    const pane: MuxBasePane = {
       id: 'file-browser-e2e-pane',
       slug: 'file-browser-e2e',
       prompt: '',
@@ -97,7 +97,7 @@ async function waitForVisible(locator: ReturnType<Page['locator']>, timeout = 10
 
 async function applyTheme(page: Page, theme: 'dark' | 'light'): Promise<void> {
   await page.evaluate((value) => {
-    (window as unknown as E2EWindow).__aumxStores?.ui?.setState({ theme: value });
+    (window as unknown as E2EWindow).__muxbaseStores?.ui?.setState({ theme: value });
   }, theme);
   await expect.poll(
     () => page.evaluate(() => document.documentElement.getAttribute('data-theme')),
@@ -106,11 +106,11 @@ async function applyTheme(page: Page, theme: 'dark' | 'light'): Promise<void> {
 }
 
 async function killProjectTmuxSession(projectRoot: string): Promise<void> {
-  const sessionName = `aumx-${basename(projectRoot)}`;
+  const sessionName = `muxbase-${basename(projectRoot)}`;
   await execFileAsync('tmux', ['kill-session', '-t', sessionName]).catch(() => undefined);
 }
 
-describe.runIf(process.env.AUMX_E2E === '1')('File Browser E2E', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('File Browser E2E', () => {
   let app: ElectronApplication;
   let page: Page;
   let projectRoot: string;
@@ -118,7 +118,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('File Browser E2E', () => {
   beforeAll(async () => {
     expect(existsSync(MAIN_ENTRY), `Build output missing: ${MAIN_ENTRY}`).toBe(true);
 
-    projectRoot = await mkdtemp(join(tmpdir(), 'aumx-file-browser-e2e-'));
+    projectRoot = await mkdtemp(join(tmpdir(), 'muxbase-file-browser-e2e-'));
     await seedProject(projectRoot);
 
     app = await electron.launch({
@@ -127,14 +127,14 @@ describe.runIf(process.env.AUMX_E2E === '1')('File Browser E2E', () => {
       env: {
         ...process.env,
         NODE_ENV: 'test',
-        AUMX_DEV: 'true',
-        AUMX_E2E: '1',
+        MUXBASE_DEV: 'true',
+        MUXBASE_E2E: '1',
       },
     });
 
     page = await getAppWindow(app);
     await app.context().addInitScript(() => {
-      (window as unknown as E2EWindow).__AUMX_E2E = true;
+      (window as unknown as E2EWindow).__MUXBASE_E2E = true;
     });
     await page.reload();
     await ensureAppWindowVisible(app);
@@ -397,7 +397,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('File Browser E2E', () => {
   }, 30_000);
 
   it('autosaves editor text without reporting its own filesystem change as a conflict', async () => {
-    const nextContent = '# Edited in Amux\n\nAutosave remains conflict-free.\n';
+    const nextContent = '# Edited in MuxBase\n\nAutosave remains conflict-free.\n';
     const editor = page.locator('[data-testid="file-viewer"] .cm-editor .cm-content');
 
     await editor.fill(nextContent);
@@ -463,7 +463,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('File Browser E2E', () => {
     await page.evaluate((channel) => {
       const e2eWindow = window as unknown as E2EWindow;
       e2eWindow.__fileChangedEvents = [];
-      e2eWindow.aumx?.on(channel, (event) => {
+      e2eWindow.muxbase?.on(channel, (event) => {
         e2eWindow.__fileChangedEvents?.push(event);
       });
     }, IPC_EVENT.FILE_CHANGED);

@@ -1,9 +1,9 @@
 import { isAgentName } from '../agents/agent-contract.js';
-import type { AumxSettings } from '../types.js';
+import type { MuxBaseSettings } from '../types.js';
 
 export const CLAUDE_FULLSCREEN_DEFAULT_RESET_KEY = 'claudeFullscreenDefaultResetVersion';
 
-type SettingKey = keyof AumxSettings;
+type SettingKey = keyof MuxBaseSettings;
 
 const validators: Readonly<Record<string, (value: unknown) => boolean>> = {
   baseBranch: (value) => typeof value === 'string',

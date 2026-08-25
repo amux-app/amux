@@ -2,25 +2,25 @@
  * Bridge-orchestration tests for the review-agent action surface.
  *
  * Covers the rejection branches and in-flight-Set release contract of:
- *  - AumxBridge.startReviewAction (source-busy, agent-missing, in-flight dedupe,
+ *  - MuxBaseBridge.startReviewAction (source-busy, agent-missing, in-flight dedupe,
  *    changedFiles===0 short-circuit, createPane failure)
- *  - AumxBridge.startFixHandoffAction (not-a-review-pane, already-handed-off,
+ *  - MuxBaseBridge.startFixHandoffAction (not-a-review-pane, already-handed-off,
  *    reviewer-busy, source-missing/busy, no-findings, no-issues short-circuit,
  *    sendPromptToPane failure → findings file rollback)
  *
- * The bridge is exercised as a unit with mocked `aumx/core` singletons,
+ * The bridge is exercised as a unit with mocked `muxbase/core` singletons,
  * agent-session service, and the createPane bridge wrapper.
  */
-import { atomicWriteJsonSync, inspectPreservedWorktreeAsync, type AgentName, type AumxPane } from 'aumx/core';
+import { atomicWriteJsonSync, inspectPreservedWorktreeAsync, type AgentName, type MuxBasePane } from 'muxbase/core';
 import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { VersionedActivity } from '../../src/shared/pane-activity';
 
 const coreState = vi.hoisted(() => {
-  const panes: AumxPane[] = [];
+  const panes: MuxBasePane[] = [];
   return {
     panes,
-    updatePanes: vi.fn((next: AumxPane[]) => {
+    updatePanes: vi.fn((next: MuxBasePane[]) => {
       panes.length = 0;
       panes.push(...next);
     }),
@@ -43,7 +43,7 @@ const coreState = vi.hoisted(() => {
     },
     createPane: vi.fn(),
     createWorktreeForPane: vi.fn(),
-    getProjectMetadataDir: vi.fn((projectRoot: string) => `${projectRoot}/.amux`),
+    getProjectMetadataDir: vi.fn((projectRoot: string) => `${projectRoot}/.muxbase`),
     closePane: vi.fn(),
   };
 });
@@ -59,7 +59,7 @@ const terminalInputState = vi.hoisted(() => ({
 vi.mock('electron', () => ({ BrowserWindow: class {} }));
 vi.mock('@electron-toolkit/utils', () => ({ is: { dev: false } }));
 
-vi.mock('aumx/core', () => ({
+vi.mock('muxbase/core', () => ({
   agentHasCapability: (agent: string, capability: string) => agent !== 'pi' || capability !== 'review',
   assertNever: (value: never) => { throw new Error(`Unhandled agent: ${String(value)}`); },
   assertClaudeFullscreenSupported: vi.fn().mockResolvedValue(undefined),
@@ -94,7 +94,7 @@ vi.mock('aumx/core', () => ({
   shQuote: (s: string) => `'${s}'`,
   atomicWriteJsonSync: vi.fn(),
   triggerHook: vi.fn().mockResolvedValue(undefined),
-  ensureAumxGitignore: vi.fn().mockResolvedValue(undefined),
+  ensureMuxBaseGitignore: vi.fn().mockResolvedValue(undefined),
   generateLocalSlug: vi.fn(() => 'duel-task'),
   getProjectMetadataDir: coreState.getProjectMetadataDir,
   getStatusDetector: () => ({ on: vi.fn(), removePane: vi.fn() }),
@@ -149,7 +149,7 @@ vi.mock('../../src/main/services/ProjectDiscovery.js', () => ({
   discoverCurrentProject: vi.fn().mockResolvedValue(null),
 }));
 vi.mock('../../src/main/utils/tmuxSession.js', () => ({
-  ensureTmuxSession: vi.fn().mockResolvedValue({ paneId: '%0', sessionName: 'aumx-test', created: false }),
+  ensureTmuxSession: vi.fn().mockResolvedValue({ paneId: '%0', sessionName: 'muxbase-test', created: false }),
 }));
 vi.mock('../../src/main/services/GitRepositoryBootstrap.js', () => ({
   ensureGitRepository: vi.fn().mockResolvedValue({ isReady: true, initialized: false }),
@@ -195,23 +195,23 @@ vi.mock('../../src/main/services/git/gitDiff.js', () => ({
   sh: (s: string) => `'${s}'`,
 }));
 
-import { AumxBridge } from '../../src/main/services/AumxBridge';
+import { MuxBaseBridge } from '../../src/main/services/MuxBaseBridge';
 
 interface BridgeInternals {
   inFlightHandoffIds: Set<string>;
   inFlightReviewSourceIds: Set<string>;
   agentSessionService: { getSession: (id: string) => unknown } | null;
-  createPane: (...args: unknown[]) => Promise<{ success: boolean; pane?: AumxPane; error?: string }>;
+  createPane: (...args: unknown[]) => Promise<{ success: boolean; pane?: MuxBasePane; error?: string }>;
   paneActivityService: { getSnapshot: (paneId: string) => VersionedActivity } | null;
   sendCommandToPane: (paneId: string, command: string) => Promise<void>;
   sendPromptToPane: (paneId: string, prompt: string) => Promise<void>;
 }
 
 function resetSingleton(): void {
-  (AumxBridge as unknown as { instance: AumxBridge | undefined }).instance = undefined;
+  (MuxBaseBridge as unknown as { instance: MuxBaseBridge | undefined }).instance = undefined;
 }
 
-function asInternals(bridge: AumxBridge): BridgeInternals {
+function asInternals(bridge: MuxBaseBridge): BridgeInternals {
   return bridge as unknown as BridgeInternals;
 }
 
@@ -246,7 +246,7 @@ function makeReadinessActivityStub(): { getSnapshot: (paneId: string) => Version
   };
 }
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'claude',
     agentStatus: 'idle',
@@ -259,7 +259,7 @@ function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
   };
 }
 
-function makeReviewPane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makeReviewPane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return makePane({
     id: 'review-pane',
     paneId: '%2',
@@ -278,7 +278,7 @@ function makeReviewPane(overrides: Partial<AumxPane> = {}): AumxPane {
   });
 }
 
-function makeDuelPane(role: 'a' | 'b', overrides: Partial<AumxPane> = {}): AumxPane {
+function makeDuelPane(role: 'a' | 'b', overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   const id = `duel-${role}`;
   const siblingPaneId = role === 'a' ? 'duel-b' : 'duel-a';
   return makePane({
@@ -290,9 +290,9 @@ function makeDuelPane(role: 'a' | 'b', overrides: Partial<AumxPane> = {}): AumxP
   });
 }
 
-async function makeBridge(panes: AumxPane[], cachedAgents: string[] = ['claude']): Promise<AumxBridge> {
+async function makeBridge(panes: MuxBasePane[], cachedAgents: string[] = ['claude']): Promise<MuxBaseBridge> {
   resetSingleton();
-  const bridge = AumxBridge.getInstance();
+  const bridge = MuxBaseBridge.getInstance();
   // Seed StateManager-via-mock panes
   coreState.panes.splice(0, coreState.panes.length, ...panes);
   // Inject internals the real boot would build
@@ -307,10 +307,10 @@ async function makeBridge(panes: AumxPane[], cachedAgents: string[] = ['claude']
   return bridge;
 }
 
-describe('AumxBridge Duel orchestration', () => {
+describe('MuxBaseBridge Duel orchestration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    coreState.getProjectMetadataDir.mockImplementation((projectRoot: string) => `${projectRoot}/.amux`);
+    coreState.getProjectMetadataDir.mockImplementation((projectRoot: string) => `${projectRoot}/.muxbase`);
     coreState.closePane.mockReset();
   });
 
@@ -353,7 +353,7 @@ describe('AumxBridge Duel orchestration', () => {
     const paneA = makeDuelPane('a');
     const paneB = makeDuelPane('b');
     const bridge = await makeBridge([paneA, paneB]);
-    coreState.closePane.mockImplementation(async (pane: AumxPane, context: { panes: AumxPane[] }) => {
+    coreState.closePane.mockImplementation(async (pane: MuxBasePane, context: { panes: MuxBasePane[] }) => {
       coreState.updatePanes(context.panes.filter((candidate) => candidate.id !== pane.id));
       return { type: 'success', message: 'closed' };
     });
@@ -370,7 +370,7 @@ describe('AumxBridge Duel orchestration', () => {
     const bridge = await makeBridge([]);
     const createPane = vi.fn()
       .mockImplementationOnce(async (...args: unknown[]) => {
-        const options = args[2] as { duel: NonNullable<AumxPane['duel']> };
+        const options = args[2] as { duel: NonNullable<MuxBasePane['duel']> };
         const paneA = makeDuelPane('a', { duel: options.duel });
         coreState.panes.push(paneA);
         return { success: true, pane: paneA };
@@ -397,7 +397,7 @@ describe('AumxBridge Duel orchestration', () => {
     const rogue = makeDuelPane('b', { id: 'duel-rogue', paneId: '%12' });
     const bridge = await makeBridge([paneA, rogue, paneB]);
     let selectedCloseOption: string | undefined;
-    coreState.closePane.mockImplementation(async (pane: AumxPane) => {
+    coreState.closePane.mockImplementation(async (pane: MuxBasePane) => {
       return {
         type: 'choice',
         message: 'choose cleanup',
@@ -422,7 +422,7 @@ describe('AumxBridge Duel orchestration', () => {
   });
 });
 
-describe('AumxBridge.startReviewAction — rejection paths and in-flight contract', () => {
+describe('MuxBaseBridge.startReviewAction — rejection paths and in-flight contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(existsSync).mockReturnValue(false);
@@ -710,15 +710,15 @@ describe('AumxBridge.startReviewAction — rejection paths and in-flight contrac
     expect(options.agentPrompt).toContain('Files to inspect:');
     expect(options.agentPrompt).toContain('Review skill: Strict Review Rubric');
     expect(options.agentPrompt).toContain('Must read this file before reviewing or reporting findings.');
-    expect(options.agentPrompt).toContain('Review skill loaded: .amux/review/REVIEW.md');
-    expect(options.agentPrompt).toContain('.amux/review/REVIEW.md');
+    expect(options.agentPrompt).toContain('Review skill loaded: .muxbase/review/REVIEW.md');
+    expect(options.agentPrompt).toContain('.muxbase/review/REVIEW.md');
     expect(options.agentPrompt).not.toContain('Only report a finding when it satisfies ALL');
-    expect(options.worktreeSeedFile.relativePath).toBe('.amux/review/REVIEW.md');
+    expect(options.worktreeSeedFile.relativePath).toBe('.muxbase/review/REVIEW.md');
     expect(options.worktreeSeedFile.content).toContain('Only report a finding when it satisfies ALL');
   });
 
   it('keeps review artifacts in the active legacy metadata directory', async () => {
-    coreState.getProjectMetadataDir.mockReturnValue('/Users/example/project/.aumx');
+    coreState.getProjectMetadataDir.mockReturnValue('/Users/example/project/.muxbase');
     const bridge = await makeBridge([makePane({ projectRoot: '/Users/example/project' })], ['claude']);
 
     const result = await bridge.startReviewAction('source-pane', 'claude');
@@ -729,8 +729,8 @@ describe('AumxBridge.startReviewAction — rejection paths and in-flight contrac
       agentPrompt: string;
       worktreeSeedFile: { relativePath: string };
     };
-    expect(options.agentPrompt).toContain('Review skill loaded: .aumx/review/REVIEW.md');
-    expect(options.worktreeSeedFile.relativePath).toBe('.aumx/review/REVIEW.md');
+    expect(options.agentPrompt).toContain('Review skill loaded: .muxbase/review/REVIEW.md');
+    expect(options.worktreeSeedFile.relativePath).toBe('.muxbase/review/REVIEW.md');
   });
 
   it('gives shared-checkout reviewers a diff command scoped to the synthetic snapshot commit', async () => {
@@ -745,10 +745,10 @@ describe('AumxBridge.startReviewAction — rejection paths and in-flight contrac
   });
 });
 
-describe('AumxBridge.startFixHandoffAction — rejection paths and in-flight contract', () => {
+describe('MuxBaseBridge.startFixHandoffAction — rejection paths and in-flight contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    coreState.getProjectMetadataDir.mockImplementation((projectRoot: string) => `${projectRoot}/.amux`);
+    coreState.getProjectMetadataDir.mockImplementation((projectRoot: string) => `${projectRoot}/.muxbase`);
     vi.mocked(existsSync).mockReturnValue(false);
     vi.mocked(readFileSync).mockImplementation(() => { throw new Error('no config'); });
     vi.mocked(statSync).mockReturnValue({ isDirectory: () => true } as ReturnType<typeof statSync>);
@@ -813,7 +813,7 @@ describe('AumxBridge.startFixHandoffAction — rejection paths and in-flight con
 
   it('rejects and releases the slot when the review pane itself is not idle', async () => {
     // Arrange — reviewPaneGuards.getReviewPaneHandoffBlockReason, consolidated
-    // into AumxBridge rather than duplicated, must still gate on the reviewer.
+    // into MuxBaseBridge rather than duplicated, must still gate on the reviewer.
     const source = makePane();
     const review = makeReviewPane({ agentStatus: 'working' });
     const bridge = await makeBridge([source, review]);
@@ -948,7 +948,7 @@ describe('AumxBridge.startFixHandoffAction — rejection paths and in-flight con
   });
 
   it('writes handoff findings under the active legacy metadata directory', async () => {
-    coreState.getProjectMetadataDir.mockReturnValue('/Users/example/project/.aumx');
+    coreState.getProjectMetadataDir.mockReturnValue('/Users/example/project/.muxbase');
     const source = makePane({ projectRoot: '/Users/example/project' });
     const bridge = await makeBridge([source, makeReviewPane()]);
     reviewMocks.extractReviewFindings.mockReturnValue({ kind: 'findings', text: 'Critical: foo.ts:10' });
@@ -957,7 +957,7 @@ describe('AumxBridge.startFixHandoffAction — rejection paths and in-flight con
 
     expect(result.success).toBe(true);
     expect(writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('/tmp/wt/feature-pane/.aumx/review/findings-'),
+      expect.stringContaining('/tmp/wt/feature-pane/.muxbase/review/findings-'),
       expect.any(String),
       expect.any(Object),
     );
@@ -978,7 +978,7 @@ describe('AumxBridge.startFixHandoffAction — rejection paths and in-flight con
   });
 });
 
-describe('AumxBridge command submission', () => {
+describe('MuxBaseBridge command submission', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     terminalManagerState.submitCommand.mockResolvedValue(false);
@@ -989,7 +989,7 @@ describe('AumxBridge command submission', () => {
 
   it('submits through the managed terminal stream using the logical pane id', async () => {
     resetSingleton();
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     coreState.panes.splice(0, coreState.panes.length, makePane({ id: 'logical-7', paneId: '%7' }));
     terminalManagerState.submitCommand.mockResolvedValue(true);
 
@@ -1006,7 +1006,7 @@ describe('AumxBridge command submission', () => {
 
   it('submits a distinct Enter key through tmux when the pane has no managed stream', async () => {
     resetSingleton();
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     coreState.panes.splice(0, coreState.panes.length, makePane({ id: 'logical-8', paneId: '%8' }));
     coreState.tmuxService.sendTmuxKeys
       .mockRejectedValueOnce(new Error('not in copy-mode'))
@@ -1029,7 +1029,7 @@ describe('AumxBridge command submission', () => {
 
   it('does not bypass a managed terminal submission rejection', async () => {
     resetSingleton();
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     coreState.panes.splice(0, coreState.panes.length, makePane({ id: 'logical-9', paneId: '%9' }));
     terminalManagerState.submitCommand.mockRejectedValue(new Error('Terminal input is locked'));
 
@@ -1044,7 +1044,7 @@ describe('AumxBridge command submission', () => {
   it('never reaches tmux for a pane id that is not registered in main state', async () => {
     // Arrange
     resetSingleton();
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     coreState.panes.splice(0, coreState.panes.length, makePane({ id: 'logical-7', paneId: '%7' }));
 
     // Act
@@ -1060,7 +1060,7 @@ describe('AumxBridge command submission', () => {
 
   it('routes review prompts through the shared command submission path', async () => {
     resetSingleton();
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     const sendCommandToPane = vi.fn().mockResolvedValue(undefined);
     asInternals(bridge).sendCommandToPane = sendCommandToPane;
 
@@ -1070,7 +1070,7 @@ describe('AumxBridge command submission', () => {
   });
 });
 
-describe('AumxBridge worktree command submission', () => {
+describe('MuxBaseBridge worktree command submission', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(inspectPreservedWorktreeAsync).mockRejectedValue(new Error('not found'));

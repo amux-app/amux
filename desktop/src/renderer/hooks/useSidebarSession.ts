@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { PaneActivity, PaneActivityState } from '../../shared/pane-activity';
@@ -47,7 +47,7 @@ const STATUS_BY_CODE: Record<string, PaneActivityState> = {
  * when something the sidebar actually paints has moved.
  */
 function encodePane(
-  pane: AumxPane,
+  pane: MuxBasePane,
   session: PaneAttentionSession,
   title: string | undefined,
   activity: PaneActivity | undefined,
@@ -58,7 +58,7 @@ function encodePane(
   return `${code}${waiting}${FIELD_SEPARATOR}${title ?? ''}`;
 }
 
-function statusEntryFor(pane: AumxPane, entry: string, cache: StatusEntryCache): SidebarPaneStatus {
+function statusEntryFor(pane: MuxBasePane, entry: string, cache: StatusEntryCache): SidebarPaneStatus {
   const cached = cache.get(pane.id);
   if (cached?.encodedValue === entry) return cached.entry;
 
@@ -78,7 +78,7 @@ function statusEntryFor(pane: AumxPane, entry: string, cache: StatusEntryCache):
  * unchanged, so a tick that only moves an unrelated pane doesn't hand every
  * `React.memo`-wrapped row a new `status` reference and force it to re-render.
  */
-function decode(panes: readonly AumxPane[], encoded: readonly string[], statusCache: StatusEntryCache): SidebarSession {
+function decode(panes: readonly MuxBasePane[], encoded: readonly string[], statusCache: StatusEntryCache): SidebarSession {
   const statusOf = new Map<string, SidebarPaneStatus>();
   const titleOf = new Map<string, string>();
   const seenIds = new Set<string>();
@@ -104,7 +104,7 @@ function decode(panes: readonly AumxPane[], encoded: readonly string[], statusCa
 }
 
 /** The sidebar's single agent-session subscription. Rows read the result as props. */
-export function useSidebarSession(panes: readonly AumxPane[]): SidebarSession {
+export function useSidebarSession(panes: readonly MuxBasePane[]): SidebarSession {
   const statusCacheRef = useRef<StatusEntryCache>(new Map());
   const activities = usePaneActivityStore(
     useShallow((s) => panes.map((pane) => s.activityByPaneId[pane.id])),

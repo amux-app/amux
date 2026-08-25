@@ -15,11 +15,11 @@ import type {
 import { KanbanPersistenceService } from '../services/KanbanPersistenceService.js';
 import { formatError } from '../utils/formatError.js';
 import { log } from '../services/Logger.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { secureHandle } from './ipc-security.js';
 import { authorizeProjectRoot } from '../services/projectRootAuthorization.js';
 
-function emitKanbanChanged(bridge: AumxBridge): void {
+function emitKanbanChanged(bridge: MuxBaseBridge): void {
   const win = bridge.getWindow?.();
   if (win && !win.isDestroyed()) {
     win.webContents.send(IPC_EVENT.KANBAN_CHANGED);
@@ -58,7 +58,7 @@ function releaseInFlightLaunch(projectRoot: string, itemId: string): void {
   }
 }
 
-export function registerKanbanHandlers(bridge: AumxBridge): void {
+export function registerKanbanHandlers(bridge: MuxBaseBridge): void {
   const service = KanbanPersistenceService.getInstance();
   const authorize = (root: string | undefined): Promise<string | undefined> =>
     authorizeProjectRoot(root, bridge.getProjectRoot(), bridge.getPanes());

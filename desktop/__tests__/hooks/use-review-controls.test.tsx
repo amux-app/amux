@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useReviewControls } from '../../src/renderer/hooks/useReviewControls';
 import { useDirtyMapStore } from '../../src/renderer/stores/worktree-dirty.store';
@@ -14,14 +14,14 @@ const gitApi = vi.hoisted(() => ({
 
 vi.mock('../../src/renderer/api/git.api', () => gitApi);
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'codex',
     id: 'pane-1',
     paneId: '%1',
     prompt: 'build feature',
     slug: 'feature',
-    worktreePath: '/tmp/project/.aumx/worktrees/feature',
+    worktreePath: '/tmp/project/.muxbase/worktrees/feature',
     ...overrides,
   };
 }

@@ -15,10 +15,10 @@ import {
   waitForAppLaunch,
 } from './install-local-app-utils.mjs';
 
-const APP_BUNDLE = 'Amux.app';
-const APP_ID = 'app.amux.desktop';
+const APP_BUNDLE = 'MuxBase.app';
+const APP_ID = 'app.muxbase.desktop';
 const DESKTOP_PACKAGE_PATH = 'desktop/package.json';
-const NO_LAUNCH = process.env.AUMX_INSTALL_NO_LAUNCH === '1';
+const NO_LAUNCH = process.env.MUXBASE_INSTALL_NO_LAUNCH === '1';
 const ROOT_DIR = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const DESKTOP_DIR = resolve(ROOT_DIR, 'desktop');
 const RELEASE_DIR = resolve(DESKTOP_DIR, 'release');
@@ -46,18 +46,18 @@ async function main() {
     ['exec', 'node', 'scripts/check-managed-toolchain.mjs'],
     ROOT_DIR,
   );
-  await runStep('Building core package', 'pnpm', ['-w', '--filter', 'aumx', 'build'], ROOT_DIR);
+  await runStep('Building core package', 'pnpm', ['-w', '--filter', 'muxbase', 'build'], ROOT_DIR);
   await runStep('Building desktop app', 'pnpm', ['exec', 'electron-vite', 'build'], DESKTOP_DIR);
   await cleanReleaseDir();
-  await runStep('Packaging local Amux app', 'pnpm', buildPackageArgs(buildNumber, buildVersion), DESKTOP_DIR);
+  await runStep('Packaging local MuxBase app', 'pnpm', buildPackageArgs(buildNumber, buildVersion), DESKTOP_DIR);
   const packagedAppPath = findPackagedApp();
   await validatePackagedApp(packagedAppPath);
   await quitRunningApp();
   await installPackagedApp(packagedAppPath, installPlan.installDir);
 
   if (!NO_LAUNCH) {
-    await runStep('Launching Amux', 'open', [installedAppPath], ROOT_DIR);
-    console.log('Confirming Amux remains running...');
+    await runStep('Launching MuxBase', 'open', [installedAppPath], ROOT_DIR);
+    console.log('Confirming MuxBase remains running...');
     await waitForAppLaunch(
       isAppRunning,
       () => new Promise((resolvePromise) => setTimeout(resolvePromise, LAUNCH_CHECK_INTERVAL_MS)),
@@ -65,12 +65,12 @@ async function main() {
     );
   }
 
-  console.log(`Installed Amux ${packageVersion} (${buildVersion}) to ${installedAppPath}`);
+  console.log(`Installed MuxBase ${packageVersion} (${buildVersion}) to ${installedAppPath}`);
 }
 
 function assertMacOS() {
   if (process.platform === 'darwin') return;
-  throw new Error('make install installs the macOS Amux.app bundle and must run on macOS.');
+  throw new Error('make install installs the macOS MuxBase.app bundle and must run on macOS.');
 }
 
 function assertPnpmAvailable(pnpmVersion) {
@@ -89,7 +89,7 @@ async function cleanReleaseDir() {
 
 async function validatePackagedApp(appPath) {
   const archivePath = resolve(appPath, 'Contents', 'Resources', 'app.asar');
-  console.log('Validating packaged Amux archive...');
+  console.log('Validating packaged MuxBase archive...');
   await validatePackagedArchive(archivePath);
 }
 
@@ -117,11 +117,11 @@ async function installPackagedApp(sourcePath, installDir) {
   await mkdir(installDir, { recursive: true });
   assertWritableInstallTarget(installDir, targetPath);
   await rm(targetPath, { force: true, recursive: true });
-  await runStep(`Installing Amux.app to ${installDir}`, 'ditto', [sourcePath, targetPath], ROOT_DIR);
+  await runStep(`Installing MuxBase.app to ${installDir}`, 'ditto', [sourcePath, targetPath], ROOT_DIR);
 }
 
 async function quitRunningApp() {
-  console.log('Quitting any running Amux instance');
+  console.log('Quitting any running MuxBase instance');
   await run('osascript', ['-e', `tell application id "${APP_ID}" to quit`], ROOT_DIR, {
     allowFailure: true,
     quiet: true,
@@ -152,7 +152,7 @@ function createInstallPlan() {
   const systemTargetPath = resolve(SYSTEM_APPLICATIONS_DIR, APP_BUNDLE);
   const plan = resolveInstallDir({
     canWriteSystemApplications: canWritePath(SYSTEM_APPLICATIONS_DIR) && canReplacePath(systemTargetPath),
-    envInstallDir: process.env.AUMX_INSTALL_DIR,
+    envInstallDir: process.env.MUXBASE_INSTALL_DIR,
     homeDir: homedir(),
   });
 
@@ -165,11 +165,11 @@ function createInstallPlan() {
 
 function assertWritableInstallTarget(installDir, targetPath) {
   if (!canWritePath(installDir)) {
-    throw new Error(`Install directory is not writable: ${installDir}. Set AUMX_INSTALL_DIR to a writable directory.`);
+    throw new Error(`Install directory is not writable: ${installDir}. Set MUXBASE_INSTALL_DIR to a writable directory.`);
   }
 
   if (existsSync(targetPath) && !canReplacePath(targetPath)) {
-    throw new Error(`Existing app bundle is not writable: ${targetPath}. Remove it or set AUMX_INSTALL_DIR to a writable directory.`);
+    throw new Error(`Existing app bundle is not writable: ${targetPath}. Remove it or set MUXBASE_INSTALL_DIR to a writable directory.`);
   }
 }
 

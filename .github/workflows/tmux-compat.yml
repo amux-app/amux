@@ -56,44 +56,44 @@ jobs:
 
       - name: Run terminal contract tests against exact floor
         env:
-          AUMX_TMUX_BIN: ${{ steps.floor.outputs.tmux-bin }}
-          AUMX_TMUX_BIN_DIR: ${{ steps.floor.outputs.bin-dir }}
+          MUXBASE_TMUX_BIN: ${{ steps.floor.outputs.tmux-bin }}
+          MUXBASE_TMUX_BIN_DIR: ${{ steps.floor.outputs.bin-dir }}
         run: |
-          export PATH="$AUMX_TMUX_BIN_DIR:$PATH"
-          node scripts/ci/tmux-command-smoke.mjs --tmux-bin "$AUMX_TMUX_BIN"
-          pnpm --filter aumx-desktop test -- __tests__/services/terminal-manager.test.ts
+          export PATH="$MUXBASE_TMUX_BIN_DIR:$PATH"
+          node scripts/ci/tmux-command-smoke.mjs --tmux-bin "$MUXBASE_TMUX_BIN"
+          pnpm --filter muxbase-desktop test -- __tests__/services/terminal-manager.test.ts
 
       - name: Build application for exact-floor terminal E2E
         env:
-          AUMX_TMUX_BIN_DIR: ${{ steps.floor.outputs.bin-dir }}
+          MUXBASE_TMUX_BIN_DIR: ${{ steps.floor.outputs.bin-dir }}
         run: |
-          export PATH="$AUMX_TMUX_BIN_DIR:$PATH"
+          export PATH="$MUXBASE_TMUX_BIN_DIR:$PATH"
           pnpm build
           pnpm --dir desktop build
 
       - name: Start exact-floor isolated tmux server
         env:
-          AUMX_TMUX_BIN: ${{ steps.floor.outputs.tmux-bin }}
-          AUMX_TMUX_BIN_DIR: ${{ steps.floor.outputs.bin-dir }}
+          MUXBASE_TMUX_BIN: ${{ steps.floor.outputs.tmux-bin }}
+          MUXBASE_TMUX_BIN_DIR: ${{ steps.floor.outputs.bin-dir }}
         run: |
-          "$AUMX_TMUX_BIN" -f /dev/null new-session -d -s tmux-prewarm
-          export PATH="$AUMX_TMUX_BIN_DIR:$PATH"
+          "$MUXBASE_TMUX_BIN" -f /dev/null new-session -d -s tmux-prewarm
+          export PATH="$MUXBASE_TMUX_BIN_DIR:$PATH"
           node scripts/ensure-tmux.mjs --check | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Exact-floor terminal resilience E2E
         env:
-          AUMX_E2E_EXPECT_TMUX_VERSION: ${{ steps.floor.outputs.tmux-version }}
-          AUMX_TMUX_BIN_DIR: ${{ steps.floor.outputs.bin-dir }}
+          MUXBASE_E2E_EXPECT_TMUX_VERSION: ${{ steps.floor.outputs.tmux-version }}
+          MUXBASE_TMUX_BIN_DIR: ${{ steps.floor.outputs.bin-dir }}
           SHELL: /bin/sh
         run: |
-          export PATH="$AUMX_TMUX_BIN_DIR:$PATH"
-          AUMX_E2E=1 AUMX_E2E_ALLOW_STORE_COERCE=1 \
+          export PATH="$MUXBASE_TMUX_BIN_DIR:$PATH"
+          MUXBASE_E2E=1 MUXBASE_E2E_ALLOW_STORE_COERCE=1 \
             pnpm --dir desktop exec vitest run --config vitest.config.ts --no-file-parallelism \
             __tests__/e2e/terminal-resilience.e2e.test.ts
 
       - name: Tear down isolated tmux server
         if: always()
         env:
-          AUMX_TMUX_BIN: ${{ steps.floor.outputs.tmux-bin }}
+          MUXBASE_TMUX_BIN: ${{ steps.floor.outputs.tmux-bin }}
         run: |
-          TMUX_TMPDIR="$TMUX_TMPDIR" "$AUMX_TMUX_BIN" kill-server 2>/dev/null || true
+          TMUX_TMPDIR="$TMUX_TMPDIR" "$MUXBASE_TMUX_BIN" kill-server 2>/dev/null || true

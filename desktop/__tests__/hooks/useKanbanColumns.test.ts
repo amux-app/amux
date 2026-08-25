@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { BacklogItem, DoneItem } from '../../src/shared/kanban-types';
 import { computeEffectiveStatusByPaneId, deriveKanbanColumns } from '../../src/renderer/hooks/useKanbanColumns';
 import type { PaneActivityState } from '../../src/shared/pane-activity';
 import { makeActivity } from '../helpers/pane-activity-fixtures';
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
-    id: `aumx-${Math.random().toString(36).slice(2, 6)}`,
+    id: `muxbase-${Math.random().toString(36).slice(2, 6)}`,
     slug: 'test-pane',
     prompt: 'do something',
     paneId: '%1',

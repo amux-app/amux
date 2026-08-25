@@ -1,4 +1,5 @@
 import {
+  mkdirSync,
   mkdtempSync,
   readFileSync as readActualFileSync,
   rmSync,
@@ -67,7 +68,7 @@ describe('SettingsManager defaults', () => {
       const actual = await importOriginal<typeof import('fs')>();
       return {
         ...actual,
-        existsSync: vi.fn((filePath: string) => filePath.endsWith('/.amux/settings.json')),
+        existsSync: vi.fn((filePath: string) => filePath.endsWith('/.muxbase/settings.json')),
         readFileSync: vi.fn(() => JSON.stringify({
           claudeFullscreenDefaultResetVersion: 1,
           claudeFullscreenRendering: false,
@@ -89,7 +90,7 @@ describe('SettingsManager defaults', () => {
       const actual = await importOriginal<typeof import('fs')>();
       return {
         ...actual,
-        existsSync: vi.fn((filePath: string) => filePath.endsWith('/.aumx.global.json')),
+        existsSync: vi.fn((filePath: string) => filePath.endsWith('/.muxbase/settings.json')),
         readFileSync: vi.fn(() => JSON.stringify({
           claudeFullscreenDefaultResetVersion: 1,
           claudeFullscreenRendering: false,
@@ -106,7 +107,7 @@ describe('SettingsManager defaults', () => {
   });
 
   it('migrates an unmarked global classic value once without exposing migration metadata', async () => {
-    const globalPath = '/tmp/.aumx.global.json';
+    const globalPath = '/tmp/.muxbase/settings.json';
     let stored = JSON.stringify({ claudeFullscreenRendering: false, useWorktree: true });
     const writeFileSync = vi.fn((filePath: string, data: string) => {
       if (filePath === globalPath) stored = data;
@@ -142,8 +143,8 @@ describe('SettingsManager defaults', () => {
   });
 
   it('migrates unmarked global and project classic values independently', async () => {
-    const globalPath = '/tmp/.aumx.global.json';
-    const projectPath = '/tmp/test-project/.amux/settings.json';
+    const globalPath = '/tmp/.muxbase/settings.json';
+    const projectPath = '/tmp/test-project/.muxbase/settings.json';
     const stored = new Map<string, string>([
       [globalPath, JSON.stringify({ claudeFullscreenRendering: false, claudeModel: 'sonnet' })],
       [projectPath, JSON.stringify({ claudeFullscreenRendering: false, useWorktree: true })],
@@ -191,7 +192,8 @@ describe('SettingsManager defaults', () => {
       return {
         ...actual,
         existsSync: vi.fn(() => true),
-        readFileSync: vi.fn((filePath: string) => JSON.stringify(filePath.endsWith('/.aumx.global.json')
+        readFileSync: vi.fn((filePath: string) => JSON.stringify(
+          filePath.endsWith('/.muxbase/settings.json') && !filePath.includes('/test-project/')
           ? { claudeFullscreenRendering: true }
           : {
               claudeFullscreenDefaultResetVersion: 1,
@@ -210,7 +212,7 @@ describe('SettingsManager defaults', () => {
   });
 
   it('stamps explicit classic updates and reloads them as explicit choices', async () => {
-    const globalPath = '/tmp/.aumx.global.json';
+    const globalPath = '/tmp/.muxbase/settings.json';
     let stored: string | undefined;
     const writeFileSync = vi.fn((_filePath: string, data: string) => { stored = data; });
     vi.doMock('os', async (importOriginal) => {
@@ -242,7 +244,7 @@ describe('SettingsManager defaults', () => {
   });
 
   it('stamps bulk classic updates and retains provenance when removing the setting', async () => {
-    const projectPath = '/tmp/test-project/.amux/settings.json';
+    const projectPath = '/tmp/test-project/.muxbase/settings.json';
     let stored: string | undefined;
     const writeFileSync = vi.fn((_filePath: string, data: string) => { stored = data; });
     vi.doMock('fs', async (importOriginal) => {
@@ -273,18 +275,19 @@ describe('SettingsManager defaults', () => {
   });
 
   it('preserves the original settings after a failed migration write, then retries exactly once', async () => {
-    const homeDir = mkdtempSync(join(tmpdir(), 'aumx-settings-migration-'));
-    const globalPath = join(homeDir, '.aumx.global.json');
+    const homeDir = mkdtempSync(join(tmpdir(), 'muxbase-settings-migration-'));
+    const globalPath = join(homeDir, '.muxbase/settings.json');
     const originalSettings = {
       claudeFullscreenRendering: false,
       claudeModel: 'sonnet',
       useWorktree: true,
     };
+    mkdirSync(join(homeDir, '.muxbase'), { recursive: true });
     writeActualFileSync(globalPath, JSON.stringify(originalSettings, null, 2), 'utf8');
 
     let failNextTemporaryWrite = true;
     const writeFileSync = vi.fn((filePath: string, ...args: unknown[]) => {
-      const isMigrationTemporaryFile = filePath.startsWith(join(homeDir, '..aumx.global.json.'))
+      const isMigrationTemporaryFile = filePath.startsWith(join(homeDir, '.muxbase', '.settings.json.'))
         && filePath.endsWith('.tmp');
       if (failNextTemporaryWrite && isMigrationTemporaryFile) {
         failNextTemporaryWrite = false;
@@ -340,7 +343,7 @@ describe('SettingsManager defaults', () => {
       const actual = await importOriginal<typeof import('fs')>();
       return {
         ...actual,
-        existsSync: vi.fn((filePath: string) => filePath.endsWith('/.amux/settings.json')),
+        existsSync: vi.fn((filePath: string) => filePath.endsWith('/.muxbase/settings.json')),
         readFileSync: vi.fn(() => JSON.stringify({ claudeFullscreenRendering: 'false' })),
         writeFileSync: vi.fn(),
         mkdirSync: vi.fn(),
@@ -358,7 +361,7 @@ describe('SettingsManager defaults', () => {
       const actual = await importOriginal<typeof import('fs')>();
       return {
         ...actual,
-        existsSync: vi.fn((filePath: string) => filePath.endsWith('/.aumx.global.json')),
+        existsSync: vi.fn((filePath: string) => filePath.endsWith('/.muxbase/settings.json')),
         readFileSync: vi.fn(() => 'null'),
         writeFileSync: vi.fn(),
         mkdirSync: vi.fn(),
@@ -378,7 +381,7 @@ describe('SettingsManager defaults', () => {
       const actual = await importOriginal<typeof import('fs')>();
       return {
         ...actual,
-        existsSync: vi.fn((filePath: string) => filePath.endsWith('/.amux/settings.json')),
+        existsSync: vi.fn((filePath: string) => filePath.endsWith('/.muxbase/settings.json')),
         readFileSync: vi.fn(() => malformed
           ? JSON.stringify({ useWorktree: 'yes' })
           : JSON.stringify({ useWorktree: true })),
@@ -395,7 +398,7 @@ describe('SettingsManager defaults', () => {
   });
 
   it('promotes a successful settings save to the last known good value', async () => {
-    const projectPath = '/tmp/test-project/.amux/settings.json';
+    const projectPath = '/tmp/test-project/.muxbase/settings.json';
     let stored = JSON.stringify({ useWorktree: false });
     const writeFileSync = vi.fn((_filePath: string, data: string) => { stored = data; });
     vi.doMock('fs', async (importOriginal) => {
@@ -481,7 +484,7 @@ describe('SettingsManager defaults', () => {
       const actual = await importOriginal<typeof import('fs')>();
       return {
         ...actual,
-        existsSync: vi.fn((filePath: string) => filePath.endsWith('/.amux/settings.json')),
+        existsSync: vi.fn((filePath: string) => filePath.endsWith('/.muxbase/settings.json')),
         readFileSync: vi.fn(() => JSON.stringify({ opencodeScrollbackMode: 'true' })),
         writeFileSync: vi.fn(),
         mkdirSync: vi.fn(),
@@ -544,7 +547,9 @@ describe('SettingsManager defaults', () => {
       const actual = await importOriginal<typeof import('fs')>();
       return {
         ...actual,
-        existsSync: vi.fn((filePath: string) => !filePath.includes('/.aumx/')),
+        existsSync: vi.fn((filePath: string) => (
+          filePath.endsWith('/.muxbase/settings.json') && !filePath.includes('/test-project/')
+        )),
         readFileSync: vi.fn(() => JSON.stringify({ permissionMode: 'bypassPermissions' })),
         writeFileSync: vi.fn(),
         mkdirSync: vi.fn(),
@@ -562,7 +567,9 @@ describe('SettingsManager defaults', () => {
       const actual = await importOriginal<typeof import('fs')>();
       return {
         ...actual,
-        existsSync: vi.fn((filePath: string) => !filePath.includes('/.aumx/')),
+        existsSync: vi.fn((filePath: string) => (
+          filePath.endsWith('/.muxbase/settings.json') && !filePath.includes('/test-project/')
+        )),
         readFileSync: vi.fn(() => JSON.stringify({ permissionMode: 'plan' })),
         writeFileSync: vi.fn(),
         mkdirSync: vi.fn(),
@@ -580,7 +587,9 @@ describe('SettingsManager defaults', () => {
       const actual = await importOriginal<typeof import('fs')>();
       return {
         ...actual,
-        existsSync: vi.fn((filePath: string) => !filePath.includes('/.aumx/')),
+        existsSync: vi.fn((filePath: string) => (
+          filePath.endsWith('/.muxbase/settings.json') && !filePath.includes('/test-project/')
+        )),
         readFileSync: vi.fn(() => JSON.stringify({ permissionMode: 'fullAuto' })),
         writeFileSync: vi.fn(),
         mkdirSync: vi.fn(),

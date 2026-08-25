@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 
 const paneApi = vi.hoisted(() => ({ createPane: vi.fn(), jumpToPane: vi.fn() }));
 
@@ -24,7 +24,7 @@ const ROW_TEST_ID = 'attention-peek-row';
 const STAT_TEST_ID = 'resource-attention-stat';
 const TOOLTIP_DELAY_MS = 200;
 
-function makePane(id: string, overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(id: string, overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agentStatus: 'idle',
     id,
@@ -41,7 +41,7 @@ function makeSession(overrides: Partial<NormalizedSession>): NormalizedSession {
   return { ...createEmptySession('claude', 'session-1'), ...overrides };
 }
 
-function setPanes(panes: AumxPane[], selectedPaneId: string | null = null): void {
+function setPanes(panes: MuxBasePane[], selectedPaneId: string | null = null): void {
   usePaneStore.setState({ loaded: true, panes, selectedPaneId });
   usePaneActivityStore.setState({
     activityByPaneId: Object.fromEntries(panes.map((pane) => [pane.id, {
@@ -58,7 +58,7 @@ function setPanes(panes: AumxPane[], selectedPaneId: string | null = null): void
   });
 }
 
-function waitingPanes(count: number): AumxPane[] {
+function waitingPanes(count: number): MuxBasePane[] {
   return Array.from({ length: count }, (_unused, index) => makePane(`w${index + 1}`, { agentStatus: 'waiting' }));
 }
 
@@ -251,7 +251,7 @@ describe('AttentionPeek', () => {
 
     it('renders the state word and the reason phrase for every reason', () => {
       // Arrange
-      const cases: Array<[Partial<AumxPane>, Partial<NormalizedSession> | null, PaneAttentionReason, string]> = [
+      const cases: Array<[Partial<MuxBasePane>, Partial<NormalizedSession> | null, PaneAttentionReason, string]> = [
         [{}, { awaitingUserInput: true }, 'session-input', 'Waiting · needs input'],
         [{}, { pendingUserQuestion: 'Which one?' }, 'session-question', 'Waiting · asked a question'],
       ];

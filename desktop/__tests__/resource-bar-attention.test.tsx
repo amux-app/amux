@@ -2,7 +2,7 @@
 import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 
 const paneApi = vi.hoisted(() => ({ createPane: vi.fn(), jumpToPane: vi.fn() }));
 
@@ -22,7 +22,7 @@ const STAT_TEST_ID = 'resource-attention-stat';
 const STATS_GROUP_TEST_ID = 'resource-bar-stats';
 const ZEN_TEST_ID = 'zen-attention-stat';
 
-function makePane(id: string, overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(id: string, overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agentStatus: 'idle',
     id,
@@ -34,7 +34,7 @@ function makePane(id: string, overrides: Partial<AumxPane> = {}): AumxPane {
   };
 }
 
-function baseFleet(waitingIds: string[]): AumxPane[] {
+function baseFleet(waitingIds: string[]): MuxBasePane[] {
   return [
     makePane('p1', { agentStatus: 'working' }),
     makePane('p2', { agentStatus: waitingIds.includes('p2') ? 'waiting' : 'idle' }),
@@ -42,7 +42,7 @@ function baseFleet(waitingIds: string[]): AumxPane[] {
   ];
 }
 
-function setPanes(panes: AumxPane[], selectedPaneId: string | null = null): void {
+function setPanes(panes: MuxBasePane[], selectedPaneId: string | null = null): void {
   usePaneStore.setState({ loaded: true, panes, selectedPaneId });
   usePaneActivityStore.setState({
     activityByPaneId: Object.fromEntries(panes.map((pane) => [pane.id, {

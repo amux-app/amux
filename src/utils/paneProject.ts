@@ -1,10 +1,10 @@
 import path from 'path';
-import type { AumxPane } from '../types.js';
+import type { MuxBasePane } from '../types.js';
 import { deriveProjectRootFromManagedWorktreePath } from './worktreePaths.js';
 
 /**
- * Derive a repository root from a current or legacy Amux worktree path.
- * Example: /repo/.amux/worktrees/feature-a -> /repo
+ * Derive a repository root from a current or legacy MuxBase worktree path.
+ * Example: /repo/.muxbase/worktrees/feature-a -> /repo
  */
 export function deriveProjectRootFromWorktreePath(worktreePath?: string): string | undefined {
   return deriveProjectRootFromManagedWorktreePath(worktreePath);
@@ -15,7 +15,7 @@ export function deriveProjectRootFromWorktreePath(worktreePath?: string): string
  * then the session project root as fallback.
  */
 export function getPaneProjectRoot(
-  pane: AumxPane,
+  pane: MuxBasePane,
   fallbackProjectRoot: string
 ): string {
   const fromPane = pane.projectRoot?.trim();
@@ -31,7 +31,7 @@ export function getPaneProjectRoot(
  * Resolve a display name for a pane's project.
  */
 export function getPaneProjectName(
-  pane: AumxPane,
+  pane: MuxBasePane,
   fallbackProjectRoot: string,
   fallbackProjectName?: string
 ): string {

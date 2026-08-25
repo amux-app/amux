@@ -69,7 +69,7 @@ describe('file IPC handlers', () => {
   beforeEach(async () => {
     secureHandleMock.mockClear();
     trashItemMock.mockReset().mockImplementation((path: string) => unlink(path));
-    rootPath = await mkdtemp(join(tmpdir(), 'aumx-file-handlers-'));
+    rootPath = await mkdtemp(join(tmpdir(), 'muxbase-file-handlers-'));
     registerFileHandlers({
       getPanes: () => [],
       getProjectRoot: () => rootPath,
@@ -196,7 +196,7 @@ describe('file IPC handlers', () => {
   });
 
   it('blocks a symlink whose target is outside the authorized root', async () => {
-    const outsideRoot = await mkdtemp(join(tmpdir(), 'aumx-file-outside-'));
+    const outsideRoot = await mkdtemp(join(tmpdir(), 'muxbase-file-outside-'));
     const outsideTarget = join(outsideRoot, 'outside.ts');
     await writeFile(outsideTarget, 'outside', 'utf8');
     await symlink(outsideTarget, join(rootPath, 'alias.ts'));

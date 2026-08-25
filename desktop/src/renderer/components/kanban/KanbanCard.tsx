@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, typ
 import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { PaneActivityState } from '../../../shared/pane-activity';
 import type { BacklogItem, DoneItem } from '../../../shared/kanban-types';
 import { computeSessionDisplayMetrics } from '../../../shared/agent-session-display-metrics';
@@ -394,7 +394,7 @@ function PaneCardContent({
   paneActivity,
   columnId,
 }: {
-  data: AumxPane;
+  data: MuxBasePane;
   session?: NormalizedSession;
   activity?: PaneActivity;
   status: PaneActivityState;

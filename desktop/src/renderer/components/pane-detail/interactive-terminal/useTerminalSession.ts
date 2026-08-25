@@ -3,7 +3,7 @@ import { SearchAddon } from '@xterm/addon-search';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TERMINAL_BACKGROUND_COLORS } from '../../../../shared/app-colors';
 import { IPC_EVENT } from '../../../../shared/ipc-channels';
@@ -104,14 +104,14 @@ function isPaneActivityIdle(activity: PaneActivity | undefined): boolean {
   return activity?.state === 'idle';
 }
 
-function needsBootOverlay(pane: AumxPane, activity: PaneActivity | undefined): boolean {
+function needsBootOverlay(pane: MuxBasePane, activity: PaneActivity | undefined): boolean {
   return !!pane.agent
     && !isPaneActivityIdle(activity)
     && !useTerminalStore.getState().seenPaneIds.has(pane.id);
 }
 
 export interface InteractiveTerminalProps {
-  pane: AumxPane;
+  pane: MuxBasePane;
   terminalVisible?: boolean;
 }
 
@@ -644,7 +644,7 @@ export function useTerminalSession({ pane, terminalVisible = true }: Interactive
     let webglContextLossDisposer: TerminalDisposable | null = null;
     const wheelListenerOptions: AddEventListenerOptions = { capture: true, passive: false };
     const terminalDebugPromise = (
-      (window as typeof window & { __AUMX_E2E?: boolean }).__AUMX_E2E === true
+      (window as typeof window & { __MUXBASE_E2E?: boolean }).__MUXBASE_E2E === true
       || (
         (import.meta as ImportMeta & { env: { DEV: boolean } }).env.DEV
         && window.location.search.includes('e2e=1')

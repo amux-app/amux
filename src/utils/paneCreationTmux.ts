@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import type { LogService } from '../services/LogService.js';
 import type { TmuxService } from '../services/TmuxService.js';
-import type { AumxConfig } from '../types.js';
+import type { MuxBaseConfig } from '../types.js';
 import { SIDEBAR_WIDTH } from './layoutManager.js';
-import { updateAumxControlFields } from './aumxConfigMutation.js';
+import { updateMuxBaseControlFields } from './muxbaseConfigMutation.js';
 import { ensureMinimumWindowSize, setupSidebarLayout, splitPane } from './tmux.js';
 
 type PaneCreationLog = Pick<LogService, 'error' | 'info' | 'warn'>;
@@ -28,7 +28,7 @@ export async function resolveControlPane({
   tmuxService,
 }: ResolveControlPaneOptions): Promise<string> {
   try {
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as AumxConfig;
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as MuxBaseConfig;
     let controlPaneId = config.controlPaneId;
 
     if (controlPaneId && !providedControlPaneId) {
@@ -39,7 +39,7 @@ export async function resolveControlPane({
           'paneCreation',
         );
         controlPaneId = originalPaneId;
-        updateAumxControlFields(configPath, {
+        updateMuxBaseControlFields(configPath, {
           controlPaneId,
           controlPaneSize: SIDEBAR_WIDTH,
         });
@@ -48,7 +48,7 @@ export async function resolveControlPane({
 
     if (!controlPaneId) {
       controlPaneId = originalPaneId;
-      updateAumxControlFields(configPath, {
+      updateMuxBaseControlFields(configPath, {
         controlPaneId,
         controlPaneSize: SIDEBAR_WIDTH,
       });
@@ -152,7 +152,7 @@ export async function allocateTmuxPane({
     );
 
     try {
-      updateAumxControlFields(configPath, { controlPaneId: originalPaneId });
+      updateMuxBaseControlFields(configPath, { controlPaneId: originalPaneId });
       controlPaneId = originalPaneId;
     } catch (configError) {
       log.error(

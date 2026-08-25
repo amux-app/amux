@@ -1,4 +1,4 @@
-import type { SettingDefinition, SettingsScope } from 'aumx/core';
+import type { SettingDefinition, SettingsScope } from 'muxbase/core';
 import { useSettingsStore } from '../../stores';
 import { ToggleSwitch } from '../shared/ToggleSwitch';
 

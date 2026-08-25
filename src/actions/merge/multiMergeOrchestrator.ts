@@ -7,7 +7,7 @@
 
 import { getAgentLabel, type AgentName } from '../../agents/agent-contract.js';
 import type { ActionResult, ActionContext } from '../types.js';
-import type { AumxPane } from '../../types.js';
+import type { MuxBasePane } from '../../types.js';
 import type { WorktreeInfo, MergeQueueItem, MultiMergeResult } from './types.js';
 import { getWorktreeDisplayLabel } from '../../utils/worktreeDiscovery.js';
 import { LogService } from '../../services/LogService.js';
@@ -70,7 +70,7 @@ export async function buildMergeQueue(
  * Returns ActionResult that chains through each merge
  */
 export async function executeMultiMerge(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   queue: MergeQueueItem[]
 ): Promise<ActionResult> {
@@ -82,7 +82,7 @@ export async function executeMultiMerge(
  * Show initial confirmation dialog listing all worktrees to merge
  */
 function showMultiMergeConfirmation(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   queue: MergeQueueItem[]
 ): ActionResult {
@@ -126,7 +126,7 @@ function showMultiMergeConfirmation(
  * Process the next item in the merge queue
  */
 async function processNextInQueue(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   queue: MergeQueueItem[],
   currentIndex: number,
@@ -191,7 +191,7 @@ async function processNextInQueue(
  * Execute merge for a single worktree in the queue
  */
 async function executeSingleWorktreeMerge(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   item: MergeQueueItem,
   currentIndex: number,
@@ -238,7 +238,7 @@ async function executeSingleWorktreeMerge(
  * Handle merge issues for a single worktree in multi-merge context
  */
 async function handleWorktreeMergeIssues(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   item: MergeQueueItem,
   progressPrefix: string,
@@ -455,7 +455,7 @@ async function handleUncommittedForWorktree(
  * Handle merge conflict for a worktree in multi-merge
  */
 async function handleConflictForWorktree(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   item: MergeQueueItem,
   progressPrefix: string,
@@ -530,7 +530,7 @@ async function handleConflictForWorktree(
  * Creates a new pane with an agent to resolve conflicts, then continues the multi-merge
  */
 async function launchConflictResolutionForSubWorktree(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   item: MergeQueueItem,
   queue: MergeQueueItem[],
@@ -588,7 +588,7 @@ async function launchConflictResolutionForSubWorktree(
  * Create a conflict resolution pane and monitor for completion
  */
 async function createAndMonitorConflictPane(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   item: MergeQueueItem,
   queue: MergeQueueItem[],
@@ -664,7 +664,7 @@ async function createAndMonitorConflictPane(
 
           const stateManager = StateManager.getInstance();
           const currentPanes = stateManager.getPanes();
-          const panesWithoutConflictPane = currentPanes.filter((p: AumxPane) => p.id !== resolvedConflictPane.id);
+          const panesWithoutConflictPane = currentPanes.filter((p: MuxBasePane) => p.id !== resolvedConflictPane.id);
           await context.savePanes(panesWithoutConflictPane);
 
           const mergeResult = await mergeWorktreeIntoMain(worktree.parentRepoPath, worktree.branch);
@@ -680,9 +680,9 @@ async function createAndMonitorConflictPane(
             clearConflictMergeTransaction(worktree.worktreePath);
             // Trigger post_merge hook
             await triggerHook('post_merge', worktree.parentRepoPath, pane, {
-              AUMX_TARGET_BRANCH: mainBranch,
-              AUMX_WORKTREE_PATH: worktree.worktreePath,
-              AUMX_REPO_NAME: worktree.repoName,
+              MUXBASE_TARGET_BRANCH: mainBranch,
+              MUXBASE_WORKTREE_PATH: worktree.worktreePath,
+              MUXBASE_REPO_NAME: worktree.repoName,
             });
           }
           await continueQueue(true);
@@ -718,7 +718,7 @@ async function createAndMonitorConflictPane(
  * Actually perform the merge for a worktree
  */
 async function performWorktreeMerge(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   item: MergeQueueItem,
   progressPrefix: string,
@@ -731,9 +731,9 @@ async function performWorktreeMerge(
   const { mainBranch } = validation;
 
   await triggerHook('pre_merge', worktree.parentRepoPath, pane, {
-    AUMX_TARGET_BRANCH: mainBranch,
-    AUMX_WORKTREE_PATH: worktree.worktreePath,
-    AUMX_REPO_NAME: worktree.repoName,
+    MUXBASE_TARGET_BRANCH: mainBranch,
+    MUXBASE_WORKTREE_PATH: worktree.worktreePath,
+    MUXBASE_REPO_NAME: worktree.repoName,
   });
 
   const step1 = await mergeMainIntoWorktree(worktree.worktreePath, mainBranch);
@@ -812,9 +812,9 @@ async function performWorktreeMerge(
 
   // Trigger post_merge hook
   await triggerHook('post_merge', worktree.parentRepoPath, pane, {
-    AUMX_TARGET_BRANCH: mainBranch,
-    AUMX_WORKTREE_PATH: worktree.worktreePath,
-    AUMX_REPO_NAME: worktree.repoName,
+    MUXBASE_TARGET_BRANCH: mainBranch,
+    MUXBASE_WORKTREE_PATH: worktree.worktreePath,
+    MUXBASE_REPO_NAME: worktree.repoName,
   });
 
   log.info(`[multiMerge] Successfully merged ${worktree.repoName}`, 'multiMerge');
@@ -825,7 +825,7 @@ async function performWorktreeMerge(
  * Show final summary of multi-merge operation
  */
 function showMultiMergeSummary(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   result: MultiMergeResult
 ): ActionResult {

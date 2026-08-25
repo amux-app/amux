@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import type { AumxPane, AgentStatus } from '../types.js';
+import type { MuxBasePane, AgentStatus } from '../types.js';
 import { WORKER_ACTIVITY_NOTIFY_THROTTLE } from '../constants/timing.js';
 import { PaneStatusManager } from './PaneStatusManager.js';
 import type { PaneStatusChange } from './PaneStatusAnalyzer.js';
@@ -12,7 +12,7 @@ export interface StatusUpdateEvent {
   reasserted?: true;
 }
 
-export function selectStatusMonitoredPanes(panes: AumxPane[]): AumxPane[] {
+export function selectStatusMonitoredPanes(panes: MuxBasePane[]): MuxBasePane[] {
   return panes.filter((pane) => pane.agent !== undefined && pane.type !== 'shell');
 }
 
@@ -35,7 +35,7 @@ export class StatusDetector extends EventEmitter {
   /**
    * Start monitoring a set of panes
    */
-  async monitorPanes(panes: AumxPane[]): Promise<void> {
+  async monitorPanes(panes: MuxBasePane[]): Promise<void> {
     if (this.isShuttingDown) return;
 
     const monitoredPanes = selectStatusMonitoredPanes(panes);

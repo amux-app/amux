@@ -66,7 +66,7 @@ describe('app IPC handlers', () => {
   });
 
   afterEach(() => {
-    delete process.env.AUMX_DISABLE_TERMINAL_SELECTION_INTEGRATION;
+    delete process.env.MUXBASE_DISABLE_TERMINAL_SELECTION_INTEGRATION;
   });
 
   it('relaunches the current application for startup retry', () => {
@@ -101,7 +101,7 @@ describe('app IPC handlers', () => {
   });
 
   it('exposes the internal terminal selection recovery switch at boot', () => {
-    process.env.AUMX_DISABLE_TERMINAL_SELECTION_INTEGRATION = '1';
+    process.env.MUXBASE_DISABLE_TERMINAL_SELECTION_INTEGRATION = '1';
     const event: { returnValue?: { terminalSelectionIntegrationEnabled?: boolean } } = {};
 
     getSyncListener(IPC_SYNC.APP_BOOT_SETTINGS)(event);

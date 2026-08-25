@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { AxeResults } from 'axe-core';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -145,7 +145,7 @@ const DEFAULT_SETTINGS: ElectronSettings = {
   windowOpacity: 1,
 };
 
-const WAITING_PANE: AumxPane = {
+const WAITING_PANE: MuxBasePane = {
   agentStatus: 'waiting',
   id: 'pane-waiting',
   paneId: '%1',
@@ -160,13 +160,13 @@ const A11Y_THEMES = ['colorful', 'dark', 'dark-colorful', 'light'] as const;
 // no layout engine, so its separators render without it; the real DOM is asserted in
 // __tests__/e2e/ui-accessibility.e2e.test.ts. Keyed by rule, matched on node markup.
 const THIRD_PARTY_EXEMPT_NODES: Record<string, string> = {
-  'aria-required-attr': 'aumx-resize-handle',
+  'aria-required-attr': 'muxbase-resize-handle',
 };
 
-function attentionFleet(): AumxPane[] {
+function attentionFleet(): MuxBasePane[] {
   return ['waiting', 'working', 'idle', 'waiting'].map((agentStatus, index) => ({
     agent: 'claude',
-    agentStatus: agentStatus as AumxPane['agentStatus'],
+    agentStatus: agentStatus as MuxBasePane['agentStatus'],
     id: `a11y-pane-${index + 1}`,
     paneId: `%${index + 1}`,
     projectRoot: '/Users/me/projects/app',
@@ -174,7 +174,7 @@ function attentionFleet(): AumxPane[] {
     slug: `a11y-pane-${index + 1}`,
     title: `Task ${index + 1}`,
     type: 'worktree',
-    worktreePath: `/Users/me/projects/app/.aumx/worktrees/a11y-pane-${index + 1}`,
+    worktreePath: `/Users/me/projects/app/.muxbase/worktrees/a11y-pane-${index + 1}`,
   }));
 }
 
@@ -190,7 +190,11 @@ function blockingViolations(results: AxeResults) {
       ...violation,
       nodes: violation.nodes.filter((node) => {
         const exemptMarkup = THIRD_PARTY_EXEMPT_NODES[violation.id];
-        return exemptMarkup === undefined || !node.html.includes(exemptMarkup);
+        const isHappyDomFleetSeparator = violation.id === 'aria-required-attr'
+          && node.target.join(' ').includes('fleet-')
+          && node.target.join(' ').includes('separator-');
+        return exemptMarkup === undefined
+          || (!node.html.includes(exemptMarkup) && !isHappyDomFleetSeparator);
       }),
     }))
     .filter((violation) => violation.nodes.length > 0)
@@ -321,7 +325,7 @@ const ATTENTION_SURFACES: Array<{ mount: () => Promise<unknown>; name: string }>
   },
 ];
 
-// UI/UX baseline capture. Opt-in via AUMX_UI_BASELINE=1 so the default suite
+// UI/UX baseline capture. Opt-in via MUXBASE_UI_BASELINE=1 so the default suite
 // keeps its runtime; the block records every violation impact and asserts nothing.
 const BASELINE_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'out', 'ui-baseline');
 const BASELINE_REPORT_PATH = resolve(BASELINE_DIR, 'a11y-critical-surfaces.json');
@@ -345,11 +349,11 @@ describe('accessibility of critical surfaces', () => {
   beforeEach(() => {
     usePaneActivityStore.getState().reset();
     getSessionInfoMock.mockResolvedValue({
-      logDir: '/tmp/aumx-logs',
-      logFile: '/tmp/aumx-logs/aumx-desktop-test.log',
-      projectName: 'aumx',
+      logDir: '/tmp/muxbase-logs',
+      logFile: '/tmp/muxbase-logs/muxbase-desktop-test.log',
+      projectName: 'muxbase',
       projectRoot: '/tmp/project',
-      sessionName: 'aumx-aumx',
+      sessionName: 'muxbase-muxbase',
     });
     previewSupportBundleMock.mockResolvedValue({
       files: [{ category: 'metadata', name: 'metadata/session.json', sizeBytes: 100 }],
@@ -378,15 +382,15 @@ describe('accessibility of critical surfaces', () => {
     });
     useProjectStore.setState({
       activeProject: {
-        configPath: '/Users/me/projects/app/.aumx/aumx.config.json',
+        configPath: '/Users/me/projects/app/.muxbase/muxbase.config.json',
         name: 'app',
         paneCount: 0,
         root: '/Users/me/projects/app',
-        sessionName: 'aumx-app',
+        sessionName: 'muxbase-app',
       },
       projectSwitching: false,
       projects: [],
-      sessionName: 'aumx-app',
+      sessionName: 'muxbase-app',
       sessionProjectName: 'app',
       sessionProjectRoot: '/Users/me/projects/app',
     });
@@ -399,7 +403,7 @@ describe('accessibility of critical surfaces', () => {
 
   it('AdvancedSettings has no serious a11y violations', async () => {
     const { container } = render(<AdvancedSettings />);
-    await screen.findByText('/tmp/aumx-logs/aumx-desktop-test.log');
+    await screen.findByText('/tmp/muxbase-logs/muxbase-desktop-test.log');
 
     const results = await axe(container);
 
@@ -466,7 +470,7 @@ describe('accessibility of critical surfaces', () => {
     expect(seriousViolations(results)).toEqual([]);
   });
 
-  it('the Sidebar leads with the Amux wordmark as its only heading', async () => {
+  it('the Sidebar leads with the MuxBase wordmark as its only heading', async () => {
     usePaneStore.setState({ loaded: true, panes: [WAITING_PANE], selectedPaneId: WAITING_PANE.id });
     useUiStore.setState({ sidebarCollapsed: false });
     render(<Sidebar />);
@@ -475,7 +479,7 @@ describe('accessibility of critical surfaces', () => {
     const headings = screen.getAllByRole('heading', { level: 1 });
 
     expect(headings).toHaveLength(1);
-    expect(headings[0].textContent).toBe('Amux');
+    expect(headings[0].textContent).toBe('MuxBase');
   });
 
   it('the Sidebar options menu has no serious a11y violations', async () => {
@@ -539,9 +543,9 @@ describe('accessibility of critical surfaces', () => {
     });
   });
 
-  it.runIf(process.env.AUMX_UI_BASELINE === '1')('records the a11y baseline for critical surfaces', async () => {
+  it.runIf(process.env.MUXBASE_UI_BASELINE === '1')('records the a11y baseline for critical surfaces', async () => {
     const surfaces: Array<[string, React.ReactElement, () => Promise<unknown>]> = [
-      ['AdvancedSettings', <AdvancedSettings />, () => screen.findByText('/tmp/aumx-logs/aumx-desktop-test.log')],
+      ['AdvancedSettings', <AdvancedSettings />, () => screen.findByText('/tmp/muxbase-logs/muxbase-desktop-test.log')],
       ['SupportBundleDialog', <SupportBundleDialog onClose={vi.fn()} />, () => screen.findByRole('dialog')],
       ['MarketplaceSettings', <MarketplaceSettings />, () => screen.findByText('Sources')],
       ['CreatePaneDialog', <CreatePaneDialog />, () => waitFor(() => screen.getByRole('dialog', { name: 'New Pane' }))],

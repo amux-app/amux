@@ -1,4 +1,4 @@
-import { AGENT_IDS, getAgentsWithCapability } from 'aumx/core';
+import { AGENT_IDS, getAgentsWithCapability } from 'muxbase/core';
 import { describe, expect, it } from 'vitest';
 import {
   agentHasSessionParsing,

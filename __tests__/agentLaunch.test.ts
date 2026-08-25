@@ -146,7 +146,7 @@ describe('getEffortFlags (claude)', () => {
     expect(getEffortFlags('claude', 'max')).toBe("--effort 'max'");
   });
 
-  it('translates ultracode (aumx harness marker) to the highest valid CLI effort xhigh', () => {
+  it('translates ultracode (muxbase harness marker) to the highest valid CLI effort xhigh', () => {
     expect(getEffortFlags('claude', 'ultracode')).toBe("--effort 'xhigh'");
   });
 

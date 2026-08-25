@@ -6,9 +6,9 @@ import {
   shQuote,
   TMUX_SHELL_READY_DELAY,
   triggerHook,
-  type AumxPane,
+  type MuxBasePane,
   type PreservedWorktree,
-} from 'aumx/core';
+} from 'muxbase/core';
 import { randomUUID } from 'node:crypto';
 import { basename, resolve } from 'path';
 import type {
@@ -39,17 +39,17 @@ function toOrphanedWorktreeInfo(worktree: PreservedWorktree): OrphanedWorktreeIn
 
 interface WorktreeWorkflowDependencies {
   ensureValidControlPaneId(): Promise<void>;
-  getPane(paneId: string): AumxPane | undefined;
-  getPanes(): AumxPane[];
+  getPane(paneId: string): MuxBasePane | undefined;
+  getPanes(): MuxBasePane[];
   getProjectName(): string;
   getProjectRoot(): string;
   getSessionName(): string;
   hasActiveProjectContext(): boolean;
   killPane(paneId: string): Promise<void>;
   newWindowPane(options: { cwd: string; sessionName: string }): Promise<string>;
-  replacePanesBestEffort(panes: AumxPane[]): void;
+  replacePanesBestEffort(panes: MuxBasePane[]): void;
   resumePaneWatcher(): void;
-  saveReopenedPane(pane: AumxPane): void;
+  saveReopenedPane(pane: MuxBasePane): void;
   sendProgress(action: string, active: boolean): void;
   sendShellCommand(paneId: string, command: string): Promise<void>;
   sendTmuxKeys(paneId: string, keys: string): Promise<void>;
@@ -60,7 +60,7 @@ interface WorktreeWorkflowDependencies {
     existingTranscriptPath?: string,
     filenamePrefix?: string,
   ): Promise<string | undefined>;
-  startPaneMonitor(panes: AumxPane[]): Promise<void>;
+  startPaneMonitor(panes: MuxBasePane[]): Promise<void>;
   suspendPaneWatcher(): void;
 }
 
@@ -179,11 +179,11 @@ export class WorktreeWorkflow {
         undefined,
         'reopened',
       );
-      const pane: AumxPane = {
+      const pane: MuxBasePane = {
         branchName: worktree.branch && worktree.branch !== worktree.slug
           ? worktree.branch
           : undefined,
-        id: `aumx-${randomUUID()}`,
+        id: `muxbase-${randomUUID()}`,
         paneId: tmuxPaneId,
         projectName: this.dependencies.getProjectName(),
         projectRoot: this.dependencies.getProjectRoot(),
@@ -326,7 +326,7 @@ export class WorktreeWorkflow {
   }
 
   private async changePaneDirectory(
-    pane: AumxPane,
+    pane: MuxBasePane,
     worktreePath: string,
     operation: 'attached' | 'new',
   ): Promise<void> {

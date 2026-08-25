@@ -1,6 +1,6 @@
 import { z } from 'zod/mini';
 
-const APP_UPDATE_REPOSITORY = Object.freeze({ owner: 'amux-app', repo: 'amux' });
+const APP_UPDATE_REPOSITORY = Object.freeze({ owner: 'muxbase-app', repo: 'muxbase' });
 
 const APP_UPDATE_DISABLED_REASONS = [
   'development',
@@ -56,8 +56,8 @@ const availableBase = {
   ...snapshotBase,
   availableVersion: semanticVersionSchema,
   releaseNotesUrl: z.optional(z.string().check(z.regex(
-    /^https:\/\/github\.com\/amux-app\/amux\/releases\/tag\/v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/,
-    'Expected a canonical stable Amux release URL',
+    /^https:\/\/github\.com\/muxbase-app\/muxbase\/releases\/tag\/v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/,
+    'Expected a canonical stable MuxBase release URL',
   ))),
 };
 

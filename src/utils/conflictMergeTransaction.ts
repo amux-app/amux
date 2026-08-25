@@ -1,5 +1,5 @@
 import path from 'node:path';
-import type { AumxPane, ConflictMergeMetadata } from '../types.js';
+import type { MuxBasePane, ConflictMergeMetadata } from '../types.js';
 import { execFileAsync } from './execAsync.js';
 
 type ConflictMergeRepositoryStatus = 'conflicted' | 'clean' | 'failed';
@@ -94,7 +94,7 @@ export function findConflictMergeTransactionForMerge(
 }
 
 export async function scanConflictMergeRecovery(
-  panes: readonly Pick<AumxPane, 'id' | 'worktreePath'>[],
+  panes: readonly Pick<MuxBasePane, 'id' | 'worktreePath'>[],
 ): Promise<ConflictMergeRecovery[]> {
   const recoveries: Array<ConflictMergeRecovery | undefined> = await Promise.all(panes.flatMap((pane) => {
     if (!pane.worktreePath) return [];

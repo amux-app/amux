@@ -23,7 +23,7 @@ let home = '';
 let sessionsDir = '';
 
 beforeEach(() => {
-  home = mkdtempSync(join(tmpdir(), 'aumx-session-lister-'));
+  home = mkdtempSync(join(tmpdir(), 'muxbase-session-lister-'));
   process.env.HOME = home;
   sessionsDir = join(home, '.claude', 'projects', ENCODED_PROJECT);
   mkdirSync(sessionsDir, { recursive: true });

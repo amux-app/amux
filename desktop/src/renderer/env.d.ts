@@ -1,7 +1,7 @@
-import type { AumxElectronAPI } from '../shared/ipc-types';
+import type { MuxBaseElectronAPI } from '../shared/ipc-types';
 
 declare global {
   interface Window {
-    aumx: AumxElectronAPI;
+    muxbase: MuxBaseElectronAPI;
   }
 }

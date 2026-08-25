@@ -1,4 +1,4 @@
-import type { AumxPane, ReviewMetadata } from 'aumx/core';
+import type { MuxBasePane, ReviewMetadata } from 'muxbase/core';
 import { describe, expect, it } from 'vitest';
 import { makeActivity } from '../helpers/pane-activity-fixtures';
 import {
@@ -9,7 +9,7 @@ import {
   resolveReviewSourcePane,
 } from '../../src/main/services/review/reviewPaneGuards';
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'claude',
     agentStatus: 'idle',
@@ -17,7 +17,7 @@ function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
     paneId: '%1',
     prompt: 'implement feature',
     slug: 'feature-pane',
-    worktreePath: '/repo/.aumx/worktrees/feature-pane',
+    worktreePath: '/repo/.muxbase/worktrees/feature-pane',
     ...overrides,
   };
 }

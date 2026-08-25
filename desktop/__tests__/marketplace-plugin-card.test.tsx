@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { DetectedPlugin, MarketplaceSource } from 'aumx/core';
+import type { DetectedPlugin, MarketplaceSource } from 'muxbase/core';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MarketplaceSettings } from '../src/renderer/components/settings/MarketplaceSettings';
@@ -59,7 +59,7 @@ describe('marketplace executable preview consent', () => {
       preview: {
         digest: 'digest-1',
         introducesExecutableBehavior: true,
-        agents: [{ agent: 'claude', artifacts: [{ name: 'post_merge', destinationPaths: ['.aumx-hooks/post_merge'], detail: 'run-tool' }] }],
+        agents: [{ agent: 'claude', artifacts: [{ name: 'post_merge', destinationPaths: ['.muxbase-hooks/post_merge'], detail: 'run-tool' }] }],
         environmentVariableNames: [],
         generatedFiles: [],
       },

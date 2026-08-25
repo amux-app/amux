@@ -5,7 +5,7 @@ import { HEAD_REF, PATHSPEC_SEPARATOR, STATUS_ARGS, VERIFY_HEAD_ARGS } from './g
 import { git, gitOrThrow } from './gitCommand.js';
 import { parsePorcelainV1Z, type ParsedStatusEntry } from './gitDiffParser.js';
 
-const REVIEW_SNAPSHOT_MESSAGE = 'amux review snapshot';
+const REVIEW_SNAPSHOT_MESSAGE = 'muxbase review snapshot';
 const SNAPSHOT_MAX_FILE_BYTES = 1024 * 1024;
 const SECRET_NAME_RE = /(?:^|[\\/])(\.env(\.[^/\\]*)?|secrets?\.(?:json|ya?ml|toml)|credentials?\.(?:json|ya?ml)|.*\.pem|.*\.key|.*\.p12|.*\.pfx|.*\.cer)$/i;
 
@@ -71,7 +71,7 @@ export async function createReviewSnapshot(worktreePath: string): Promise<Snapsh
 
   const skippedFiles = await skippedSnapshotFiles(worktreePath, statusEntries);
 
-  const indexDir = await mkdtemp(join(tmpdir(), 'amux-review-index-'));
+  const indexDir = await mkdtemp(join(tmpdir(), 'muxbase-review-index-'));
   const env = { GIT_INDEX_FILE: join(indexDir, 'index') };
   try {
     // Seed the temp index from HEAD so files that are tracked but now match

@@ -27,7 +27,7 @@ import { createParser } from '../../src/main/services/parsing/AgentLogParser';
 import type { AgentLogParser } from '../../src/main/services/parsing/AgentLogParser';
 import type { NormalizedMessage, NormalizedSession } from '../../src/shared/agent-session-types';
 import { createEmptySession } from '../../src/shared/agent-session-types';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 
 const mockedCreateParser = vi.mocked(createParser);
 type MockAgentLogParser = AgentLogParser & {
@@ -36,9 +36,9 @@ type MockAgentLogParser = AgentLogParser & {
   parseSession: ReturnType<typeof vi.fn>;
 };
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
-    id: 'aumx-1',
+    id: 'muxbase-1',
     slug: 'test',
     prompt: 'do something',
     paneId: '%1',
@@ -176,7 +176,7 @@ describe('AgentSessionService', () => {
 
     it('serializes concurrent ensureTracking calls for the same pane', async () => {
       registerMockParser();
-      const pane = makePane({ id: 'aumx-shell', agent: undefined });
+      const pane = makePane({ id: 'muxbase-shell', agent: undefined });
       let release: () => void = () => {};
       const gate = new Promise<string>((resolve) => {
         release = () => resolve('/tmp/test-project');
@@ -343,20 +343,20 @@ describe('AgentSessionService', () => {
       const mockParser = registerMockParser();
       const serviceWithResolver = new AgentSessionService(
         '/tmp/fallback-root',
-        async () => '/Users/user/my-repo/.aumx/worktrees/fix-123/src',
+        async () => '/Users/user/my-repo/.muxbase/worktrees/fix-123/src',
       );
 
       await serviceWithResolver.onPaneCreated(
         makePane({
           agent: 'claude',
           projectRoot: '/Users/user/my-repo',
-          worktreePath: '/Users/user/my-repo/.aumx/worktrees/fix-123',
+          worktreePath: '/Users/user/my-repo/.muxbase/worktrees/fix-123',
         }),
       );
 
       expect(mockParser.findSessionFile).toHaveBeenCalledWith(
         expect.any(Object),
-        '/Users/user/my-repo/.aumx/worktrees/fix-123/src',
+        '/Users/user/my-repo/.muxbase/worktrees/fix-123/src',
         expect.any(Set),
         'initial',
       );
@@ -369,13 +369,13 @@ describe('AgentSessionService', () => {
         makePane({
           agent: 'claude',
           projectRoot: undefined,
-          worktreePath: '/Users/user/my-repo/.aumx/worktrees/fix-123',
+          worktreePath: '/Users/user/my-repo/.muxbase/worktrees/fix-123',
         }),
       );
 
       expect(mockParser.findSessionFile).toHaveBeenCalledWith(
         expect.any(Object),
-        '/Users/user/my-repo/.aumx/worktrees/fix-123',
+        '/Users/user/my-repo/.muxbase/worktrees/fix-123',
         expect.any(Set),
         'initial',
       );
@@ -423,20 +423,20 @@ describe('AgentSessionService', () => {
       const mockParser = registerMockParser();
       const serviceWithResolver = new AgentSessionService(
         '/tmp/fallback',
-        async () => '/Users/user/my-repo/.aumx/worktrees/feature/src',
+        async () => '/Users/user/my-repo/.muxbase/worktrees/feature/src',
       );
 
       await serviceWithResolver.onPaneCreated(
         makePane({
           agent: 'claude',
           projectRoot: '/Users/user/my-repo',
-          worktreePath: '/Users/user/my-repo/.aumx/worktrees/feature',
+          worktreePath: '/Users/user/my-repo/.muxbase/worktrees/feature',
         }),
       );
 
       expect(mockParser.findSessionFile).toHaveBeenCalledWith(
         expect.any(Object),
-        '/Users/user/my-repo/.aumx/worktrees/feature/src',
+        '/Users/user/my-repo/.muxbase/worktrees/feature/src',
         expect.any(Set),
         'initial',
       );
@@ -464,16 +464,16 @@ describe('AgentSessionService', () => {
     it('passes shared claimedFiles set to parser via context', async () => {
       const mockParser = registerMockParser();
 
-      const paneA = makePane({ id: 'aumx-1', agent: 'claude' });
-      const paneB = makePane({ id: 'aumx-2', agent: 'claude' });
+      const paneA = makePane({ id: 'muxbase-1', agent: 'claude' });
+      const paneB = makePane({ id: 'muxbase-2', agent: 'claude' });
       await service.onPaneCreated(paneA);
       await service.onPaneCreated(paneB);
 
       const callsA = mockParser.findSessionFile.mock.calls.filter(
-        (c: unknown[]) => (c[0] as AumxPane).id === 'aumx-1',
+        (c: unknown[]) => (c[0] as MuxBasePane).id === 'muxbase-1',
       );
       const callsB = mockParser.findSessionFile.mock.calls.filter(
-        (c: unknown[]) => (c[0] as AumxPane).id === 'aumx-2',
+        (c: unknown[]) => (c[0] as MuxBasePane).id === 'muxbase-2',
       );
       expect(callsA[0][2]).toBe(callsB[0][2]);
       expect(callsA[0][2]).toBeInstanceOf(Set);
@@ -934,13 +934,13 @@ describe('AgentSessionService', () => {
     it('clears all contexts', async () => {
       registerMockParser();
 
-      await service.onPaneCreated(makePane({ id: 'aumx-1', agent: 'claude' }));
-      await service.onPaneCreated(makePane({ id: 'aumx-2', agent: 'claude' }));
+      await service.onPaneCreated(makePane({ id: 'muxbase-1', agent: 'claude' }));
+      await service.onPaneCreated(makePane({ id: 'muxbase-2', agent: 'claude' }));
 
       service.shutdown();
 
-      expect(service.getSession('aumx-1')).toBeNull();
-      expect(service.getSession('aumx-2')).toBeNull();
+      expect(service.getSession('muxbase-1')).toBeNull();
+      expect(service.getSession('muxbase-2')).toBeNull();
     });
   });
 });

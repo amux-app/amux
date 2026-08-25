@@ -1,4 +1,4 @@
-import type { DetectedPlugin, InstalledPlugin, MarketplaceInstallMode, MarketplaceSource } from 'aumx/core';
+import type { DetectedPlugin, InstalledPlugin, MarketplaceInstallMode, MarketplaceSource } from 'muxbase/core';
 import { create } from 'zustand';
 import * as marketplaceApi from '../api/marketplace.api';
 

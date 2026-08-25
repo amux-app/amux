@@ -22,9 +22,9 @@ describe('PaneCreationRollback', () => {
   });
 
   it('removes created artifacts in reverse order', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'aumx-rollback-'));
+    const root = mkdtempSync(join(tmpdir(), 'muxbase-rollback-'));
     roots.push(root);
-    const configPath = join(root, 'aumx.config.json');
+    const configPath = join(root, 'muxbase.config.json');
     const transcriptPath = join(root, 'pane.ansi');
     const worktreePath = join(root, 'worktree');
 
@@ -61,7 +61,7 @@ describe('PaneCreationRollback', () => {
   });
 
   it('does nothing after disarm', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'aumx-rollback-'));
+    const root = mkdtempSync(join(tmpdir(), 'muxbase-rollback-'));
     roots.push(root);
     const transcriptPath = join(root, 'pane.ansi');
     writeFileSync(transcriptPath, 'ansi');

@@ -1,4 +1,4 @@
-import { normalizeAutomaticPaneTitle } from 'aumx/core';
+import { normalizeAutomaticPaneTitle } from 'muxbase/core';
 
 const OPENROUTER_CHAT_COMPLETIONS_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const REQUEST_TIMEOUT_MS = 3_000;

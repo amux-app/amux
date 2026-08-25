@@ -64,7 +64,7 @@ describe('ClaudeLogParser token deduplication by message.id', () => {
   it('counts usage once per message.id even when written across multiple JSONL entries', async () => {
     // Real-world JSONL: one API call produces multiple content blocks,
     // each written as its own JSONL entry with the same terminal usage.
-    const dir = createTempDir('aumx-claude-dedup-');
+    const dir = createTempDir('muxbase-claude-dedup-');
     const file = join(dir, 'session.jsonl');
 
     writeJsonl(file, [
@@ -88,7 +88,7 @@ describe('ClaudeLogParser token deduplication by message.id', () => {
   });
 
   it('keeps all content blocks visible while attributing usage only to the first entry of each turn', async () => {
-    const dir = createTempDir('aumx-claude-dedup-blocks-');
+    const dir = createTempDir('muxbase-claude-dedup-blocks-');
     const file = join(dir, 'session.jsonl');
 
     writeJsonl(file, [
@@ -108,7 +108,7 @@ describe('ClaudeLogParser token deduplication by message.id', () => {
   });
 
   it('falls back to per-entry accumulation when message.id is missing (legacy)', async () => {
-    const dir = createTempDir('aumx-claude-dedup-legacy-');
+    const dir = createTempDir('muxbase-claude-dedup-legacy-');
     const file = join(dir, 'session.jsonl');
 
     writeJsonl(file, [

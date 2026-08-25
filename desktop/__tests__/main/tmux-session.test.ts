@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { execAsync } from 'aumx/core';
+import { execAsync } from 'muxbase/core';
 import { ensureTmuxSession } from '../../src/main/utils/tmuxSession';
 import type { ThemeMode } from '../../src/shared/theme-mode';
 
 const execAsyncMock = vi.hoisted(() => vi.fn());
 const terminalTheme = vi.hoisted(() => ({ mode: 'dark' as ThemeMode }));
 
-vi.mock('aumx/core', () => ({
+vi.mock('muxbase/core', () => ({
   AGENT_TERMINAL_ENVIRONMENT: [
     ['TERM', 'tmux-256color'],
     ['COLORTERM', 'truecolor'],
@@ -36,10 +36,10 @@ describe('ensureTmuxSession', () => {
   it('reuses a session when tmux show returns the option name with the value', async () => {
     // Arrange
     execAsyncMock.mockImplementation((command: string) => {
-      if (command.includes('list-sessions')) return Promise.resolve('aumx-example-rag\n');
+      if (command.includes('list-sessions')) return Promise.resolve('muxbase-example-rag\n');
       if (command.includes('has-session')) return Promise.resolve('');
-      if (command.includes('@aumx_project_root')) {
-        return Promise.resolve('@aumx_project_root /Users/me/projects/example-rag');
+      if (command.includes('@muxbase_project_root')) {
+        return Promise.resolve('@muxbase_project_root /Users/me/projects/example-rag');
       }
       if (command.includes('list-panes')) return Promise.resolve('%7');
       return Promise.resolve('');
@@ -47,7 +47,7 @@ describe('ensureTmuxSession', () => {
 
     // Act
     const result = await ensureTmuxSession(
-      'aumx-example-rag',
+      'muxbase-example-rag',
       '/Users/me/projects/example-rag',
       'example-rag',
     );
@@ -56,7 +56,7 @@ describe('ensureTmuxSession', () => {
     expect(result).toEqual({
       created: false,
       paneId: '%7',
-      sessionName: 'aumx-example-rag',
+      sessionName: 'muxbase-example-rag',
     });
     expect(execAsync).toHaveBeenNthCalledWith(
       1,
@@ -68,15 +68,15 @@ describe('ensureTmuxSession', () => {
       expect.anything(),
     );
     expect(execAsync).toHaveBeenCalledWith(
-      "tmux set-environment -t 'aumx-example-rag' -r NO_COLOR",
+      "tmux set-environment -t 'muxbase-example-rag' -r NO_COLOR",
       { silent: true },
     );
     expect(execAsync).toHaveBeenCalledWith(
-      "tmux set-environment -t 'aumx-example-rag' COLORTERM 'truecolor'",
+      "tmux set-environment -t 'muxbase-example-rag' COLORTERM 'truecolor'",
       { silent: true },
     );
     expect(execAsync).toHaveBeenCalledWith(
-      "tmux set-environment -t 'aumx-example-rag' COLORFGBG '15;0'",
+      "tmux set-environment -t 'muxbase-example-rag' COLORFGBG '15;0'",
       { silent: true },
     );
   });
@@ -92,11 +92,11 @@ describe('ensureTmuxSession', () => {
     });
 
     // Act
-    await ensureTmuxSession('aumx-example-rag', '/Users/me/projects/example-rag', 'example-rag');
+    await ensureTmuxSession('muxbase-example-rag', '/Users/me/projects/example-rag', 'example-rag');
 
     // Assert
     expect(execAsync).toHaveBeenCalledWith(
-      "tmux set-environment -t 'aumx-example-rag' COLORFGBG '0;15'",
+      "tmux set-environment -t 'muxbase-example-rag' COLORFGBG '0;15'",
       { silent: true },
     );
   });
@@ -106,36 +106,36 @@ describe('ensureTmuxSession', () => {
     execAsyncMock.mockImplementation((command: string) => {
       if (command.includes('list-sessions')) {
         listCalls += 1;
-        return Promise.resolve(listCalls === 1 ? 'aumx-example-rag\n' : 'aumx-example-rag\naumx-example-rag_01\n');
+        return Promise.resolve(listCalls === 1 ? 'muxbase-example-rag\n' : 'muxbase-example-rag\nmuxbase-example-rag_01\n');
       }
-      if (command.includes('@aumx_project_root')) return Promise.resolve('@aumx_project_root /other/project');
+      if (command.includes('@muxbase_project_root')) return Promise.resolve('@muxbase_project_root /other/project');
       if (command.includes('has-session')) return Promise.resolve('');
       if (command.includes('new-session')) return Promise.resolve('%2\n');
       return Promise.resolve('');
     });
 
-    await expect(ensureTmuxSession('aumx-example-rag', '/repo', 'repo')).resolves.toEqual({
+    await expect(ensureTmuxSession('muxbase-example-rag', '/repo', 'repo')).resolves.toEqual({
       created: true,
       paneId: '%2',
-      sessionName: 'aumx-example-rag_02',
+      sessionName: 'muxbase-example-rag_02',
     });
   });
 
   it('recreates a project-owned session that has no panes', async () => {
     execAsyncMock.mockImplementation((command: string) => {
-      if (command.includes('list-sessions')) return Promise.resolve('aumx-example-rag\n');
-      if (command.includes('@aumx_project_root')) return Promise.resolve('@aumx_project_root /repo');
+      if (command.includes('list-sessions')) return Promise.resolve('muxbase-example-rag\n');
+      if (command.includes('@muxbase_project_root')) return Promise.resolve('@muxbase_project_root /repo');
       if (command.includes('list-panes')) return Promise.resolve('');
       if (command.includes('new-session')) return Promise.resolve('%8\n');
       return Promise.resolve('');
     });
 
-    await expect(ensureTmuxSession('aumx-example-rag', '/repo', 'repo')).resolves.toMatchObject({
+    await expect(ensureTmuxSession('muxbase-example-rag', '/repo', 'repo')).resolves.toMatchObject({
       created: true,
       paneId: '%8',
-      sessionName: 'aumx-example-rag',
+      sessionName: 'muxbase-example-rag',
     });
-    expect(execAsyncMock).toHaveBeenCalledWith("tmux kill-session -t 'aumx-example-rag'", { silent: true });
+    expect(execAsyncMock).toHaveBeenCalledWith("tmux kill-session -t 'muxbase-example-rag'", { silent: true });
   });
 
   it('still creates a session when session listing is unavailable', async () => {
@@ -147,10 +147,10 @@ describe('ensureTmuxSession', () => {
       return Promise.resolve('');
     });
 
-    await expect(ensureTmuxSession('aumx-new', '/repo', 'repo')).resolves.toEqual({
+    await expect(ensureTmuxSession('muxbase-new', '/repo', 'repo')).resolves.toEqual({
       created: true,
       paneId: '%3',
-      sessionName: 'aumx-new',
+      sessionName: 'muxbase-new',
     });
   });
 
@@ -160,18 +160,18 @@ describe('ensureTmuxSession', () => {
       if (command.includes('list-sessions')) {
         listCalls += 1;
         const sessions = [
-          'aumx-full',
-          ...Array.from({ length: 99 }, (_, index) => `aumx-full_${String(index + 1).padStart(2, '0')}`),
+          'muxbase-full',
+          ...Array.from({ length: 99 }, (_, index) => `muxbase-full_${String(index + 1).padStart(2, '0')}`),
         ];
         return Promise.resolve(sessions.join('\n'));
       }
-      if (command.includes('@aumx_project_root')) return Promise.resolve('@aumx_project_root /other');
+      if (command.includes('@muxbase_project_root')) return Promise.resolve('@muxbase_project_root /other');
       if (command.includes('has-session')) return Promise.resolve('');
       return Promise.resolve('');
     });
 
-    await expect(ensureTmuxSession('aumx-full', '/repo', 'repo'))
-      .rejects.toThrow("No available session name for 'aumx-full'");
+    await expect(ensureTmuxSession('muxbase-full', '/repo', 'repo'))
+      .rejects.toThrow("No available session name for 'muxbase-full'");
     expect(listCalls).toBe(2);
   });
 
@@ -183,10 +183,10 @@ describe('ensureTmuxSession', () => {
       return Promise.reject(new Error('metadata failed'));
     });
 
-    await expect(ensureTmuxSession('aumx-created', '/repo', 'repo')).resolves.toEqual({
+    await expect(ensureTmuxSession('muxbase-created', '/repo', 'repo')).resolves.toEqual({
       created: true,
       paneId: '%4',
-      sessionName: 'aumx-created',
+      sessionName: 'muxbase-created',
     });
   });
 });

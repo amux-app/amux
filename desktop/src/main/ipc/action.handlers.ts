@@ -1,11 +1,11 @@
 import { IPC } from '../../shared/ipc-channels.js';
 import type { ActionCallbackRequest } from '../../shared/ipc-types.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { formatError } from '../utils/formatError.js';
 import { secureHandle } from './ipc-security.js';
 import { log } from '../services/Logger.js';
 
-export function registerActionHandlers(bridge: AumxBridge): void {
+export function registerActionHandlers(bridge: MuxBaseBridge): void {
   secureHandle(IPC.ACTION_CALLBACK, async (_event, request: ActionCallbackRequest) => {
     log.info('ipc:action', 'ACTION_CALLBACK invoked', { callbackId: request.callbackId, hasValue: !!request.value });
     try {

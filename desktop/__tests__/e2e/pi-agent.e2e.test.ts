@@ -10,7 +10,7 @@ const MAIN_ENTRY = resolve(ROOT, 'out', 'main', 'index.js');
 const STARTUP_TIMEOUT_MS = 30_000;
 
 interface E2EWindow {
-  aumx: {
+  muxbase: {
     invoke: <T>(channel: string, ...args: unknown[]) => Promise<T>;
   };
 }
@@ -24,11 +24,11 @@ async function getAppWindow(app: ElectronApplication): Promise<Page> {
 async function listPanes(page: Page): Promise<Array<{ agent?: string; id: string }>> {
   return page.evaluate(async (channel) => {
     const appWindow = window as unknown as E2EWindow;
-    return appWindow.aumx.invoke(channel);
+    return appWindow.muxbase.invoke(channel);
   }, IPC.PANE_LIST);
 }
 
-describe.runIf(process.env.AUMX_E2E_PI === '1')('Pi agent E2E', () => {
+describe.runIf(process.env.MUXBASE_E2E_PI === '1')('Pi agent E2E', () => {
   let app: ElectronApplication;
   let page: Page;
   let createdPaneId: string | undefined;
@@ -38,7 +38,7 @@ describe.runIf(process.env.AUMX_E2E_PI === '1')('Pi agent E2E', () => {
     expect(existsSync(MAIN_ENTRY), `Build output missing: ${MAIN_ENTRY}`).toBe(true);
     app = await electron.launch({
       args: [MAIN_ENTRY],
-      env: { ...process.env, AUMX_DEV: 'true', AUMX_E2E: '1', NODE_ENV: 'test' },
+      env: { ...process.env, MUXBASE_DEV: 'true', MUXBASE_E2E: '1', NODE_ENV: 'test' },
     });
     page = await getAppWindow(app);
     page.on('console', (message: ConsoleMessage) => {
@@ -52,7 +52,7 @@ describe.runIf(process.env.AUMX_E2E_PI === '1')('Pi agent E2E', () => {
     if (createdPaneId && page) {
       await page.evaluate(async ({ channel, paneId }) => {
         const appWindow = window as unknown as E2EWindow;
-        await appWindow.aumx.invoke(channel, { paneId });
+        await appWindow.muxbase.invoke(channel, { paneId });
       }, { channel: IPC.PANE_CLOSE, paneId: createdPaneId });
     }
     if (app) await closeElectronApp(app);
@@ -72,7 +72,7 @@ describe.runIf(process.env.AUMX_E2E_PI === '1')('Pi agent E2E', () => {
     await expect.poll(() => page.getByText('Use Pi default').isVisible()).toBe(true);
     await expect.poll(() => page.getByText('Pi Standard Tools').isVisible()).toBe(true);
     await expect.poll(() => page.getByText('Recommended isolation').isVisible()).toBe(true);
-    await page.screenshot({ path: '/tmp/aumx-pi-prism-smoke.png' });
+    await page.screenshot({ path: '/tmp/muxbase-pi-prism-smoke.png' });
 
     await page.getByRole('button', { name: 'Launch Pi' }).click();
     await expect.poll(async () => {

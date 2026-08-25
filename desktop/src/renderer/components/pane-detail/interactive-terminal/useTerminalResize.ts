@@ -1,6 +1,6 @@
 import type { FitAddon } from '@xterm/addon-fit';
 import type { Terminal } from '@xterm/xterm';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { useCallback, useEffect, useRef, type RefObject } from 'react';
 import * as terminalApi from '../../../api/terminal.api';
 import { fitTerminalToContainer, type TerminalFitFailureReason } from '../../../lib/terminal-fit';
@@ -25,7 +25,7 @@ type TerminalFailureUpdate = TerminalFailure
   | ((current: TerminalFailure | null) => TerminalFailure | null);
 
 interface UseTerminalResizeOptions {
-  agent: AumxPane['agent'];
+  agent: MuxBasePane['agent'];
   containerRef: RefObject<HTMLDivElement | null>;
   fitAddonRef: RefObject<FitAddon | null>;
   fixedCols: number | undefined;

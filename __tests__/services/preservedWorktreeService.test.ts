@@ -21,7 +21,7 @@ import type {
 const roots: string[] = [];
 
 function createTempRoot(): string {
-  const root = mkdtempSync(join(tmpdir(), 'aumx-preserved-worktree-'));
+  const root = mkdtempSync(join(tmpdir(), 'muxbase-preserved-worktree-'));
   roots.push(root);
   return root;
 }
@@ -29,17 +29,17 @@ function createTempRoot(): string {
 function initializeRepository(): string {
   const root = createTempRoot();
   execFileSync('git', ['init', '--initial-branch=main'], { cwd: root, stdio: 'ignore' });
-  execFileSync('git', ['config', 'user.email', 'tests@aumx.local'], { cwd: root });
-  execFileSync('git', ['config', 'user.name', 'Aumx Tests'], { cwd: root });
+  execFileSync('git', ['config', 'user.email', 'tests@muxbase.local'], { cwd: root });
+  execFileSync('git', ['config', 'user.name', 'MuxBase Tests'], { cwd: root });
   writeFileSync(join(root, 'README.md'), '# fixture\n');
   execFileSync('git', ['add', 'README.md'], { cwd: root });
   execFileSync('git', ['commit', '-m', 'initial'], { cwd: root, stdio: 'ignore' });
-  mkdirSync(join(root, '.aumx', 'worktrees'), { recursive: true });
+  mkdirSync(join(root, '.muxbase', 'worktrees'), { recursive: true });
   return root;
 }
 
 function createRegisteredWorktree(root: string, slug: string): string {
-  const worktreePath = join(root, '.aumx', 'worktrees', slug);
+  const worktreePath = join(root, '.muxbase', 'worktrees', slug);
   execFileSync('git', ['worktree', 'add', '-b', `feature/${slug}`, worktreePath], {
     cwd: root,
     stdio: 'ignore',
@@ -79,7 +79,7 @@ afterEach(() => {
 describe('PreservedWorktreeService', () => {
   it('lists filesystem metadata without requiring valid Git metadata', async () => {
     const root = createTempRoot();
-    const worktreePath = join(root, '.aumx', 'worktrees', 'stale-e2e');
+    const worktreePath = join(root, '.muxbase', 'worktrees', 'stale-e2e');
     mkdirSync(worktreePath, { recursive: true });
     writeFileSync(join(worktreePath, '.git'), 'gitdir: /missing/worktree/metadata\n');
 
@@ -151,7 +151,7 @@ describe('PreservedWorktreeService', () => {
 
   it('requires explicit data-loss consent when stale Git metadata cannot be inspected', async () => {
     const root = initializeRepository();
-    const worktreePath = join(root, '.aumx', 'worktrees', 'broken');
+    const worktreePath = join(root, '.muxbase', 'worktrees', 'broken');
     mkdirSync(worktreePath);
     writeFileSync(join(worktreePath, '.git'), 'gitdir: /missing/worktree/metadata\n');
     writeFileSync(join(worktreePath, 'possibly-important.txt'), 'unknown state\n');
@@ -197,14 +197,14 @@ describe('PreservedWorktreeService', () => {
 
   it('requires explicit data-loss consent for an unregistered repository', async () => {
     const root = initializeRepository();
-    const worktreePath = join(root, '.aumx', 'worktrees', 'standalone');
+    const worktreePath = join(root, '.muxbase', 'worktrees', 'standalone');
     mkdirSync(worktreePath);
     execFileSync('git', ['init', '--initial-branch=main'], {
       cwd: worktreePath,
       stdio: 'ignore',
     });
-    execFileSync('git', ['config', 'user.email', 'tests@aumx.local'], { cwd: worktreePath });
-    execFileSync('git', ['config', 'user.name', 'Aumx Tests'], { cwd: worktreePath });
+    execFileSync('git', ['config', 'user.email', 'tests@muxbase.local'], { cwd: worktreePath });
+    execFileSync('git', ['config', 'user.name', 'MuxBase Tests'], { cwd: worktreePath });
     writeFileSync(join(worktreePath, 'standalone.txt'), 'standalone\n');
     execFileSync('git', ['add', 'standalone.txt'], { cwd: worktreePath });
     execFileSync('git', ['commit', '-m', 'standalone'], {

@@ -18,7 +18,7 @@ describe('macOS release environment preflight', () => {
       APPLE_APP_SPECIFIC_PASSWORD: 'password',
       APPLE_ID: 'release@example.com',
       APPLE_TEAM_ID: 'TEAMID',
-      CSC_NAME: 'Amux release identity',
+      CSC_NAME: 'MuxBase release identity',
     }, 'darwin');
 
     expect(error).toBeNull();
@@ -26,8 +26,8 @@ describe('macOS release environment preflight', () => {
 
   it('does not accept a signing variable that Electron Builder ignores', () => {
     const error = getMacOSReleaseEnvironmentError({
-      APPLE_NOTARY_PROFILE: 'amux-notary',
-      APPLE_SIGN_IDENTITY: 'Amux release identity',
+      APPLE_NOTARY_PROFILE: 'muxbase-notary',
+      APPLE_SIGN_IDENTITY: 'MuxBase release identity',
     }, 'darwin');
 
     expect(error).toContain('CSC_NAME');
@@ -35,8 +35,8 @@ describe('macOS release environment preflight', () => {
 
   it('rejects macOS packaging on other platforms even when credentials are present', () => {
     const error = getMacOSReleaseEnvironmentError({
-      APPLE_NOTARY_PROFILE: 'amux-notary',
-      CSC_NAME: 'Amux release identity',
+      APPLE_NOTARY_PROFILE: 'muxbase-notary',
+      CSC_NAME: 'MuxBase release identity',
     }, 'linux');
 
     expect(error).toBe('macOS release packaging must run on macOS.');
@@ -44,8 +44,8 @@ describe('macOS release environment preflight', () => {
 
   it('runs the command-line preflight against the actual host platform', () => {
     const result = checkReleaseEnvironment({
-      APPLE_NOTARY_PROFILE: 'amux-notary',
-      CSC_NAME: 'Amux release identity',
+      APPLE_NOTARY_PROFILE: 'muxbase-notary',
+      CSC_NAME: 'MuxBase release identity',
     });
 
     expect(result.status).toBe(process.platform === 'darwin' ? 0 : 1);

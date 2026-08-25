@@ -290,11 +290,11 @@ describe('provider status aggregation', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('short-circuits without fetching when AUMX_DISABLE_EXTERNAL_STATUS is set', async () => {
+  it('short-circuits without fetching when MUXBASE_DISABLE_EXTERNAL_STATUS is set', async () => {
     // Arrange
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
-    vi.stubEnv('AUMX_DISABLE_EXTERNAL_STATUS', '1');
+    vi.stubEnv('MUXBASE_DISABLE_EXTERNAL_STATUS', '1');
     const service = ProviderStatusService.getInstance();
 
     // Act

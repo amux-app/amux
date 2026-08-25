@@ -72,7 +72,7 @@ const IGNORE_FILE_NAMES = new Set([
   '.stylelintignore',
 ]);
 
-const SEARCH_MATCH_MARK = Decoration.mark({ class: 'aumx-file-editor-search-match' });
+const SEARCH_MATCH_MARK = Decoration.mark({ class: 'muxbase-file-editor-search-match' });
 
 const acceptCompletionIfDocumentChanges: Command = (view) => {
   const before = view.state.doc;
@@ -617,7 +617,7 @@ export function getFileEditorBaseExtensions(
       autocorrect: 'off',
       spellcheck: 'false',
     }),
-    EditorView.editorAttributes.of({ class: 'aumx-file-editor' }),
+    EditorView.editorAttributes.of({ class: 'muxbase-file-editor' }),
     EditorView.updateListener.of((update) => {
       if (update.docChanged) {
         onDocumentChange();
@@ -640,7 +640,7 @@ export function getFileEditorCompletionExtension(
   rootPath?: string,
   relativePath?: string,
 ): Extension {
-  const amuxSources = getFileEditorCompletionSources(fileName, rootPath, relativePath);
+  const muxbaseSources = getFileEditorCompletionSources(fileName, rootPath, relativePath);
   return [
     suppressNoopCompletionHistory,
     autocompletion({
@@ -652,7 +652,7 @@ export function getFileEditorCompletionExtension(
       maxRenderedOptions: 12,
       activateOnCompletion: (completion) => completion.type === 'folder',
     }),
-    EditorState.languageData.of(() => amuxSources.map((autocomplete) => ({ autocomplete }))),
+    EditorState.languageData.of(() => muxbaseSources.map((autocomplete) => ({ autocomplete }))),
   ];
 }
 

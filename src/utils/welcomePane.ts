@@ -57,7 +57,7 @@ export async function createWelcomePane(controlPaneId: string): Promise<string |
       // Silently ignore layout errors
     }
 
-    // Switch focus back to the control pane (aumx sidebar)
+    // Switch focus back to the control pane (muxbase sidebar)
     try {
       execFileSync('tmux', ['select-pane', '-t', controlPaneId], { stdio: 'pipe' });
     } catch {

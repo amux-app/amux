@@ -1,5 +1,5 @@
 import * as ContextMenu from '@radix-ui/react-context-menu';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { PaneActivityState } from '../../../shared/pane-activity';
 import { FileText, GitCompareArrows, Terminal, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -326,7 +326,7 @@ export function TerminalPeek({
   status,
   onJumpToTerminal,
 }: {
-  pane: AumxPane;
+  pane: MuxBasePane;
   status: PaneActivityState;
   onJumpToTerminal: () => void;
 }) {

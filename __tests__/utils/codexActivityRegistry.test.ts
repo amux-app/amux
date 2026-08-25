@@ -3,7 +3,7 @@ import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, wr
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-const fakeHome = mkdtempSync(join(tmpdir(), 'aumx-codex-activity-home-'));
+const fakeHome = mkdtempSync(join(tmpdir(), 'muxbase-codex-activity-home-'));
 
 vi.mock('os', async (importOriginal) => {
   const actual = await importOriginal<typeof import('os')>();
@@ -33,12 +33,12 @@ describe('ensureCodexActivityHookSettings', () => {
     expect(commands).toContain('existing-recorder');
     expect(commands.some((command: string) => command.includes('record-codex-activity.cjs'))).toBe(true);
     expect(existsSync(commands.find((command: string) => command.includes('record-codex-activity.cjs')).replace(/^node ['"]?([^'"]+)['"]?$/, '$1'))).toBe(true);
-    const amuxHandlers = settings.hooks.UserPromptSubmit
+    const muxbaseHandlers = settings.hooks.UserPromptSubmit
       .flatMap((group: { hooks: Array<{ async?: boolean; command: string }> }) => group.hooks)
       .filter((hook: { command: string }) => hook.command.includes('record-codex-activity.cjs'));
-    expect(amuxHandlers).toHaveLength(1);
-    expect(amuxHandlers[0]).toMatchObject({ type: 'command' });
-    expect(amuxHandlers[0].async).toBeUndefined();
+    expect(muxbaseHandlers).toHaveLength(1);
+    expect(muxbaseHandlers[0]).toMatchObject({ type: 'command' });
+    expect(muxbaseHandlers[0].async).toBeUndefined();
   });
 
   it('fails closed without modifying malformed hook settings', () => {
@@ -49,7 +49,7 @@ describe('ensureCodexActivityHookSettings', () => {
     expect(readFileSync(hooksPath, 'utf8')).toBe('{not-json');
   });
 
-  it('removes only Amux-owned groups when consent is revoked', () => {
+  it('removes only MuxBase-owned groups when consent is revoked', () => {
     const hooksPath = join(fakeHome, '.codex', 'hooks.json');
     writeFileSync(hooksPath, JSON.stringify({
       hooks: { Stop: [{ hooks: [{ command: 'existing-stop', type: 'command' }] }] },

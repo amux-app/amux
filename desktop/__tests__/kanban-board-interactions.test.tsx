@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { KanbanBoard } from '../src/renderer/components/kanban/KanbanBoard';
 import type { KanbanColumn } from '../src/renderer/hooks/useKanbanColumns';
@@ -91,7 +91,7 @@ vi.mock('../src/renderer/components/kanban/AddBacklogDialog', () => ({
   AddBacklogDialog: () => null,
 }));
 vi.mock('../src/renderer/components/kanban/KanbanSidePanel', () => ({
-  KanbanSidePanel: ({ pane }: { pane: AumxPane }) => <div data-testid="selected-pane">{pane.id}</div>,
+  KanbanSidePanel: ({ pane }: { pane: MuxBasePane }) => <div data-testid="selected-pane">{pane.id}</div>,
 }));
 vi.mock('../src/renderer/components/worktree/WorktreeOverviewModal', () => ({
   WorktreeOverviewModal: () => null,
@@ -136,7 +136,7 @@ function backlog(id: string, title = id) {
   };
 }
 
-function pane(id: string): AumxPane {
+function pane(id: string): MuxBasePane {
   return {
     agent: 'codex',
     id,
@@ -147,7 +147,7 @@ function pane(id: string): AumxPane {
   };
 }
 
-function columnsFor(items: ReturnType<typeof backlog>[], panes: AumxPane[] = []): KanbanColumn[] {
+function columnsFor(items: ReturnType<typeof backlog>[], panes: MuxBasePane[] = []): KanbanColumn[] {
   return [
     {
       id: 'backlog',
@@ -201,7 +201,7 @@ describe('KanbanBoard interactions', () => {
       activeProject: {
         name: 'repo',
         root: '/repo',
-        sessionName: 'aumx-repo',
+        sessionName: 'muxbase-repo',
         configPath: '',
         paneCount: 0,
       },

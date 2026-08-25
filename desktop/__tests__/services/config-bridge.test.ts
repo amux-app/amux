@@ -3,7 +3,7 @@
  * contract that StateManager still receives external config edits through it,
  * and that pausing it (close action) defers rather than drops updates.
  */
-import { StateManager } from 'aumx/core';
+import { StateManager } from 'muxbase/core';
 import { mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -59,9 +59,9 @@ async function waitForPaneIds(expected: string[], timeoutMs = 4000): Promise<str
 }
 
 beforeEach(() => {
-  root = mkdtempSync(join(tmpdir(), 'aumx-config-bridge-'));
-  configPath = join(root, '.aumx', 'aumx.config.json');
-  mkdirSync(join(root, '.aumx'), { recursive: true });
+  root = mkdtempSync(join(tmpdir(), 'muxbase-config-bridge-'));
+  configPath = join(root, '.muxbase', 'muxbase.config.json');
+  mkdirSync(join(root, '.muxbase'), { recursive: true });
   writeConfigAtomically([]);
   StateManager.getInstance().reset();
 });
@@ -218,7 +218,7 @@ describe('ConfigBridge', () => {
 
   it('is the only watcher: StateManager alone does not observe config edits', async () => {
     // Arrange
-    StateManager.getInstance().updateProjectInfo('proj', 'aumx-proj', root, configPath);
+    StateManager.getInstance().updateProjectInfo('proj', 'muxbase-proj', root, configPath);
 
     // Act
     writeConfigAtomically(['pane-a']);

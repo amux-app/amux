@@ -3,7 +3,7 @@
  */
 
 import { spawnSync } from 'child_process';
-import type { AumxPane } from '../../types.js';
+import type { MuxBasePane } from '../../types.js';
 import type { ActionResult, ActionContext } from '../types.js';
 
 function parseCommand(command: string): { bin: string; args: string[] } {
@@ -23,7 +23,7 @@ function parseCommand(command: string): { bin: string; args: string[] } {
  * Open worktree in external editor
  */
 export async function openInEditor(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   params?: { editor?: string }
 ): Promise<ActionResult> {

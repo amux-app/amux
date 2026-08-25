@@ -1,8 +1,8 @@
 import { realpathSync } from 'node:fs';
 import { dirname, relative, resolve, sep } from 'node:path';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 
-type FileRootPane = Pick<AumxPane, 'projectRoot' | 'worktreePath'>;
+type FileRootPane = Pick<MuxBasePane, 'projectRoot' | 'worktreePath'>;
 
 export function resolveAuthorizedFileRoot(
   projectRoot: string,

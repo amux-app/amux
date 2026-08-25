@@ -1,7 +1,7 @@
 import { execFile } from 'child_process';
 import * as fs from 'fs';
 import { promisify } from 'util';
-import type { AumxPane } from '../types.js';
+import type { MuxBasePane } from '../types.js';
 import { LogService } from '../services/LogService.js';
 import { getManagedWorktreePath, getManagedWorktreesDir } from './worktreePaths.js';
 
@@ -14,7 +14,7 @@ interface GitWorktreeEntry {
 }
 
 export interface ReconcileResult {
-  panes: AumxPane[];
+  panes: MuxBasePane[];
   attached: number;
 }
 
@@ -25,7 +25,7 @@ export interface ReconcileResult {
  * back to the project root and incorrectly share branch/diff state.
  */
 export async function reconcilePaneWorktrees(
-  panes: AumxPane[],
+  panes: MuxBasePane[],
   projectRoot: string,
 ): Promise<ReconcileResult> {
   if (!projectRoot || !panes.some((p) => !p.worktreePath && p.slug)) {
@@ -52,7 +52,7 @@ export async function reconcilePaneWorktrees(
     const entry = registered.get(candidate);
     if (!entry) return pane;
     attached += 1;
-    const next: AumxPane = { ...pane, worktreePath: candidate };
+    const next: MuxBasePane = { ...pane, worktreePath: candidate };
     if (!pane.branchName && entry.branch) next.branchName = entry.branch;
     log.info(
       `[reconcilePaneWorktrees] Re-attached pane "${pane.slug}" to ${candidate}`,

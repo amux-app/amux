@@ -5,7 +5,7 @@ import { createInterface } from 'readline';
 import {
   resolvePiDefaultSessionDirectory,
   resolvePiSessionDirectoryForProject,
-} from 'aumx/core';
+} from 'muxbase/core';
 import type { PastSession } from '../../../shared/ipc-types.js';
 import {
   SESSION_UNTITLED,

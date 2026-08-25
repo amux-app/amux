@@ -8,7 +8,7 @@ const sha256 = 'a'.repeat(64);
 
 function record(architecture) {
   return {
-    appPath: architecture === 'arm64' ? '/Applications/Amux Beta.app' : '/Users/test/Applications/Amux Beta.app',
+    appPath: architecture === 'arm64' ? '/Applications/MuxBase Beta.app' : '/Users/test/Applications/MuxBase Beta.app',
     architecture,
     channel: 'beta',
     completedAt: '2026-08-07T12:30:00.000Z',
@@ -26,7 +26,7 @@ function record(architecture) {
       staplingPassed: true,
       wrongLocationNoticeVisible: true,
     },
-    repository: 'amux-app/amux',
+    repository: 'muxbase-app/muxbase',
     screenshots: ['wrong-location', 'ready', 'after-restart'].map((kind) => ({
       kind,
       path: `/tmp/${architecture}-${kind}.png`,

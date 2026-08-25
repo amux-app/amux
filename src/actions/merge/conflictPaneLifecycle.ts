@@ -1,4 +1,4 @@
-import type { AumxPane } from '../../types.js';
+import type { MuxBasePane } from '../../types.js';
 import {
   createConflictResolutionPane,
   disposeConflictResolutionPane,
@@ -22,7 +22,7 @@ export interface ManagedConflictResolutionPaneOptions {
   context: ActionContext;
   sourcePaneId: string;
   paneOptions: ConflictResolutionPaneOptions;
-  onResolved: (conflictPane: AumxPane) => void | Promise<void>;
+  onResolved: (conflictPane: MuxBasePane) => void | Promise<void>;
   onAbandoned?: (reason: string, error?: string) => void | Promise<void>;
 }
 
@@ -34,7 +34,7 @@ export interface ManagedConflictResolutionPaneOptions {
  */
 export async function launchManagedConflictResolutionPane(
   options: ManagedConflictResolutionPaneOptions,
-): Promise<AumxPane> {
+): Promise<MuxBasePane> {
   const { context, onAbandoned, onResolved, paneOptions, sourcePaneId } = options;
   const originalPanes = [...context.panes];
   const creation = await createConflictResolutionPane(paneOptions);

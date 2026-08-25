@@ -1,4 +1,4 @@
-import { execAsync, shQuote } from 'aumx/core';
+import { execAsync, shQuote } from 'muxbase/core';
 
 const MAX_VIEW_SESSION_NAME_LENGTH = 80;
 
@@ -12,10 +12,10 @@ export async function cleanupDetachedTerminalPtyViewSessions(
   // '|' as separator: tmux sanitizes control characters (incl. tabs) to '_'
   // in list-sessions output, so tab-separated formats can never be parsed.
   const sessionList = await exec(
-    'tmux list-sessions -F "#{session_name}|#{session_attached}|#{@aumx_view_session}"',
+    'tmux list-sessions -F "#{session_name}|#{session_attached}|#{@muxbase_view_session}"',
     { silent: true },
   );
-  // Both the Amux marker option and the name pattern are required before a
+  // Both the MuxBase marker option and the name pattern are required before a
   // session is killed: the name alone could match a user-created session.
   // A foreign session name containing '|' shifts the fields and fails the
   // marker check, which is the safe direction.
@@ -37,7 +37,7 @@ export async function cleanupDetachedTerminalPtyViewSessions(
 }
 
 export function makeTerminalPtyViewSessionName(sessionName: string, paneId: string): string {
-  const base = sanitizeTmuxSessionNamePart(sessionName, 'aumx').slice(0, 48);
+  const base = sanitizeTmuxSessionNamePart(sessionName, 'muxbase').slice(0, 48);
   const pane = sanitizeTmuxSessionNamePart(paneId, 'pane');
   const prefix = `${base}--view-`;
   const availablePaneChars = MAX_VIEW_SESSION_NAME_LENGTH - prefix.length;

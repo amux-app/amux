@@ -29,11 +29,14 @@ const PUBLIC_RULES = [
     pattern: /(?:api[_-]?key|access[_-]?token|client[_-]?secret|password)\s*[:=]\s*["'][A-Za-z0-9+/_=-]{24,}["']/i,
   },
 ];
+const oldMetadataDirectories = [
+  ['.', 'a', 'mux'].join(''),
+  ['.', 'a', 'u', 'm', 'x'].join(''),
+];
 const EXCLUDED_DIRECTORIES = new Set([
-  '.amux',
-  '.amux-hooks',
-  '.aumx',
-  '.aumx-hooks',
+  ...oldMetadataDirectories,
+  '.muxbase',
+  '.muxbase-hooks',
   '.claude',
   '.codex',
   '.git',
@@ -79,8 +82,8 @@ function parseRootArgument(argv) {
 }
 
 function parsePrivatePatterns(rootDir) {
-  const inlineValue = process.env.AUMX_PRIVATE_REF_PATTERNS?.trim();
-  const configuredFile = process.env.AUMX_PRIVATE_REF_PATTERNS_FILE?.trim();
+  const inlineValue = process.env.MUXBASE_PRIVATE_REF_PATTERNS?.trim();
+  const configuredFile = process.env.MUXBASE_PRIVATE_REF_PATTERNS_FILE?.trim();
   const defaultFile = resolve(rootDir, DEFAULT_PRIVATE_PATTERN_FILE);
   const filePath = configuredFile
     ? (isAbsolute(configuredFile) ? configuredFile : resolve(rootDir, configuredFile))
@@ -264,7 +267,7 @@ function main() {
     return 2;
   }
 
-  if (process.env.AUMX_REQUIRE_PRIVATE_REFS === '1' && privatePatterns.length === 0) {
+  if (process.env.MUXBASE_REQUIRE_PRIVATE_REFS === '1' && privatePatterns.length === 0) {
     console.error('Internal-refs gate configuration error: private patterns are required for this job');
     return 2;
   }

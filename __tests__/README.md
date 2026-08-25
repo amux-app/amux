@@ -1,8 +1,8 @@
-# aumx Tests
+# muxbase Tests
 
 ## Overview
 
-This directory contains the root test suite for the aumx core package and shared action logic.
+This directory contains the root test suite for the muxbase core package and shared action logic.
 
 ## Test Structure
 
@@ -17,7 +17,7 @@ __tests__/
 │   ├── openInEditorAction.test.ts
 ├── fixtures/              # Test data and mocks
 │   ├── mockContext.ts     # ActionContext mocks
-│   └── mockPanes.ts       # AumxPane fixtures
+│   └── mockPanes.ts       # MuxBasePane fixtures
 └── helpers/               # Test utilities
     └── actionAssertions.ts # Custom assertions
 ```
@@ -55,7 +55,7 @@ pnpm test __tests__/actions/ --reporter=verbose
 
 Test individual actions in isolation:
 - Mock all external dependencies (execSync, StateManager, hooks, fs)
-- Create mock ActionContext and AumxPane fixtures
+- Create mock ActionContext and MuxBasePane fixtures
 - Assert on ActionResult types and callback chains
 - Test happy paths and error scenarios
 
@@ -70,7 +70,7 @@ it('should jump to pane successfully', async () => {
   const result = await viewPane(mockPane, mockContext);
 
   expect(result.type).toBe('navigation');
-  expect(result.targetPaneId).toBe('aumx-1');
+  expect(result.targetPaneId).toBe('muxbase-1');
 });
 ```
 
@@ -94,7 +94,7 @@ const context = createMockContext(panes, {
 });
 ```
 
-**mockPanes.ts** - Creates mock AumxPane objects:
+**mockPanes.ts** - Creates mock MuxBasePane objects:
 ```typescript
 const pane = createMockPane({ slug: 'my-feature' });
 const shellPane = createShellPane();

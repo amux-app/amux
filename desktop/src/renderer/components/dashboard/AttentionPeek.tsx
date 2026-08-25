@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { useMemo, type RefObject } from 'react';
 import type { NormalizedSession } from '../../../shared/agent-session-types';
 import type { PaneActivity, PaneActivityState } from '../../../shared/pane-activity';
@@ -39,7 +39,7 @@ interface AttentionPeekRow {
 }
 
 function toRow(
-  pane: AumxPane,
+  pane: MuxBasePane,
   session: NormalizedSession | undefined,
   activity: PaneActivity | undefined,
   item: PaneAttention,
@@ -55,7 +55,7 @@ function toRow(
 
 function buildRows(
   items: readonly PaneAttention[],
-  panes: readonly AumxPane[],
+  panes: readonly MuxBasePane[],
   sessions: Readonly<Record<string, NormalizedSession>>,
   activityByPaneId: Readonly<Record<string, PaneActivity>>,
 ): AttentionPeekRow[] {

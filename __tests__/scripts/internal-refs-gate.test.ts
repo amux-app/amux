@@ -12,9 +12,9 @@ function runGate(env: NodeJS.ProcessEnv = {}) {
     encoding: 'utf8',
     env: {
       ...process.env,
-      AUMX_PRIVATE_REF_PATTERNS: '',
-      AUMX_PRIVATE_REF_PATTERNS_FILE: '',
-      AUMX_REQUIRE_PRIVATE_REFS: '0',
+      MUXBASE_PRIVATE_REF_PATTERNS: '',
+      MUXBASE_PRIVATE_REF_PATTERNS_FILE: '',
+      MUXBASE_REQUIRE_PRIVATE_REFS: '0',
       ...env,
     },
   });
@@ -36,7 +36,7 @@ function makeCommit(cwd: string, authorName: string, authorEmail: string, messag
 
 describe('internal reference gate', () => {
   beforeEach(() => {
-    fixtureRoot = mkdtempSync(join(tmpdir(), 'amux-internal-refs-'));
+    fixtureRoot = mkdtempSync(join(tmpdir(), 'muxbase-internal-refs-'));
     execFileSync('git', ['init', '-q'], { cwd: fixtureRoot });
     writeFileSync(join(fixtureRoot, 'clean.txt'), 'public content\n');
   });
@@ -63,7 +63,7 @@ describe('internal reference gate', () => {
   });
 
   it('fails closed when an upstream job requires private configuration', () => {
-    const result = runGate({ AUMX_REQUIRE_PRIVATE_REFS: '1' });
+    const result = runGate({ MUXBASE_REQUIRE_PRIVATE_REFS: '1' });
 
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain('required');
@@ -74,8 +74,8 @@ describe('internal reference gate', () => {
     writeFileSync(join(fixtureRoot, 'planted.txt'), `prefix ${privatePattern} suffix\n`);
 
     const result = runGate({
-      AUMX_PRIVATE_REF_PATTERNS: JSON.stringify([privatePattern]),
-      AUMX_REQUIRE_PRIVATE_REFS: '1',
+      MUXBASE_PRIVATE_REF_PATTERNS: JSON.stringify([privatePattern]),
+      MUXBASE_REQUIRE_PRIVATE_REFS: '1',
     });
 
     expect(result.status).not.toBe(0);
@@ -179,7 +179,7 @@ describe('internal reference gate', () => {
 
       // Act
       const result = runGate({
-        AUMX_PRIVATE_REF_PATTERNS: JSON.stringify([privateUsername]),
+        MUXBASE_PRIVATE_REF_PATTERNS: JSON.stringify([privateUsername]),
       });
 
       // Assert: gate fails and the finding references a git-commit path

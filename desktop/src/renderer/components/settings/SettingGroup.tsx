@@ -1,4 +1,4 @@
-import type { SettingDefinition, SettingsScope } from 'aumx/core';
+import type { SettingDefinition, SettingsScope } from 'muxbase/core';
 import { AgentBrandIcon, hasIcon } from '../shared/agent-brand-icons';
 import { SettingRow } from './SettingRow';
 

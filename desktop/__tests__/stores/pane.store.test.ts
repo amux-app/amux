@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { usePaneStore } from '../../src/renderer/stores/pane.store';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
-    id: `aumx-${Math.random().toString(36).slice(2, 6)}`,
+    id: `muxbase-${Math.random().toString(36).slice(2, 6)}`,
     slug: 'test-pane',
     prompt: 'do something',
     paneId: '%1',
@@ -30,27 +30,27 @@ describe('usePaneStore', () => {
   });
 
   it('setPanes replaces entire pane list', () => {
-    const panes = [makePane({ id: 'aumx-1' }), makePane({ id: 'aumx-2' })];
+    const panes = [makePane({ id: 'muxbase-1' }), makePane({ id: 'muxbase-2' })];
     usePaneStore.getState().setPanes(panes);
 
     expect(usePaneStore.getState().panes).toHaveLength(2);
-    expect(usePaneStore.getState().panes[0].id).toBe('aumx-1');
-    expect(usePaneStore.getState().panes[1].id).toBe('aumx-2');
+    expect(usePaneStore.getState().panes[0].id).toBe('muxbase-1');
+    expect(usePaneStore.getState().panes[1].id).toBe('muxbase-2');
   });
 
   it('setPanes overwrites previous panes', () => {
-    usePaneStore.getState().setPanes([makePane({ id: 'aumx-old' })]);
-    usePaneStore.getState().setPanes([makePane({ id: 'aumx-new' })]);
+    usePaneStore.getState().setPanes([makePane({ id: 'muxbase-old' })]);
+    usePaneStore.getState().setPanes([makePane({ id: 'muxbase-new' })]);
 
     const { panes } = usePaneStore.getState();
     expect(panes).toHaveLength(1);
-    expect(panes[0].id).toBe('aumx-new');
+    expect(panes[0].id).toBe('muxbase-new');
   });
 
   it('setPanes does not merge runtime activity fields from the previous pane record', () => {
     usePaneStore.getState().setPanes([
       makePane({
-        id: 'aumx-1',
+        id: 'muxbase-1',
         agentStatus: 'waiting',
         optionsQuestion: 'Continue?',
         terminalTranscriptPath: '/tmp/transcript.ansi',
@@ -59,7 +59,7 @@ describe('usePaneStore', () => {
 
     usePaneStore.getState().setPanes([
       makePane({
-        id: 'aumx-1',
+        id: 'muxbase-1',
         slug: 'renamed-pane',
         agentStatus: undefined,
         optionsQuestion: undefined,
@@ -76,9 +76,9 @@ describe('usePaneStore', () => {
 
   it('setPanes keeps pane and list references stable across a no-op push', () => {
     // Arrange - IPC pushes structurally identical (but freshly allocated) panes
-    const snapshot = (): AumxPane[] => [
-      makePane({ id: 'aumx-1', slug: 'first', agentStatus: 'working' }),
-      makePane({ id: 'aumx-2', slug: 'second', agentStatus: 'idle' }),
+    const snapshot = (): MuxBasePane[] => [
+      makePane({ id: 'muxbase-1', slug: 'first', agentStatus: 'working' }),
+      makePane({ id: 'muxbase-2', slug: 'second', agentStatus: 'idle' }),
     ];
     usePaneStore.getState().setPanes(snapshot());
     const first = usePaneStore.getState().panes;
@@ -96,15 +96,15 @@ describe('usePaneStore', () => {
   it('setPanes gives a changed pane a new reference and leaves siblings untouched', () => {
     // Arrange
     usePaneStore.getState().setPanes([
-      makePane({ id: 'aumx-1', slug: 'first', agentStatus: 'working' }),
-      makePane({ id: 'aumx-2', slug: 'second', agentStatus: 'idle' }),
+      makePane({ id: 'muxbase-1', slug: 'first', agentStatus: 'working' }),
+      makePane({ id: 'muxbase-2', slug: 'second', agentStatus: 'idle' }),
     ]);
     const before = usePaneStore.getState().panes;
 
     // Act
     usePaneStore.getState().setPanes([
-      makePane({ id: 'aumx-1', slug: 'first', agentStatus: 'waiting' }),
-      makePane({ id: 'aumx-2', slug: 'second', agentStatus: 'idle' }),
+      makePane({ id: 'muxbase-1', slug: 'first', agentStatus: 'waiting' }),
+      makePane({ id: 'muxbase-2', slug: 'second', agentStatus: 'idle' }),
     ]);
 
     // Assert
@@ -116,56 +116,56 @@ describe('usePaneStore', () => {
   });
 
   it('selectPane sets selectedPaneId', () => {
-    usePaneStore.getState().selectPane('aumx-1');
-    expect(usePaneStore.getState().selectedPaneId).toBe('aumx-1');
+    usePaneStore.getState().selectPane('muxbase-1');
+    expect(usePaneStore.getState().selectedPaneId).toBe('muxbase-1');
   });
 
   it('selectPane accepts null to deselect', () => {
-    usePaneStore.getState().selectPane('aumx-1');
+    usePaneStore.getState().selectPane('muxbase-1');
     usePaneStore.getState().selectPane(null);
     expect(usePaneStore.getState().selectedPaneId).toBeNull();
   });
 
   it('addPane appends to pane list', () => {
-    const pane1 = makePane({ id: 'aumx-1', slug: 'first' });
-    const pane2 = makePane({ id: 'aumx-2', slug: 'second' });
+    const pane1 = makePane({ id: 'muxbase-1', slug: 'first' });
+    const pane2 = makePane({ id: 'muxbase-2', slug: 'second' });
 
     usePaneStore.getState().addPane(pane1);
     usePaneStore.getState().addPane(pane2);
 
     const { panes } = usePaneStore.getState();
     expect(panes).toHaveLength(2);
-    expect(panes[0].id).toBe('aumx-1');
-    expect(panes[1].id).toBe('aumx-2');
+    expect(panes[0].id).toBe('muxbase-1');
+    expect(panes[1].id).toBe('muxbase-2');
   });
 
   it('removePane filters out the specified pane', () => {
-    const panes = [makePane({ id: 'aumx-1' }), makePane({ id: 'aumx-2' })];
+    const panes = [makePane({ id: 'muxbase-1' }), makePane({ id: 'muxbase-2' })];
     usePaneStore.getState().setPanes(panes);
 
-    usePaneStore.getState().removePane('aumx-1');
+    usePaneStore.getState().removePane('muxbase-1');
 
     const remaining = usePaneStore.getState().panes;
     expect(remaining).toHaveLength(1);
-    expect(remaining[0].id).toBe('aumx-2');
+    expect(remaining[0].id).toBe('muxbase-2');
   });
 
   it('removePane clears selectedPaneId when the selected pane is removed', () => {
-    usePaneStore.getState().setPanes([makePane({ id: 'aumx-1' }), makePane({ id: 'aumx-2' })]);
-    usePaneStore.getState().selectPane('aumx-1');
+    usePaneStore.getState().setPanes([makePane({ id: 'muxbase-1' }), makePane({ id: 'muxbase-2' })]);
+    usePaneStore.getState().selectPane('muxbase-1');
 
-    usePaneStore.getState().removePane('aumx-1');
+    usePaneStore.getState().removePane('muxbase-1');
 
     expect(usePaneStore.getState().selectedPaneId).toBeNull();
   });
 
   it('removePane preserves selectedPaneId when a different pane is removed', () => {
-    usePaneStore.getState().setPanes([makePane({ id: 'aumx-1' }), makePane({ id: 'aumx-2' })]);
-    usePaneStore.getState().selectPane('aumx-2');
+    usePaneStore.getState().setPanes([makePane({ id: 'muxbase-1' }), makePane({ id: 'muxbase-2' })]);
+    usePaneStore.getState().selectPane('muxbase-2');
 
-    usePaneStore.getState().removePane('aumx-1');
+    usePaneStore.getState().removePane('muxbase-1');
 
-    expect(usePaneStore.getState().selectedPaneId).toBe('aumx-2');
+    expect(usePaneStore.getState().selectedPaneId).toBe('muxbase-2');
   });
 
   it('setCreating toggles isCreating', () => {
@@ -177,15 +177,15 @@ describe('usePaneStore', () => {
   });
 
   it('keeps pending pane while no new pane has appeared yet', () => {
-    usePaneStore.getState().setPendingPane({ agent: 'claude', prompt: 'test', targetPaneId: 'aumx-2' });
-    usePaneStore.getState().setPanes([makePane({ id: 'aumx-1' })]);
+    usePaneStore.getState().setPendingPane({ agent: 'claude', prompt: 'test', targetPaneId: 'muxbase-2' });
+    usePaneStore.getState().setPanes([makePane({ id: 'muxbase-1' })]);
 
     expect(usePaneStore.getState().pendingPane).not.toBeNull();
   });
 
   it('clears pending pane when target pane arrives', () => {
-    usePaneStore.getState().setPendingPane({ agent: 'claude', prompt: 'test', targetPaneId: 'aumx-2' });
-    usePaneStore.getState().setPanes([makePane({ id: 'aumx-2' })]);
+    usePaneStore.getState().setPendingPane({ agent: 'claude', prompt: 'test', targetPaneId: 'muxbase-2' });
+    usePaneStore.getState().setPanes([makePane({ id: 'muxbase-2' })]);
 
     expect(usePaneStore.getState().pendingPane).toBeNull();
   });

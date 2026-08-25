@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { PaneActivityState } from '../../../shared/pane-activity';
 import { useRef, useState } from 'react';
 import type { SerializableActionResult } from '../../../shared/ipc-types';
@@ -14,7 +14,7 @@ import { AnchoredMenu } from '../shared/AnchoredMenu';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
 
 interface PaneActionsMenuProps {
-  pane: AumxPane;
+  pane: MuxBasePane;
   status: PaneActivityState;
   /** Invoked when the user picks "Rename" — the header owns the inline rename input. */
   onRename: () => void;

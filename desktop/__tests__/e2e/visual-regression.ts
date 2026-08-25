@@ -116,14 +116,14 @@ export async function assertVisualBaseline(
   const screenshot = await target.screenshot({ animations: 'disabled', caret: 'hide' });
   const baselinePath = resolve(BASELINE_DIR, `${name}.png`);
 
-  if (process.env.AUMX_UPDATE_VISUAL_BASELINES === '1') {
+  if (process.env.MUXBASE_UPDATE_VISUAL_BASELINES === '1') {
     mkdirSync(BASELINE_DIR, { recursive: true });
     writeFileSync(baselinePath, screenshot);
   }
 
   if (!existsSync(baselinePath)) {
     throw new Error(
-      `Missing visual baseline ${baselinePath}. Run with AUMX_UPDATE_VISUAL_BASELINES=1 to create it.`,
+      `Missing visual baseline ${baselinePath}. Run with MUXBASE_UPDATE_VISUAL_BASELINES=1 to create it.`,
     );
   }
 

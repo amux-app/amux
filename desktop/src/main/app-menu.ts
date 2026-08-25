@@ -11,7 +11,7 @@ export function createApplicationMenuTemplate({
 }: ApplicationMenuOptions): MenuItemConstructorOptions[] {
   return [
     {
-      label: 'Amux',
+      label: 'MuxBase',
       submenu: [
         { role: 'about' },
         {

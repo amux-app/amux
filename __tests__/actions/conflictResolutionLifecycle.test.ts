@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createConflictResolutionPaneForMerge } from '../../src/actions/merge/conflictResolution.js';
 import { launchManagedConflictResolutionPane } from '../../src/actions/merge/conflictPaneLifecycle.js';
 import type { ActionContext } from '../../src/actions/types.js';
-import type { AumxPane } from '../../src/types.js';
+import type { MuxBasePane } from '../../src/types.js';
 import { getAvailableAgents } from '../../src/utils/agentDetection.js';
 
 vi.mock('../../src/actions/merge/conflictPaneLifecycle.js', () => ({
@@ -39,7 +39,7 @@ vi.mock('../../src/utils/git.js', () => ({
   getPaneBranchName: vi.fn(() => 'feature'),
 }));
 
-const sourcePane: AumxPane = {
+const sourcePane: MuxBasePane = {
   id: 'source',
   slug: 'feature',
   prompt: 'feature',
@@ -48,7 +48,7 @@ const sourcePane: AumxPane = {
   worktreePath: '/workspace/worktrees/feature',
 };
 
-const conflictPane: AumxPane = {
+const conflictPane: MuxBasePane = {
   id: 'conflict',
   slug: 'merge-feature-into-main',
   prompt: 'resolve',
@@ -63,7 +63,7 @@ function makeContext(): ActionContext {
     panes: [sourcePane],
     projectName: 'main-project',
     savePanes: vi.fn(),
-    sessionName: 'aumx-main-project',
+    sessionName: 'muxbase-main-project',
     terminalTranscriptDir: '/logs/terminal',
   };
 }

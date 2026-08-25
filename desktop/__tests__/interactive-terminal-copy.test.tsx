@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -359,7 +359,7 @@ const defaultSettings: ElectronSettings = {
   windowOpacity: 1,
 };
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'opencode',
     agentStatus: 'working',
@@ -368,9 +368,9 @@ function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
     projectRoot: '/repo',
     prompt: 'Explain the architecture',
     slug: 'explain-architecture',
-    terminalTranscriptPath: '/tmp/aumx-pane-1.log',
+    terminalTranscriptPath: '/tmp/muxbase-pane-1.log',
     type: 'worktree',
-    worktreePath: '/repo/.aumx/worktrees/explain-architecture',
+    worktreePath: '/repo/.muxbase/worktrees/explain-architecture',
     ...overrides,
   };
 }
@@ -390,15 +390,15 @@ function resetStores(settings: Partial<ElectronSettings> = {}, pane = makePane()
   });
   useProjectStore.setState({
     activeProject: {
-      configPath: '/repo/.aumx/aumx.config.json',
+      configPath: '/repo/.muxbase/muxbase.config.json',
       name: 'repo',
       paneCount: 1,
       root: '/repo',
-      sessionName: 'aumx-repo',
+      sessionName: 'muxbase-repo',
     },
     projectSwitching: false,
     projects: [],
-    sessionName: 'aumx-repo',
+    sessionName: 'muxbase-repo',
     sessionProjectName: 'repo',
     sessionProjectRoot: '/repo',
   });
@@ -698,7 +698,7 @@ describe('InteractiveTerminal copy behavior', () => {
     expect(terminalApiMock.detach).not.toHaveBeenCalled();
 
     view.rerender(<InteractiveTerminal
-      pane={{ ...pane, terminalTranscriptPath: '/tmp/aumx-pane-1-reconnected.log' }}
+      pane={{ ...pane, terminalTranscriptPath: '/tmp/muxbase-pane-1-reconnected.log' }}
     />);
 
     await waitFor(() => expect(terminalMock.instances).toHaveLength(2));

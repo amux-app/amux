@@ -1,4 +1,4 @@
-import type { AumxPane, ReviewMetadata } from 'aumx/core';
+import type { MuxBasePane, ReviewMetadata } from 'muxbase/core';
 import { resolve } from 'path';
 import { isReadyForMutation, type PaneActivity } from '../../../shared/pane-activity.js';
 
@@ -6,7 +6,7 @@ const FIX_HANDOFF_SOURCE_BUSY_MESSAGE = 'Wait until the original pane is idle be
 const REVIEW_PANE_BUSY_MESSAGE = 'Wait until the review pane is idle before sending findings';
 const REVIEW_SOURCE_BUSY_MESSAGE = 'Wait until the source pane is idle before starting review';
 
-export function getFixHandoffSourceCapabilityBlockReason(pane: AumxPane): string | undefined {
+export function getFixHandoffSourceCapabilityBlockReason(pane: MuxBasePane): string | undefined {
   if (pane.type === 'shell' || !pane.agent) {
     return 'The original pane is not an agent pane';
   }
@@ -14,7 +14,7 @@ export function getFixHandoffSourceCapabilityBlockReason(pane: AumxPane): string
   return undefined;
 }
 
-export function getReviewSourceCapabilityBlockReason(pane: AumxPane): string | undefined {
+export function getReviewSourceCapabilityBlockReason(pane: MuxBasePane): string | undefined {
   if (pane.role === 'review') {
     return 'Review panes cannot be reviewed again';
   }
@@ -26,7 +26,7 @@ export function getReviewSourceCapabilityBlockReason(pane: AumxPane): string | u
   return undefined;
 }
 
-export function getFixHandoffSourceBlockReason(pane: AumxPane, activity?: PaneActivity): string | undefined {
+export function getFixHandoffSourceBlockReason(pane: MuxBasePane, activity?: PaneActivity): string | undefined {
   const capabilityBlockReason = getFixHandoffSourceCapabilityBlockReason(pane);
   if (capabilityBlockReason) return capabilityBlockReason;
 
@@ -37,7 +37,7 @@ export function getFixHandoffSourceBlockReason(pane: AumxPane, activity?: PaneAc
   return undefined;
 }
 
-export function getReviewPaneHandoffBlockReason(pane: AumxPane, activity?: PaneActivity): string | undefined {
+export function getReviewPaneHandoffBlockReason(pane: MuxBasePane, activity?: PaneActivity): string | undefined {
   if (!activity || !isReadyForMutation(activity)) {
     return REVIEW_PANE_BUSY_MESSAGE;
   }
@@ -45,7 +45,7 @@ export function getReviewPaneHandoffBlockReason(pane: AumxPane, activity?: PaneA
   return undefined;
 }
 
-export function getReviewSourceBlockReason(pane: AumxPane, activity?: PaneActivity): string | undefined {
+export function getReviewSourceBlockReason(pane: MuxBasePane, activity?: PaneActivity): string | undefined {
   const capabilityBlockReason = getReviewSourceCapabilityBlockReason(pane);
   if (capabilityBlockReason) return capabilityBlockReason;
 
@@ -56,13 +56,13 @@ export function getReviewSourceBlockReason(pane: AumxPane, activity?: PaneActivi
   return undefined;
 }
 
-export function hasOpenReviewForSource(sourcePaneId: string, panes: AumxPane[]): boolean {
+export function hasOpenReviewForSource(sourcePaneId: string, panes: MuxBasePane[]): boolean {
   return panes.some(
     (pane) => pane.role === 'review' && pane.review?.sourcePaneId === sourcePaneId && !pane.review.handedOffAt,
   );
 }
 
-export function resolveReviewSourcePane(review: ReviewMetadata, panes: AumxPane[]): AumxPane | undefined {
+export function resolveReviewSourcePane(review: ReviewMetadata, panes: MuxBasePane[]): MuxBasePane | undefined {
   const sourceById = panes.find((pane) => pane.id === review.sourcePaneId);
   if (sourceById) return sourceById;
 

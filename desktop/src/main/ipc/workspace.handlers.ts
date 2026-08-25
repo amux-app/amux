@@ -1,4 +1,4 @@
-import { getProjectConfigPath } from 'aumx/core';
+import { getProjectConfigPath } from 'muxbase/core';
 import { dialog } from 'electron';
 import { existsSync } from 'fs';
 import { basename } from 'path';
@@ -118,7 +118,7 @@ export function registerWorkspaceHandlers(): void {
         }
 
         const projectName = basename(folderPath);
-        const sessionName = `aumx-${projectName}`;
+        const sessionName = `muxbase-${projectName}`;
         const session = await ensureTmuxSession(sessionName, folderPath, projectName);
         const discoveredProject = resolveProjectFromDiscovery(
           await discoverProjects(),

@@ -1,4 +1,4 @@
-import type { AgentName } from 'aumx/core';
+import type { AgentName } from 'muxbase/core';
 
 /**
  * Runtime-only agent activity. This contract deliberately contains no pane

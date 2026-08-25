@@ -52,7 +52,7 @@ jobs:
       contents: write
       id-token: write
     env:
-      AUMX_REQUIRE_NOTARIZATION: '1'
+      MUXBASE_REQUIRE_NOTARIZATION: '1'
       DEBUG: 'electron-notarize*'
       RELEASE_TAG: ${{ inputs.tag || github.event.inputs.tag }}
     outputs:
@@ -71,7 +71,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          if [ "$GITHUB_REPOSITORY" != "amux-app/amux" ]; then
+          if [ "$GITHUB_REPOSITORY" != "muxbase-app/muxbase" ]; then
             echo "Refusing to publish outside the canonical repository: $GITHUB_REPOSITORY"
             exit 1
           fi
@@ -107,8 +107,8 @@ jobs:
       - name: Internal-refs gate
         run: node scripts/internal-refs-gate.mjs
         env:
-          AUMX_PRIVATE_REF_PATTERNS: ${{ secrets.INTERNAL_REF_PATTERNS }}
-          AUMX_REQUIRE_PRIVATE_REFS: '1'
+          MUXBASE_PRIVATE_REF_PATTERNS: ${{ secrets.INTERNAL_REF_PATTERNS }}
+          MUXBASE_REQUIRE_PRIVATE_REFS: '1'
 
       - name: Install pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
@@ -125,7 +125,7 @@ jobs:
 
       - name: Configure isolated tmux server
         run: |
-          socket_dir="$RUNNER_TEMP/aumx-tmux-release/socket"
+          socket_dir="$RUNNER_TEMP/muxbase-tmux-release/socket"
           mkdir -p "$socket_dir"
           echo "TMUX_TMPDIR=$socket_dir" >> "$GITHUB_ENV"
 
@@ -138,7 +138,7 @@ jobs:
       - name: Verify release candidate
         run: pnpm release:verify
         env:
-          AUMX_REQUIRE_NOTARIZATION: '0'
+          MUXBASE_REQUIRE_NOTARIZATION: '0'
           APPLE_APP_SPECIFIC_PASSWORD: ''
           APPLE_ID: ''
           APPLE_NOTARY_PROFILE: ''
@@ -156,14 +156,14 @@ jobs:
           APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_KEYCHAIN_PASSWORD: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
-          CERT_PATH: ${{ runner.temp }}/amux-signing-cert.p12
+          CERT_PATH: ${{ runner.temp }}/muxbase-signing-cert.p12
         run: |
           set -euo pipefail
           if [ -z "$APPLE_CERTIFICATE_BASE64" ] || [ -z "$APPLE_CERTIFICATE_PASSWORD" ] || [ -z "$APPLE_KEYCHAIN_PASSWORD" ]; then
             echo 'Missing Apple certificate provisioning secrets.'
             exit 1
           fi
-          KEYCHAIN_PATH="$RUNNER_TEMP/amux-signing.keychain-db"
+          KEYCHAIN_PATH="$RUNNER_TEMP/muxbase-signing.keychain-db"
           python3 -c "import base64, os, pathlib; pathlib.Path(os.environ['CERT_PATH']).write_bytes(base64.b64decode(os.environ['APPLE_CERTIFICATE_BASE64']))"
           security create-keychain -p "$APPLE_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
@@ -186,7 +186,7 @@ jobs:
             echo 'Missing Apple notarization credentials.'
             exit 1
           fi
-          PROFILE_NAME="${APPLE_NOTARY_PROFILE:-amux-notary}"
+          PROFILE_NAME="${APPLE_NOTARY_PROFILE:-muxbase-notary}"
           xcrun notarytool store-credentials "$PROFILE_NAME" \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_SPECIFIC_PASSWORD" \
@@ -203,7 +203,7 @@ jobs:
         with:
           path: desktop/release
           format: cyclonedx-json
-          output-file: desktop/release/amux-sbom.cdx.json
+          output-file: desktop/release/muxbase-sbom.cdx.json
           upload-artifact: false
           upload-release-assets: false
 
@@ -213,14 +213,14 @@ jobs:
           set -euo pipefail
           version="${RELEASE_TAG#v}"
           release_dir='desktop/release'
-          asset_list="$RUNNER_TEMP/amux-release-assets.txt"
+          asset_list="$RUNNER_TEMP/muxbase-release-assets.txt"
           checksum_inputs=(
-            "$release_dir/Amux-$version-arm64.dmg"
-            "$release_dir/Amux-$version-x64.dmg"
-            "$release_dir/Amux-$version-arm64.zip"
-            "$release_dir/Amux-$version-x64.zip"
+            "$release_dir/MuxBase-$version-arm64.dmg"
+            "$release_dir/MuxBase-$version-x64.dmg"
+            "$release_dir/MuxBase-$version-arm64.zip"
+            "$release_dir/MuxBase-$version-x64.zip"
             "$release_dir/latest-mac.yml"
-            "$release_dir/amux-sbom.cdx.json"
+            "$release_dir/muxbase-sbom.cdx.json"
           )
           for artifact in "${checksum_inputs[@]}"; do
             test -s "$artifact"
@@ -229,8 +229,8 @@ jobs:
           for blockmap in "$release_dir"/*.blockmap; do
             [ -e "$blockmap" ] || continue
             case "$(basename "$blockmap")" in
-              "Amux-$version-arm64.dmg.blockmap"|"Amux-$version-x64.dmg.blockmap"|\
-              "Amux-$version-arm64.zip.blockmap"|"Amux-$version-x64.zip.blockmap")
+              "MuxBase-$version-arm64.dmg.blockmap"|"MuxBase-$version-x64.dmg.blockmap"|\
+              "MuxBase-$version-arm64.zip.blockmap"|"MuxBase-$version-x64.zip.blockmap")
                 checksum_inputs+=("$blockmap")
                 ;;
               *)
@@ -261,25 +261,25 @@ jobs:
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: |
-            desktop/release/Amux-${{ steps.version.outputs.version }}-arm64.dmg
-            desktop/release/Amux-${{ steps.version.outputs.version }}-x64.dmg
-            desktop/release/Amux-${{ steps.version.outputs.version }}-arm64.zip
-            desktop/release/Amux-${{ steps.version.outputs.version }}-x64.zip
+            desktop/release/MuxBase-${{ steps.version.outputs.version }}-arm64.dmg
+            desktop/release/MuxBase-${{ steps.version.outputs.version }}-x64.dmg
+            desktop/release/MuxBase-${{ steps.version.outputs.version }}-arm64.zip
+            desktop/release/MuxBase-${{ steps.version.outputs.version }}-x64.zip
 
       - name: Attest release SBOM
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: |
-            desktop/release/Amux-${{ steps.version.outputs.version }}-arm64.dmg
-            desktop/release/Amux-${{ steps.version.outputs.version }}-x64.dmg
-            desktop/release/Amux-${{ steps.version.outputs.version }}-arm64.zip
-            desktop/release/Amux-${{ steps.version.outputs.version }}-x64.zip
-          sbom-path: desktop/release/amux-sbom.cdx.json
+            desktop/release/MuxBase-${{ steps.version.outputs.version }}-arm64.dmg
+            desktop/release/MuxBase-${{ steps.version.outputs.version }}-x64.dmg
+            desktop/release/MuxBase-${{ steps.version.outputs.version }}-arm64.zip
+            desktop/release/MuxBase-${{ steps.version.outputs.version }}-x64.zip
+          sbom-path: desktop/release/muxbase-sbom.cdx.json
 
       - name: Attest SBOM document provenance
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          subject-path: desktop/release/amux-sbom.cdx.json
+          subject-path: desktop/release/muxbase-sbom.cdx.json
 
       - name: Upload exact asset set to draft
         shell: bash
@@ -290,7 +290,7 @@ jobs:
           assets=()
           while IFS= read -r asset; do
             assets+=("$asset")
-          done < "$RUNNER_TEMP/amux-release-assets.txt"
+          done < "$RUNNER_TEMP/muxbase-release-assets.txt"
           gh release upload "$RELEASE_TAG" "${assets[@]}"
 
       - name: Audit uploaded draft
@@ -304,11 +304,11 @@ jobs:
           jq -e 'all(.assets[]; .size > 0)' <<<"$release_json" >/dev/null
 
           while IFS= read -r asset; do basename "$asset"; done \
-            < "$RUNNER_TEMP/amux-release-assets.txt" | LC_ALL=C sort > "$RUNNER_TEMP/local-assets.txt"
+            < "$RUNNER_TEMP/muxbase-release-assets.txt" | LC_ALL=C sort > "$RUNNER_TEMP/local-assets.txt"
           jq -r '.assets[].name' <<<"$release_json" | LC_ALL=C sort > "$RUNNER_TEMP/remote-assets.txt"
           diff -u "$RUNNER_TEMP/local-assets.txt" "$RUNNER_TEMP/remote-assets.txt"
 
-          remote_dir="$RUNNER_TEMP/amux-remote-release"
+          remote_dir="$RUNNER_TEMP/muxbase-remote-release"
           mkdir -p "$remote_dir"
           gh release download "$RELEASE_TAG" --dir "$remote_dir"
           while IFS= read -r asset; do
@@ -316,14 +316,14 @@ jobs:
             test -s "$remote_asset"
             test "$(shasum -a 256 "$asset" | cut -d ' ' -f 1)" = \
               "$(shasum -a 256 "$remote_asset" | cut -d ' ' -f 1)"
-          done < "$RUNNER_TEMP/amux-release-assets.txt"
+          done < "$RUNNER_TEMP/muxbase-release-assets.txt"
           (cd "$remote_dir" && shasum -a 256 -c SHA256SUMS)
 
-          gh attestation verify "$remote_dir/Amux-${RELEASE_TAG#v}-arm64.dmg" --repo "$GITHUB_REPOSITORY"
-          gh attestation verify "$remote_dir/Amux-${RELEASE_TAG#v}-x64.dmg" --repo "$GITHUB_REPOSITORY"
-          gh attestation verify "$remote_dir/Amux-${RELEASE_TAG#v}-arm64.zip" --repo "$GITHUB_REPOSITORY"
-          gh attestation verify "$remote_dir/Amux-${RELEASE_TAG#v}-x64.zip" --repo "$GITHUB_REPOSITORY"
-          gh attestation verify "$remote_dir/amux-sbom.cdx.json" --repo "$GITHUB_REPOSITORY"
+          gh attestation verify "$remote_dir/MuxBase-${RELEASE_TAG#v}-arm64.dmg" --repo "$GITHUB_REPOSITORY"
+          gh attestation verify "$remote_dir/MuxBase-${RELEASE_TAG#v}-x64.dmg" --repo "$GITHUB_REPOSITORY"
+          gh attestation verify "$remote_dir/MuxBase-${RELEASE_TAG#v}-arm64.zip" --repo "$GITHUB_REPOSITORY"
+          gh attestation verify "$remote_dir/MuxBase-${RELEASE_TAG#v}-x64.zip" --repo "$GITHUB_REPOSITORY"
+          gh attestation verify "$remote_dir/muxbase-sbom.cdx.json" --repo "$GITHUB_REPOSITORY"
 
       - name: Publish verified draft
         shell: bash

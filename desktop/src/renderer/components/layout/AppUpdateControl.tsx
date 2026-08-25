@@ -18,11 +18,11 @@ const CONTROL_CLASS = cn(
 
 function updateStatus(snapshot: AppUpdateSnapshot): string {
   if (snapshot.phase === 'downloading') {
-    return `Downloading Amux ${snapshot.availableVersion} — ${Math.round(snapshot.progress?.percent ?? 0)}%`;
+    return `Downloading MuxBase ${snapshot.availableVersion} — ${Math.round(snapshot.progress?.percent ?? 0)}%`;
   }
-  if (snapshot.phase === 'available') return `Downloading Amux ${snapshot.availableVersion}`;
-  if (snapshot.phase === 'ready') return `Update Amux to ${snapshot.availableVersion}`;
-  if (snapshot.phase === 'installing') return 'Preparing to restart and update Amux';
+  if (snapshot.phase === 'available') return `Downloading MuxBase ${snapshot.availableVersion}`;
+  if (snapshot.phase === 'ready') return `Update MuxBase to ${snapshot.availableVersion}`;
+  if (snapshot.phase === 'installing') return 'Preparing to restart and update MuxBase';
   return '';
 }
 
@@ -114,14 +114,14 @@ export function AppUpdateControl() {
 
       {createPortal(<ModalSurface
         initialFocusRef={laterRef}
-        label={ready ? 'Amux update ready' : 'Amux update'}
+        label={ready ? 'MuxBase update ready' : 'MuxBase update'}
         onClose={() => setOpen(false)}
         open={open}
         panelClassName="w-[min(420px,calc(100vw-2rem))] rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-2xl"
       >
         <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-5 py-4">
           <div>
-            <h2 className="text-sm font-semibold text-[var(--text)]">Amux update</h2>
+            <h2 className="text-sm font-semibold text-[var(--text)]">MuxBase update</h2>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
               {snapshot.currentVersion} → {snapshot.availableVersion}
             </p>
@@ -138,11 +138,11 @@ export function AppUpdateControl() {
         <div className="px-5 py-4">
           <p className="text-sm text-[var(--text-secondary)]">
             {ready
-              ? 'Ready to install. Amux will preserve your open work before restarting.'
+              ? 'Ready to install. MuxBase will preserve your open work before restarting.'
               : snapshot.phase === 'downloading'
                 ? `Downloading in the background — ${Math.round(progress)}% complete.`
                 : installing
-                  ? 'Preparing to restart and update Amux.'
+                  ? 'Preparing to restart and update MuxBase.'
                   : 'The update is being prepared in the background.'}
           </p>
         </div>

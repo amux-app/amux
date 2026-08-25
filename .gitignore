@@ -29,18 +29,22 @@ coverage/
 playwright-report/
 test-results/
 playwright/.cache/
-.amux/test-output/
-.aumx/test-output/
+.muxbase/test-output/
+.[a]mux/test-output/
+.[a]umx/test-output/
 .e2e-kanban-marker*
 .e2e-marker-*
 
 # === Runtime / per-user state ===
-.amux/
-.amux-hooks/
-.amux-dev/
-.aumx/
-.aumx-hooks/
-.aumx-dev/
+.muxbase/
+.muxbase-hooks/
+.muxbase-dev/
+.[a]mux/
+.[a]mux-hooks/
+.[a]mux-dev/
+.[a]umx/
+.[a]umx-hooks/
+.[a]umx-dev/
 .claude/
 .codex/
 .tmp

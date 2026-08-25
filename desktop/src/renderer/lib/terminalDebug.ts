@@ -119,7 +119,7 @@ interface TerminalDebugMetadata {
 
 declare global {
   interface Window {
-    __aumxTerminalDebug?: DebugApi;
+    __muxbaseTerminalDebug?: DebugApi;
   }
 }
 
@@ -145,7 +145,7 @@ function extractMeaningfulLines(data: string): string[] {
 }
 
 function ensureApi(): DebugApi {
-  if (window.__aumxTerminalDebug) return window.__aumxTerminalDebug;
+  if (window.__muxbaseTerminalDebug) return window.__muxbaseTerminalDebug;
 
   const terminals = new Map<string, Terminal>();
   const metadata = new Map<string, TerminalDebugMetadata>();
@@ -286,7 +286,7 @@ function ensureApi(): DebugApi {
     },
   };
 
-  window.__aumxTerminalDebug = api;
+  window.__muxbaseTerminalDebug = api;
   return api;
 }
 
@@ -297,7 +297,7 @@ function registerTerminalForDebug(paneId: string, term: Terminal): void {
 
 function unregisterTerminalForDebug(paneId: string): void {
   if (!isTerminalDebugEnabled()) return;
-  window.__aumxTerminalDebug?._unregister(paneId);
+  window.__muxbaseTerminalDebug?._unregister(paneId);
 }
 
 function recordTerminalAttachForDebug(

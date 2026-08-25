@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FocusView } from '../src/renderer/components/dashboard/FocusView';
@@ -20,13 +20,13 @@ vi.mock('react-resizable-panels', () => ({
 }));
 
 vi.mock('../src/renderer/components/pane-detail/InteractiveTerminal', () => ({
-  InteractiveTerminal: ({ pane }: { pane: AumxPane }) => (
+  InteractiveTerminal: ({ pane }: { pane: MuxBasePane }) => (
     <div data-testid="interactive-terminal">{pane.id}</div>
   ),
 }));
 
 vi.mock('../src/renderer/components/pane-detail/LazyGitDiffView', () => ({
-  LazyGitDiffView: ({ pane }: { pane: AumxPane }) => (
+  LazyGitDiffView: ({ pane }: { pane: MuxBasePane }) => (
     <div data-testid="git-diff-view">{pane.id}</div>
   ),
 }));
@@ -51,7 +51,7 @@ vi.mock('../src/renderer/hooks/useAgentSessionHydration', () => ({
   useAgentSessionHydration: vi.fn(),
 }));
 
-function makePane(overrides: Partial<AumxPane>): AumxPane {
+function makePane(overrides: Partial<MuxBasePane>): MuxBasePane {
   return {
     agent: 'claude',
     agentStatus: 'idle',
@@ -61,12 +61,12 @@ function makePane(overrides: Partial<AumxPane>): AumxPane {
     prompt: 'test prompt',
     slug: overrides.slug ?? 'feature-one',
     type: 'worktree',
-    worktreePath: overrides.worktreePath ?? '/repo/.aumx/worktrees/feature-one',
+    worktreePath: overrides.worktreePath ?? '/repo/.muxbase/worktrees/feature-one',
     ...overrides,
   };
 }
 
-function resetStores(panes: AumxPane[]): void {
+function resetStores(panes: MuxBasePane[]): void {
   usePaneStore.setState({
     isCreating: false,
     loaded: true,
@@ -76,15 +76,15 @@ function resetStores(panes: AumxPane[]): void {
   });
   useProjectStore.setState({
     activeProject: {
-      configPath: '/repo/.aumx/aumx.config.json',
+      configPath: '/repo/.muxbase/muxbase.config.json',
       name: 'repo',
       paneCount: panes.length,
       root: '/repo',
-      sessionName: 'aumx-repo',
+      sessionName: 'muxbase-repo',
     },
     projectSwitching: false,
     projects: [],
-    sessionName: 'aumx-repo',
+    sessionName: 'muxbase-repo',
     sessionProjectName: 'repo',
     sessionProjectRoot: '/repo',
   });
@@ -132,7 +132,7 @@ describe('Focus mode', () => {
       id: 'pane-2',
       paneId: '%2',
       slug: 'feature-two',
-      worktreePath: '/repo/.aumx/worktrees/feature-two',
+      worktreePath: '/repo/.muxbase/worktrees/feature-two',
     });
     resetStores([firstPane, secondPane]);
 
@@ -162,15 +162,15 @@ describe('Focus mode', () => {
   it('shows the active pane file tab in focus mode', () => {
     resetStores([makePane({ id: 'pane-1' })]);
     useWorkspaceTabsStore.setState({
-      activeTabByScope: { 'pane-1': '/repo/.aumx/worktrees/feature-one::src/index.ts' },
+      activeTabByScope: { 'pane-1': '/repo/.muxbase/worktrees/feature-one::src/index.ts' },
       tabsByScope: {
         'pane-1': [
           {
             fileName: 'index.ts',
-            id: '/repo/.aumx/worktrees/feature-one::src/index.ts',
+            id: '/repo/.muxbase/worktrees/feature-one::src/index.ts',
             openedAt: 1,
             relativePath: 'src/index.ts',
-            rootPath: '/repo/.aumx/worktrees/feature-one',
+            rootPath: '/repo/.muxbase/worktrees/feature-one',
           },
         ],
       },

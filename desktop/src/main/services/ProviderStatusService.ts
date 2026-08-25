@@ -51,7 +51,7 @@ export class ProviderStatusService {
   }
 
   async getStatus(): Promise<ProviderStatusResponse> {
-    if (this.disabled || process.env.AUMX_DISABLE_EXTERNAL_STATUS) {
+    if (this.disabled || process.env.MUXBASE_DISABLE_EXTERNAL_STATUS) {
       return { statuses: {}, fetchedAt: Date.now() };
     }
     const ttl = this.cacheComplete ? CACHE_TTL_MS : FAILURE_RETRY_MS;

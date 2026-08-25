@@ -77,7 +77,7 @@ function isMatchingResponse(
 async function spawnFormatterWorker(): Promise<FormatterChildProcess> {
   const workerPath = fileURLToPath(new URL('./formatterWorker.js', import.meta.url));
   return utilityProcess.fork(workerPath, [], {
-    serviceName: 'Amux document formatter',
+    serviceName: 'MuxBase document formatter',
   });
 }
 

@@ -1,5 +1,5 @@
-appId: app.amux.desktop
-productName: Amux
+appId: app.muxbase.desktop
+productName: MuxBase
 artifactName: ${productName}-${version}-${arch}.${ext}
 forceCodeSigning: true
 electronUpdaterCompatibility: ">=6.8.9"
@@ -15,8 +15,8 @@ extraResources:
 afterSign: scripts/notarize.cjs
 publish:
   provider: github
-  owner: amux-app
-  repo: amux
+  owner: muxbase-app
+  repo: muxbase
   releaseType: release
   channel: latest
   private: false
@@ -36,12 +36,12 @@ files:
   - "!node_modules/node-pty/deps/winpty/**/*"
   - "!node_modules/node-pty/prebuilds/**/*"
   - "!node_modules/node-pty/lib/*.test.js"
-  - "!node_modules/aumx/**/*"
+  - "!node_modules/muxbase/**/*"
   - "!node_modules/@typescript/**/*"
   - "!node_modules/typescript-7/**/*"
-  - node_modules/aumx/dist/**/*
-  - node_modules/aumx/config/**/*
-  - node_modules/aumx/package.json
+  - node_modules/muxbase/dist/**/*
+  - node_modules/muxbase/config/**/*
+  - node_modules/muxbase/package.json
   - "!**/*.map"
 
 mac:
@@ -63,7 +63,7 @@ mac:
   minimumSystemVersion: "13.0"
 
 dmg:
-  title: Amux
+  title: MuxBase
   # Squirrel.Mac installs ZIP payloads; keep DMGs as drag-to-install assets
   # without advertising them as updater candidates in latest-mac.yml.
   writeUpdateInfo: false

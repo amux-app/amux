@@ -5,7 +5,7 @@ import { resolve } from 'path';
 import type { ElectronApplication, Page, ConsoleMessage } from 'playwright';
 import { _electron as electron } from 'playwright';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { SerializableActionResult } from '../../src/shared/ipc-types';
 import {
   type PhaseResult,
@@ -20,7 +20,7 @@ import {
 const ROOT = resolve(__dirname, '..', '..');
 const MAIN_ENTRY = resolve(ROOT, 'out', 'main', 'index.js');
 const ACTIVE_AGENT_STATES = new Set(['working', 'analyzing', 'waiting']);
-const SLOW = process.env.AUMX_E2E_SLOW === '1';
+const SLOW = process.env.MUXBASE_E2E_SLOW === '1';
 const STEP_PAUSE = SLOW ? 2500 : 0;
 const VIEW_PAUSE = SLOW ? 4000 : 0;
 
@@ -116,27 +116,27 @@ async function unhighlightElement(page: Page, selector: string): Promise<void> {
 async function initializePaneStatusTracker(page: Page): Promise<void> {
   await page.evaluate(() => {
     const w = window as any;
-    if (w.__aumxPaneStatusTrackerInitialized) {
-      w.__aumxPaneStatusById = {};
-      w.__aumxPaneStatusHistoryById = {};
+    if (w.__muxbasePaneStatusTrackerInitialized) {
+      w.__muxbasePaneStatusById = {};
+      w.__muxbasePaneStatusHistoryById = {};
       return;
     }
-    w.__aumxPaneStatusById = {};
-    w.__aumxPaneStatusHistoryById = {};
-    w.__aumxPaneStatusTrackerUnsub = w.aumx.on(
+    w.__muxbasePaneStatusById = {};
+    w.__muxbasePaneStatusHistoryById = {};
+    w.__muxbasePaneStatusTrackerUnsub = w.muxbase.on(
       'event:pane-status-changed',
       (payload: { paneId?: string; status?: string }) => {
         const paneId = payload?.paneId;
         const status = payload?.status;
         if (!paneId || !status) return;
-        w.__aumxPaneStatusById[paneId] = status;
-        if (!Array.isArray(w.__aumxPaneStatusHistoryById[paneId])) {
-          w.__aumxPaneStatusHistoryById[paneId] = [];
+        w.__muxbasePaneStatusById[paneId] = status;
+        if (!Array.isArray(w.__muxbasePaneStatusHistoryById[paneId])) {
+          w.__muxbasePaneStatusHistoryById[paneId] = [];
         }
-        w.__aumxPaneStatusHistoryById[paneId].push({ status, ts: Date.now() });
+        w.__muxbasePaneStatusHistoryById[paneId].push({ status, ts: Date.now() });
       },
     );
-    w.__aumxPaneStatusTrackerInitialized = true;
+    w.__muxbasePaneStatusTrackerInitialized = true;
   });
 }
 
@@ -151,16 +151,16 @@ async function autoConfirmMergeUntilConflict(
   return page.evaluate(async (id) => {
     const AUTO_CONFIRM = new Set(['Merge Worktree', 'Multi-Repository Merge', 'Multi-Merge Complete']);
     const AUTO_CHOICE = new Set(['Close Pane', 'Worktree Has Uncommitted Changes', 'Main Branch Has Uncommitted Changes']);
-    let current: any = await (window as any).aumx.invoke('pane:merge', { paneId: id });
+    let current: any = await (window as any).muxbase.invoke('pane:merge', { paneId: id });
     for (let i = 0; i < 10; i++) {
       if (current.type === 'confirm' && current.callbackId && AUTO_CONFIRM.has(current.title)) {
-        current = await (window as any).aumx.invoke('action:callback', { callbackId: current.callbackId });
+        current = await (window as any).muxbase.invoke('action:callback', { callbackId: current.callbackId });
         continue;
       }
       if (current.type === 'choice' && current.callbackId && AUTO_CHOICE.has(current.title)) {
         const choiceId = current.options?.find((o: any) => o.default)?.id ?? current.options?.[0]?.id;
         if (!choiceId) break;
-        current = await (window as any).aumx.invoke('action:callback', { callbackId: current.callbackId, value: choiceId });
+        current = await (window as any).muxbase.invoke('action:callback', { callbackId: current.callbackId, value: choiceId });
         continue;
       }
       break;
@@ -176,7 +176,7 @@ async function openConflictView(
 ): Promise<void> {
   await page.evaluate(
     ({ pid, res }) => {
-      const stores = (window as any).__aumxStores;
+      const stores = (window as any).__muxbaseStores;
       stores.conflictResolution.getState().openConflictResolution(pid, res);
       stores.ui.getState().openConflictView();
     },
@@ -185,17 +185,17 @@ async function openConflictView(
   await page.locator('[data-testid="conflict-resolution-view"]').waitFor({ state: 'visible', timeout: 10_000 });
 }
 
-if (process.env.AUMX_E2E !== '1') {
-  console.warn('Conflict Resolution E2E skipped - set AUMX_E2E=1 to run');
+if (process.env.MUXBASE_E2E !== '1') {
+  console.warn('Conflict Resolution E2E skipped - set MUXBASE_E2E=1 to run');
 }
 
-describe.runIf(process.env.AUMX_E2E === '1')('Conflict Resolution E2E', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('Conflict Resolution E2E', () => {
   let app: ElectronApplication;
   let page: Page;
   let e2eRoot: string;
   const consoleErrors: string[] = [];
   const phases: PhaseResult[] = [];
-  let createdPane: AumxPane | null = null;
+  let createdPane: MuxBasePane | null = null;
   let conflictResult: SerializableActionResult | null = null;
 
   const SLOW_TIMEOUT_FACTOR = SLOW ? 4 : 1;
@@ -211,17 +211,17 @@ describe.runIf(process.env.AUMX_E2E === '1')('Conflict Resolution E2E', () => {
 
       try {
         const sessions = execSync('tmux list-sessions -F "#{session_name}" 2>/dev/null', { encoding: 'utf-8' });
-        for (const name of sessions.split('\n').filter((s) => s.includes('aumx-conflict-e2e'))) {
+        for (const name of sessions.split('\n').filter((s) => s.includes('muxbase-conflict-e2e'))) {
           execSync(`tmux kill-session -t "${name}" 2>/dev/null`, { stdio: 'ignore' });
           console.log(`Cleaned up stale E2E session: ${name}`);
         }
       } catch { /* no tmux server or no sessions */ }
 
-      e2eRoot = realpathSync(mkdtempSync(resolve(tmpdir(), 'aumx-conflict-e2e-')));
+      e2eRoot = realpathSync(mkdtempSync(resolve(tmpdir(), 'muxbase-conflict-e2e-')));
       gitExec('git init', e2eRoot);
-      gitExec('git config user.email "e2e@aumx.test"', e2eRoot);
-      gitExec('git config user.name "aumx-e2e"', e2eRoot);
-      writeFileSync(resolve(e2eRoot, '.gitignore'), '.amux/\n.aumx/\n');
+      gitExec('git config user.email "e2e@muxbase.test"', e2eRoot);
+      gitExec('git config user.name "muxbase-e2e"', e2eRoot);
+      writeFileSync(resolve(e2eRoot, '.gitignore'), '.muxbase/\n');
       gitExec('git add .gitignore', e2eRoot);
       gitExec('git commit -m "chore: e2e workspace init"', e2eRoot);
 
@@ -234,14 +234,14 @@ describe.runIf(process.env.AUMX_E2E === '1')('Conflict Resolution E2E', () => {
         env: {
           ...inheritedEnv,
           NODE_ENV: 'test',
-          AUMX_DEV: 'true',
+          MUXBASE_DEV: 'true',
         },
       });
 
       page = await getAppWindow(app);
 
       await app.context().addInitScript(() => {
-        (window as any).__AUMX_E2E = true;
+        (window as any).__MUXBASE_E2E = true;
       });
       await page.reload();
 
@@ -269,7 +269,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Conflict Resolution E2E', () => {
       if (sessionInfo.projectRoot !== e2eRoot) {
         throw new Error(
           `Unsafe E2E root. Expected ${e2eRoot}, got ${sessionInfo.projectRoot}. ` +
-            `Stop other aumx tmux sessions before running this test.`,
+            `Stop other muxbase tmux sessions before running this test.`,
         );
       }
 
@@ -324,7 +324,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Conflict Resolution E2E', () => {
       await pause(STEP_PAUSE);
 
       await page.evaluate(() =>
-        (window as any).aumx.invoke('pane:create', {
+        (window as any).muxbase.invoke('pane:create', {
           prompt: 'echo done',
           agent: 'claude',
           useWorktree: true,
@@ -347,7 +347,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Conflict Resolution E2E', () => {
       await pollUntil(
         async () => {
           const status: string = await page.evaluate(
-            (id) => (window as any).__aumxPaneStatusById?.[id],
+            (id) => (window as any).__muxbasePaneStatusById?.[id],
             createdPane!.id,
           );
           return !ACTIVE_AGENT_STATES.has(status) ? true : null;
@@ -522,12 +522,12 @@ describe.runIf(process.env.AUMX_E2E === '1')('Conflict Resolution E2E', () => {
       await view.waitFor({ state: 'hidden', timeout: 5_000 });
 
       const viewMode = await page.evaluate(
-        () => (window as any).__aumxStores.ui.getState().viewMode,
+        () => (window as any).__muxbaseStores.ui.getState().viewMode,
       );
       expect(viewMode).not.toBe('conflict-resolution');
 
       const conflictPaneId = await page.evaluate(
-        () => (window as any).__aumxStores.conflictResolution.getState().paneId,
+        () => (window as any).__muxbaseStores.conflictResolution.getState().paneId,
       );
       expect(conflictPaneId).toBeNull();
 
@@ -623,7 +623,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Conflict Resolution E2E', () => {
       await view.waitFor({ state: 'hidden', timeout: 15_000 });
 
       const viewMode = await page.evaluate(
-        () => (window as any).__aumxStores.ui.getState().viewMode,
+        () => (window as any).__muxbaseStores.ui.getState().viewMode,
       );
       expect(viewMode).not.toBe('conflict-resolution');
 

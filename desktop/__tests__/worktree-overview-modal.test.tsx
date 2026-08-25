@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as worktreeApi from '../src/renderer/api/worktree.api';
@@ -14,7 +14,7 @@ vi.mock('../src/renderer/api/worktree.api', () => ({
   reopenWorktree: vi.fn(),
 }));
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'claude',
     agentStatus: 'idle',
@@ -25,7 +25,7 @@ function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
     prompt: 'live prompt',
     slug: 'live-worktree',
     type: 'worktree',
-    worktreePath: '/repo/.aumx/worktrees/live-worktree',
+    worktreePath: '/repo/.muxbase/worktrees/live-worktree',
     ...overrides,
   };
 }
@@ -57,7 +57,7 @@ describe('WorktreeOverviewModal', () => {
           branch: null,
           gitStatus: 'unchecked',
           lastModifiedMs: 1_700_000_000_000,
-          path: '/repo/.aumx/worktrees/closed-worktree',
+          path: '/repo/.muxbase/worktrees/closed-worktree',
           registration: 'unchecked',
           slug: 'closed-worktree',
         },
@@ -70,7 +70,7 @@ describe('WorktreeOverviewModal', () => {
         id: 'pane-reopened',
         paneId: '%2',
         slug: 'closed-worktree',
-        worktreePath: '/repo/.aumx/worktrees/closed-worktree',
+        worktreePath: '/repo/.muxbase/worktrees/closed-worktree',
       }),
     });
 
@@ -81,7 +81,7 @@ describe('WorktreeOverviewModal', () => {
 
     await waitFor(() => {
       expect(worktreeApi.reopenWorktree).toHaveBeenCalledWith({
-        worktreePath: '/repo/.aumx/worktrees/closed-worktree',
+        worktreePath: '/repo/.muxbase/worktrees/closed-worktree',
       });
     });
     expect(onJumpToPane).toHaveBeenCalledWith('pane-reopened');
@@ -99,7 +99,7 @@ describe('WorktreeOverviewModal', () => {
           branch: null,
           gitStatus: 'unchecked',
           lastModifiedMs: Date.now() - (3 * 24 * 60 * 60 * 1000),
-          path: '/repo/.aumx/worktrees/closed-worktree',
+          path: '/repo/.muxbase/worktrees/closed-worktree',
           registration: 'unchecked',
           slug: 'closed-worktree',
         },
@@ -110,7 +110,7 @@ describe('WorktreeOverviewModal', () => {
       pane: makePane({
         id: 'pane-reopened',
         slug: 'closed-worktree',
-        worktreePath: '/repo/.aumx/worktrees/closed-worktree',
+        worktreePath: '/repo/.muxbase/worktrees/closed-worktree',
       }),
     });
 
@@ -123,7 +123,7 @@ describe('WorktreeOverviewModal', () => {
     // Assert
     expect(worktreeApi.reopenWorktree).toHaveBeenCalledTimes(1);
     expect(worktreeApi.reopenWorktree).toHaveBeenCalledWith({
-      worktreePath: '/repo/.aumx/worktrees/closed-worktree',
+      worktreePath: '/repo/.muxbase/worktrees/closed-worktree',
     });
   });
 
@@ -138,7 +138,7 @@ describe('WorktreeOverviewModal', () => {
           branch: null,
           gitStatus: 'unchecked',
           lastModifiedMs: 1_700_000_000_000,
-          path: '/repo/.aumx/worktrees/closed-worktree',
+          path: '/repo/.muxbase/worktrees/closed-worktree',
           registration: 'unchecked',
           slug: 'closed-worktree',
         },
@@ -168,7 +168,7 @@ describe('WorktreeOverviewModal', () => {
   it('inspects and explicitly confirms removal of a dirty preserved worktree', async () => {
     const onClose = vi.fn();
     const onJumpToPane = vi.fn();
-    const worktreePath = '/repo/.aumx/worktrees/closed-worktree';
+    const worktreePath = '/repo/.muxbase/worktrees/closed-worktree';
     vi.mocked(worktreeApi.listOrphanedWorktrees).mockResolvedValue({
       success: true,
       worktrees: [{
@@ -218,7 +218,7 @@ describe('WorktreeOverviewModal', () => {
   });
 
   it('warns before removing a clean detached worktree', async () => {
-    const worktreePath = '/repo/.aumx/worktrees/detached-worktree';
+    const worktreePath = '/repo/.muxbase/worktrees/detached-worktree';
     vi.mocked(worktreeApi.listOrphanedWorktrees).mockResolvedValue({
       success: true,
       worktrees: [{
@@ -268,7 +268,7 @@ describe('WorktreeOverviewModal', () => {
   it('does not allow a clean inspection to silently delete newly dirty work', async () => {
     const onClose = vi.fn();
     const onJumpToPane = vi.fn();
-    const worktreePath = '/repo/.aumx/worktrees/closed-worktree';
+    const worktreePath = '/repo/.muxbase/worktrees/closed-worktree';
     vi.mocked(worktreeApi.listOrphanedWorktrees).mockResolvedValue({
       success: true,
       worktrees: [{
@@ -322,7 +322,7 @@ describe('WorktreeOverviewModal', () => {
 
   it('cancels only the confirmation when its backdrop is clicked', async () => {
     const onClose = vi.fn();
-    const worktreePath = '/repo/.aumx/worktrees/closed-worktree';
+    const worktreePath = '/repo/.muxbase/worktrees/closed-worktree';
     vi.mocked(worktreeApi.listOrphanedWorktrees).mockResolvedValue({
       success: true,
       worktrees: [{
@@ -377,7 +377,7 @@ describe('WorktreeOverviewModal', () => {
         branch: null,
         gitStatus: 'unchecked' as const,
         lastModifiedMs: 1_700_000_000_000,
-        path: `/repo/.aumx/worktrees/${slug}`,
+        path: `/repo/.muxbase/worktrees/${slug}`,
         registration: 'unchecked' as const,
         slug,
       })),

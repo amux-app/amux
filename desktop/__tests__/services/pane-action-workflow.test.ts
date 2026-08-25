@@ -1,4 +1,4 @@
-import type { ActionResult, AumxPane } from 'aumx/core';
+import type { ActionResult, MuxBasePane } from 'muxbase/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const core = vi.hoisted(() => ({
@@ -11,8 +11,8 @@ const core = vi.hoisted(() => ({
   resumeAgentInPane: vi.fn(),
 }));
 
-vi.mock('aumx/core', async () => {
-  const actual = await vi.importActual<typeof import('aumx/core')>('aumx/core');
+vi.mock('muxbase/core', async () => {
+  const actual = await vi.importActual<typeof import('muxbase/core')>('muxbase/core');
   return {
     ...actual,
     assertClaudeFullscreenSupported: core.assertClaudeFullscreenSupported,
@@ -32,7 +32,7 @@ vi.mock('../../src/main/services/git/gitDiff.js', () => ({
 
 import { PaneActionWorkflow } from '../../src/main/services/bridge/PaneActionWorkflow.js';
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'claude',
     claudeRenderer: 'classic',
@@ -44,7 +44,7 @@ function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
   };
 }
 
-function makeHarness(initialPanes: AumxPane[] = [makePane()]) {
+function makeHarness(initialPanes: MuxBasePane[] = [makePane()]) {
   let panes = initialPanes;
   const dependencies = {
     addPaneToDone: vi.fn(),
@@ -52,16 +52,16 @@ function makeHarness(initialPanes: AumxPane[] = [makePane()]) {
       panes,
       projectName: 'project',
       savePanes: vi.fn(),
-      sessionName: 'aumx-project',
+      sessionName: 'muxbase-project',
     })),
     clearDuelMetadata: vi.fn(),
-    getConfigPath: vi.fn(() => '/project/.amux/aumx.config.json'),
+    getConfigPath: vi.fn(() => '/project/.muxbase/muxbase.config.json'),
     getPane: vi.fn((paneId: string) => panes.find((pane) => pane.id === paneId)),
     getPaneCurrentCommand: vi.fn(async () => 'zsh'),
     getPanes: vi.fn(() => panes),
     getProjectRoot: vi.fn(() => '/project'),
     paneExists: vi.fn(async () => true),
-    persistPanesTransactionally: vi.fn((next: AumxPane[]) => { panes = next; }),
+    persistPanesTransactionally: vi.fn((next: MuxBasePane[]) => { panes = next; }),
     reapOrphanedTranscripts: vi.fn(async () => undefined),
   };
   return {

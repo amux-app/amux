@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 
 export interface CommandPaletteSearchScope {
   label: string;
@@ -7,7 +7,7 @@ export interface CommandPaletteSearchScope {
 }
 
 export function getCommandPaletteSearchScope(
-  panes: readonly AumxPane[],
+  panes: readonly MuxBasePane[],
   selectedPaneId: string | null,
   sessionProjectRoot: string,
 ): CommandPaletteSearchScope | null {

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
-import type { AumxPane, AgentName } from 'aumx/core';
+import type { MuxBasePane, AgentName } from 'muxbase/core';
 import type { PaneActivityState } from '../../shared/pane-activity';
 import { usePaneActivityStore } from './pane-activity.store';
 
@@ -13,7 +13,7 @@ export interface PendingPane {
 }
 
 interface PaneState {
-  panes: AumxPane[];
+  panes: MuxBasePane[];
   loaded: boolean;
   selectedPaneId: string | null;
   isCreating: boolean;
@@ -22,13 +22,13 @@ interface PaneState {
 }
 
 interface PaneActions {
-  setPanes: (panes: AumxPane[]) => void;
+  setPanes: (panes: MuxBasePane[]) => void;
   selectPane: (id: string | null) => void;
   /** Temporary source-compatibility action; activity remains in its own store. */
   updatePaneStatus: (paneId: string, status: PaneActivityState) => void;
   setCreating: (creating: boolean, mode?: LaunchMode) => void;
   setPendingPane: (pending: PendingPane | null) => void;
-  addPane: (pane: AumxPane) => void;
+  addPane: (pane: MuxBasePane) => void;
   removePane: (paneId: string) => void;
 }
 
@@ -44,18 +44,18 @@ interface PaneKeyboardSnapshot {
   selectedTmuxPaneId: string | null;
 }
 
-function samePaneFields(a: AumxPane, b: AumxPane): boolean {
-  const keys = new Set([...Object.keys(a), ...Object.keys(b)]) as Set<keyof AumxPane>;
+function samePaneFields(a: MuxBasePane, b: MuxBasePane): boolean {
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]) as Set<keyof MuxBasePane>;
   for (const key of keys) {
     if (a[key] !== b[key]) return false;
   }
   return true;
 }
 
-function mergePaneRuntimeFields(existing: AumxPane | undefined, incoming: AumxPane): AumxPane {
+function mergePaneRuntimeFields(existing: MuxBasePane | undefined, incoming: MuxBasePane): MuxBasePane {
   if (!existing) return incoming;
 
-  const merged: AumxPane = {
+  const merged: MuxBasePane = {
     ...incoming,
     terminalTranscriptPath: incoming.terminalTranscriptPath ?? existing.terminalTranscriptPath,
     review: incoming.review ?? existing.review,
@@ -64,7 +64,7 @@ function mergePaneRuntimeFields(existing: AumxPane | undefined, incoming: AumxPa
   return samePaneFields(merged, existing) ? existing : merged;
 }
 
-function preserveListIdentity(existing: AumxPane[], next: AumxPane[]): AumxPane[] {
+function preserveListIdentity(existing: MuxBasePane[], next: MuxBasePane[]): MuxBasePane[] {
   if (next.length !== existing.length) return next;
   return next.every((pane, index) => pane === existing[index]) ? existing : next;
 }
@@ -140,7 +140,7 @@ export function useFirstPaneId(): string | null {
   return usePaneStore((state) => state.panes[0]?.id ?? null);
 }
 
-export function usePaneById(paneId: string | null | undefined): AumxPane | null {
+export function usePaneById(paneId: string | null | undefined): MuxBasePane | null {
   return usePaneStore((state) => (
     paneId ? state.panes.find((pane) => pane.id === paneId) ?? null : null
   ));
@@ -152,7 +152,7 @@ export function usePaneStats(): PaneStats {
   return useMemoPaneStats(panes, activityByPaneId);
 }
 
-function useMemoPaneStats(panes: AumxPane[], activityByPaneId: Record<string, { state: string }>): PaneStats {
+function useMemoPaneStats(panes: MuxBasePane[], activityByPaneId: Record<string, { state: string }>): PaneStats {
   let active = 0;
   let worktrees = 0;
 
@@ -172,7 +172,7 @@ function useMemoPaneStats(panes: AumxPane[], activityByPaneId: Record<string, { 
   };
 }
 
-export function useSelectedPane(): AumxPane | null {
+export function useSelectedPane(): MuxBasePane | null {
   return usePaneStore((state) => {
     const selectedPaneId = state.selectedPaneId;
     return selectedPaneId

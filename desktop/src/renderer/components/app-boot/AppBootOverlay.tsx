@@ -9,7 +9,7 @@ export function AppBootOverlay({ state }: { state: AppBootState }) {
   if (state.phase === 'starting') {
     return (
       <div
-        aria-label="Starting Amux"
+        aria-label="Starting MuxBase"
         aria-live="polite"
         className="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--bg)]"
         data-testid="app-boot-overlay"
@@ -25,7 +25,7 @@ export function AppBootOverlay({ state }: { state: AppBootState }) {
 
   const blocked = state.phase === 'blocked';
   const failed = state.phase === 'failed';
-  const title = blocked ? 'Startup check needs attention' : 'Amux could not finish starting';
+  const title = blocked ? 'Startup check needs attention' : 'MuxBase could not finish starting';
 
   return (
     <div

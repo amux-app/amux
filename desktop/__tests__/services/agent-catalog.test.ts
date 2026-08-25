@@ -1,10 +1,10 @@
-import type { AgentName } from 'aumx/core';
+import type { AgentName } from 'muxbase/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getAvailableAgentsMock = vi.hoisted(() => vi.fn());
 
-vi.mock('aumx/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('aumx/core')>();
+vi.mock('muxbase/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('muxbase/core')>();
   return {
     ...actual,
     getAvailableAgents: getAvailableAgentsMock,

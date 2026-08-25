@@ -1,4 +1,4 @@
-import type { DetectedPlugin, InstalledPlugin, MarketplaceInstallMode } from 'aumx/core';
+import type { DetectedPlugin, InstalledPlugin, MarketplaceInstallMode } from 'muxbase/core';
 import { ChevronDown, ChevronUp, Download, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '../../lib/cn';

@@ -95,7 +95,7 @@ export const ensureMinimumWindowSize = (targetPaneId: string): void => {
 
 /**
  * Creates initial sidebar layout by splitting from control pane
- * @param controlPaneId The pane ID running aumx TUI (left sidebar)
+ * @param controlPaneId The pane ID running muxbase TUI (left sidebar)
  * @param cwd Optional working directory for the new content pane
  * @returns The newly created content area pane ID
  */
@@ -164,7 +164,7 @@ export const generateSidebarGridLayout = (
     try {
       const lastPaneId = contentPanes[contentPanes.length - 1];
       const title = tmuxService.getPaneTitleSync(lastPaneId);
-      return title === 'aumx-spacer';
+      return title === 'muxbase-spacer';
     } catch {
       return false;
     }

@@ -42,7 +42,7 @@ function resetSingleton(): PaneEventService {
   return PaneEventService.getInstance();
 }
 
-async function startPolling(service: PaneEventService, sessionName = 'aumx-project'): Promise<void> {
+async function startPolling(service: PaneEventService, sessionName = 'muxbase-project'): Promise<void> {
   await service.initialize({ sessionName, pollInterval: 5_000 });
   await service.start(false);
 }

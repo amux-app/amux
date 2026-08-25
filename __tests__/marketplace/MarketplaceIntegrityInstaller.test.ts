@@ -6,7 +6,7 @@ import { MarketplaceIntegrityInstaller } from '../../src/services/marketplace/Ma
 import type { DetectedPlugin } from '../../src/services/marketplace/types.js';
 
 function setup(): { homeDir: string; journalDir: string; plugin: DetectedPlugin; skillPath: string } {
-  const root = mkdtempSync(path.join(tmpdir(), 'aumx-marketplace-integrity-'));
+  const root = mkdtempSync(path.join(tmpdir(), 'muxbase-marketplace-integrity-'));
   const sourceDir = path.join(root, 'source-skill');
   const homeDir = path.join(root, 'home');
   mkdirSync(sourceDir);

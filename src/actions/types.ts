@@ -1,4 +1,4 @@
-import type { AumxPane, ProjectSettings } from '../types.js';
+import type { MuxBasePane, ProjectSettings } from '../types.js';
 
 export type ActionResultType =
   | 'success'
@@ -44,7 +44,7 @@ export interface ActionResult {
 }
 
 export interface ActionContext {
-  panes: AumxPane[];
+  panes: MuxBasePane[];
   currentPaneId?: string;
   sessionName: string;
   projectName: string;
@@ -52,16 +52,16 @@ export interface ActionContext {
   otlpEndpoint?: string;
   /** Directory that owns raw tmux transcripts for newly launched panes. */
   terminalTranscriptDir?: string;
-  savePanes: (panes: AumxPane[]) => Promise<void>;
+  savePanes: (panes: MuxBasePane[]) => Promise<void>;
 
-  onPaneUpdate?: (pane: AumxPane) => void;
+  onPaneUpdate?: (pane: MuxBasePane) => void;
   onPaneRemove?: (paneId: string) => void;
   onActionResult?: (result: ActionResult) => Promise<void>;
   skipLastPaneWelcome?: boolean;
 }
 
 export type ActionFunction<TParams = unknown> = (
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   params?: TParams
 ) => Promise<ActionResult>;
@@ -183,7 +183,7 @@ const HIDDEN_MENU_ACTIONS = new Set<PaneAction>([
  * Get available actions for a pane based on its state
  */
 export function getAvailableActions(
-  pane: AumxPane,
+  pane: MuxBasePane,
   projectSettings?: Pick<ProjectSettings, 'testCommand' | 'devCommand'>
 ): ActionMetadata[] {
   return Object.values(ACTION_REGISTRY).filter(action => {

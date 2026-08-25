@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 function createHelper(mode: number): { helperPath: string; packageRoot: string } {
-  const packageRoot = mkdtempSync(join(tmpdir(), 'aumx-node-pty-'));
+  const packageRoot = mkdtempSync(join(tmpdir(), 'muxbase-node-pty-'));
   scratchDirs.push(packageRoot);
   const helperPath = join(packageRoot, 'prebuilds', 'darwin-arm64', 'spawn-helper');
   mkdirSync(join(packageRoot, 'prebuilds', 'darwin-arm64'), { recursive: true });

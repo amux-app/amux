@@ -48,8 +48,8 @@ describe('incremental JSONL resume safety', () => {
   it('holds back a trailing partial record until it is fully written', async () => {
     // Arrange: cut the final record in half, mid JSON object.
     const scenario = claudeScenario();
-    const filePath = createTempFile('aumx-resume-partial-');
-    const referencePath = createTempFile('aumx-resume-partial-ref-');
+    const filePath = createTempFile('muxbase-resume-partial-');
+    const referencePath = createTempFile('muxbase-resume-partial-ref-');
     const lastRecordStart = scenario.content.lastIndexOf('\n', scenario.content.length - 2) + 1;
     const cut = lastRecordStart + Math.floor((scenario.content.length - lastRecordStart) / 2);
     const feeder = scenario.createFeeder(filePath);
@@ -71,8 +71,8 @@ describe('incremental JSONL resume safety', () => {
   it('consumes a complete final record that has no trailing newline yet', async () => {
     // Arrange
     const scenario = claudeScenario();
-    const filePath = createTempFile('aumx-resume-noeol-');
-    const referencePath = createTempFile('aumx-resume-noeol-ref-');
+    const filePath = createTempFile('muxbase-resume-noeol-');
+    const referencePath = createTempFile('muxbase-resume-noeol-ref-');
     const withoutNewline = scenario.content.subarray(0, scenario.content.length - 1);
     const feeder = scenario.createFeeder(filePath);
 
@@ -92,8 +92,8 @@ describe('incremental JSONL resume safety', () => {
   it('reparses from scratch after the file is truncated', async () => {
     // Arrange
     const scenario = claudeScenario();
-    const filePath = createTempFile('aumx-resume-truncate-');
-    const referencePath = createTempFile('aumx-resume-truncate-ref-');
+    const filePath = createTempFile('muxbase-resume-truncate-');
+    const referencePath = createTempFile('muxbase-resume-truncate-ref-');
     const keep = scenario.content.indexOf('\n', Math.floor(scenario.content.length / 2)) + 1;
     const feeder = scenario.createFeeder(filePath);
 
@@ -114,8 +114,8 @@ describe('incremental JSONL resume safety', () => {
     const head = paddingLines('head', HEAD_PADDING_BYTES);
     const before = claudeScenario([...head, ...paddingLines('original-tail', 1024)]);
     const after = claudeScenario([...head, ...CLAUDE_FIXTURE_LINES]);
-    const filePath = createTempFile('aumx-resume-compact-');
-    const referencePath = createTempFile('aumx-resume-compact-ref-');
+    const filePath = createTempFile('muxbase-resume-compact-');
+    const referencePath = createTempFile('muxbase-resume-compact-ref-');
     const feeder = before.createFeeder(filePath);
 
     // Act
@@ -138,8 +138,8 @@ describe('incremental JSONL resume safety', () => {
     const middle = paddingLines('middle', MIDDLE_PADDING_BYTES);
     const before = claudeScenario([...head, ...middle, ...paddingLines('tail-a', HEAD_PADDING_BYTES)]);
     const after = claudeScenario([...head, ...middle, ...paddingLines('tail-b', HEAD_PADDING_BYTES)]);
-    const filePath = createTempFile('aumx-resume-tailhash-');
-    const referencePath = createTempFile('aumx-resume-tailhash-ref-');
+    const filePath = createTempFile('muxbase-resume-tailhash-');
+    const referencePath = createTempFile('muxbase-resume-tailhash-ref-');
     const feeder = before.createFeeder(filePath);
 
     // Act
@@ -161,8 +161,8 @@ describe('incremental JSONL resume safety', () => {
     const tail = paddingLines('tail', HEAD_PADDING_BYTES);
     const before = claudeScenario([...paddingLines('head-a', HEAD_PADDING_BYTES), ...tail]);
     const after = claudeScenario([...paddingLines('head-b', HEAD_PADDING_BYTES), ...tail]);
-    const filePath = createTempFile('aumx-resume-headhash-');
-    const referencePath = createTempFile('aumx-resume-headhash-ref-');
+    const filePath = createTempFile('muxbase-resume-headhash-');
+    const referencePath = createTempFile('muxbase-resume-headhash-ref-');
     const feeder = before.createFeeder(filePath);
 
     // Act
@@ -183,8 +183,8 @@ describe('incremental JSONL resume safety', () => {
     const tail = paddingLines('tail', HEAD_PADDING_BYTES);
     const before = claudeScenario([...head, ...paddingLines('middle-a', MIDDLE_PADDING_BYTES), ...tail]);
     const after = claudeScenario([...head, ...paddingLines('middle-b', MIDDLE_PADDING_BYTES), ...tail]);
-    const filePath = createTempFile('aumx-resume-ctime-');
-    const referencePath = createTempFile('aumx-resume-ctime-ref-');
+    const filePath = createTempFile('muxbase-resume-ctime-');
+    const referencePath = createTempFile('muxbase-resume-ctime-ref-');
     const feeder = before.createFeeder(filePath);
     writeFileSync(filePath, before.content);
     utimesSync(filePath, FIXED_MTIME, FIXED_MTIME);
@@ -211,8 +211,8 @@ describe('incremental JSONL resume safety', () => {
     const tail = paddingLines('tail', HEAD_PADDING_BYTES);
     const before = claudeScenario([...head, ...paddingLines('middle-a', MIDDLE_PADDING_BYTES), ...tail]);
     const after = claudeScenario([...head, ...paddingLines('middle-b', MIDDLE_PADDING_BYTES), ...tail]);
-    const filePath = createTempFile('aumx-resume-inode-');
-    const referencePath = createTempFile('aumx-resume-inode-ref-');
+    const filePath = createTempFile('muxbase-resume-inode-');
+    const referencePath = createTempFile('muxbase-resume-inode-ref-');
     const feeder = before.createFeeder(filePath);
 
     // Act
@@ -261,8 +261,8 @@ describe('incremental JSONL streaming cost', () => {
     // Arrange
     const scenario = claudeScenario(paddingLines('base', STREAM_PRELOADED_BYTES));
     const appended = paddingLines('appended', STREAM_APPENDS * 200).slice(0, STREAM_APPENDS);
-    const incrementalPath = createTempFile('aumx-stream-incremental-');
-    const fullPath = createTempFile('aumx-stream-full-');
+    const incrementalPath = createTempFile('muxbase-stream-incremental-');
+    const fullPath = createTempFile('muxbase-stream-full-');
     writeFileSync(incrementalPath, scenario.content);
     writeFileSync(fullPath, scenario.content);
 

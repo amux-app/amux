@@ -31,7 +31,7 @@ describe('extractCodexRolloutPreview', () => {
   const updatedAt = new Date('2026-08-24T12:00:00Z').getTime();
 
   beforeEach(async () => {
-    home = await mkdtemp(join(tmpdir(), 'aumx-codex-rollout-'));
+    home = await mkdtemp(join(tmpdir(), 'muxbase-codex-rollout-'));
     homeState.value = home;
   });
 

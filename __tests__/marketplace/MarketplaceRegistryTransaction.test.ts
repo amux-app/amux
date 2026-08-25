@@ -7,7 +7,7 @@ import { digestPath, MarketplaceTransaction } from '../../src/services/marketpla
 
 describe('MarketplaceRegistry transaction integration', () => {
   it('rolls back the registry mutation when a transaction fails after every replacement', () => {
-    const root = mkdtempSync(path.join(tmpdir(), 'aumx-marketplace-registry-transaction-'));
+    const root = mkdtempSync(path.join(tmpdir(), 'muxbase-marketplace-registry-transaction-'));
     const registryPath = path.join(root, 'registry.json');
     const artifactPath = path.join(root, 'artifact.txt');
     writeFileSync(registryPath, JSON.stringify({ version: 1, sources: [], installed: [] }, null, 2));

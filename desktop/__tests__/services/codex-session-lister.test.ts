@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { listCodexSessions } from '../../src/main/services/agent-session/CodexSessionLister';
 
 // The lister resolves ~/.codex at import time, so the fake home must exist before it.
-const homeDir = vi.hoisted(() => `/tmp/aumx-codex-lister-${process.pid}`);
+const homeDir = vi.hoisted(() => `/tmp/muxbase-codex-lister-${process.pid}`);
 
 vi.mock('os', () => ({
   homedir: () => homeDir,

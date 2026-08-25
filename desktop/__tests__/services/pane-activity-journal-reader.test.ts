@@ -23,7 +23,7 @@ afterEach(async () => {
 
 describe('PaneActivityJournalReader', () => {
   it('reads complete bounded records once and marks the first read as replay', async () => {
-    const directory = mkdtempSync(join(tmpdir(), 'aumx-activity-journal-'));
+    const directory = mkdtempSync(join(tmpdir(), 'muxbase-activity-journal-'));
     directories.push(directory);
     const path = join(directory, 'activity.ndjson');
     writeFileSync(path, `${JSON.stringify({
@@ -43,7 +43,7 @@ describe('PaneActivityJournalReader', () => {
   });
 
   it('waits for an incomplete trailing record so concurrent writers cannot produce a partial event', async () => {
-    const directory = mkdtempSync(join(tmpdir(), 'aumx-activity-journal-'));
+    const directory = mkdtempSync(join(tmpdir(), 'muxbase-activity-journal-'));
     directories.push(directory);
     const path = join(directory, 'activity.ndjson');
     writeFileSync(path, '{"eventId":"partial"');
@@ -53,7 +53,7 @@ describe('PaneActivityJournalReader', () => {
   });
 
   it('treats a journal created after an absent-path check as live evidence, not restart replay', async () => {
-    const directory = mkdtempSync(join(tmpdir(), 'aumx-activity-journal-'));
+    const directory = mkdtempSync(join(tmpdir(), 'muxbase-activity-journal-'));
     directories.push(directory);
     const path = join(directory, 'activity.ndjson');
     const reader = createReader();
@@ -68,7 +68,7 @@ describe('PaneActivityJournalReader', () => {
   });
 
   it('marks a pre-existing fresh-pane journal as live when registration races the first read', async () => {
-    const directory = mkdtempSync(join(tmpdir(), 'aumx-activity-journal-'));
+    const directory = mkdtempSync(join(tmpdir(), 'muxbase-activity-journal-'));
     directories.push(directory);
     const path = join(directory, 'activity.ndjson');
     writeFileSync(path, `${JSON.stringify({
@@ -81,7 +81,7 @@ describe('PaneActivityJournalReader', () => {
   });
 
   it('drains concurrent bounded writers across rotation without loss, duplication, or interleaving', async () => {
-    const directory = mkdtempSync(join(tmpdir(), 'aumx-activity-journal-stress-'));
+    const directory = mkdtempSync(join(tmpdir(), 'muxbase-activity-journal-stress-'));
     directories.push(directory);
     const path = join(directory, 'activity.ndjson');
     const reader = createReader();
@@ -122,7 +122,7 @@ describe('PaneActivityJournalReader', () => {
   });
 
   it('finishes a bounded old inode before switching to its rotated replacement', async () => {
-    const directory = mkdtempSync(join(tmpdir(), 'aumx-activity-journal-rotation-'));
+    const directory = mkdtempSync(join(tmpdir(), 'muxbase-activity-journal-rotation-'));
     directories.push(directory);
     const path = join(directory, 'activity.ndjson');
     const reader = createReader();
@@ -145,7 +145,7 @@ describe('PaneActivityJournalReader', () => {
   });
 
   it('rejects malformed and oversized records while preserving the next valid line', async () => {
-    const directory = mkdtempSync(join(tmpdir(), 'aumx-activity-journal-invalid-'));
+    const directory = mkdtempSync(join(tmpdir(), 'muxbase-activity-journal-invalid-'));
     directories.push(directory);
     const path = join(directory, 'activity.ndjson');
     const reader = createReader();
@@ -162,7 +162,7 @@ describe('PaneActivityJournalReader', () => {
 describe('PaneActivityJournalReader — replay watermark', () => {
   it('keeps a journal larger than one bounded read in replay until its history is drained', async () => {
     // Arrange — a pre-existing journal well past the per-read byte cap
-    const directory = mkdtempSync(join(tmpdir(), 'aumx-activity-journal-'));
+    const directory = mkdtempSync(join(tmpdir(), 'muxbase-activity-journal-'));
     directories.push(directory);
     const path = join(directory, 'activity.ndjson');
     const record = (index: number) => `${JSON.stringify({
@@ -189,7 +189,7 @@ describe('PaneActivityJournalReader — replay watermark', () => {
 
   it('keeps a record appended during replay live when the next read crosses the watermark', async () => {
     // Arrange — leave enough history for a second bounded read.
-    const directory = mkdtempSync(join(tmpdir(), 'aumx-activity-journal-'));
+    const directory = mkdtempSync(join(tmpdir(), 'muxbase-activity-journal-'));
     directories.push(directory);
     const path = join(directory, 'activity.ndjson');
     const record = (index: number) => `${JSON.stringify({

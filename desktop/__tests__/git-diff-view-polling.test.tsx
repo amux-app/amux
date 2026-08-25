@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import React from 'react';
 import { act, cleanup, render, screen } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GitDiffView } from '../src/renderer/components/pane-detail/GitDiffView';
 
@@ -20,7 +20,7 @@ vi.mock('@git-diff-view/react', () => ({
 }));
 
 const WORKING_POLL_MS = 4000;
-const PANE: AumxPane = {
+const PANE: MuxBasePane = {
   id: 'pane-1',
   paneId: '%1',
   prompt: 'test',

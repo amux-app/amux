@@ -29,9 +29,9 @@ function makePane(overrides: Partial<DemoFakePane> & Pick<DemoFakePane, 'id' | '
     paneId: overrides.paneId ?? `%${100 + Math.floor(Math.random() * 900)}`,
     agent: overrides.agent,
     agentStatus: overrides.agentStatus ?? 'working',
-    worktreePath: overrides.worktreePath ?? `/tmp/aumx-demo/${overrides.id}`,
+    worktreePath: overrides.worktreePath ?? `/tmp/muxbase-demo/${overrides.id}`,
     projectName: PROJECT_NAME,
-    projectRoot: overrides.projectRoot ?? '/tmp/aumx-demo-root',
+    projectRoot: overrides.projectRoot ?? '/tmp/muxbase-demo-root',
     agentSessionId: overrides.agentSessionId ?? `session-${overrides.id}`,
     modelId: overrides.modelId,
   };

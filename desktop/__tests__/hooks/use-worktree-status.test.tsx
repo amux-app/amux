@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { act, cleanup, render } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IPC } from '../../src/shared/ipc-channels';
@@ -15,11 +15,11 @@ vi.mock('../../src/renderer/api/ipc', () => ipc);
 const SHARED_WORKTREE = '/repo/worktrees/shared';
 const OTHER_WORKTREE = '/repo/worktrees/other';
 
-function pane(id: string, worktreePath: string): AumxPane {
+function pane(id: string, worktreePath: string): MuxBasePane {
   return { id, paneId: `%${id}`, prompt: 'p', slug: id, worktreePath };
 }
 
-function Harness({ panes }: Readonly<{ panes: AumxPane[] }>) {
+function Harness({ panes }: Readonly<{ panes: MuxBasePane[] }>) {
   useWorktreeStatus(panes);
   return null;
 }

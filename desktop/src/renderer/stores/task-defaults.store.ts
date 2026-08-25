@@ -30,7 +30,7 @@ export const useTaskDefaultsStore = create<TaskDefaultsState>()(
       setLastTaskProjectRoot: (projectRoot) => set({ lastTaskProjectRoot: projectRoot }),
     }),
     {
-      name: 'aumx-task-defaults',
+      name: 'muxbase-task-defaults',
       partialize: (state) => ({ lastTaskProjectRoot: state.lastTaskProjectRoot }),
       storage: createJSONStorage(() => getTaskDefaultsStorage()),
       version: 1,

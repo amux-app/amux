@@ -61,20 +61,20 @@ describe('agentTerminalEnvironment', () => {
 
   it('exports pane environment into the fallback shell wrapper', () => {
     // Arrange / Act
-    const command = withInteractiveShellAfterCommand('claude', { AUMX_PANE_ID: 'aumx-123' });
+    const command = withInteractiveShellAfterCommand('claude', { MUXBASE_PANE_ID: 'muxbase-123' });
 
     // Assert
-    expect(command).toContain('export AUMX_PANE_ID=');
-    expect(command).toContain('aumx-123');
+    expect(command).toContain('export MUXBASE_PANE_ID=');
+    expect(command).toContain('muxbase-123');
     expect(command).toContain('claude');
     expect(command).toContain('exec "${SHELL:-/bin/sh}"');
   });
 
   it('runs fallback shell setup before handing control to the user shell', () => {
     // Arrange / Act
-    const command = withInteractiveShellAfterCommand('claude', { AUMX_PANE_ID: 'aumx-123' }, 'export PATH=/tmp/aumx:"$PATH"');
+    const command = withInteractiveShellAfterCommand('claude', { MUXBASE_PANE_ID: 'muxbase-123' }, 'export PATH=/tmp/muxbase:"$PATH"');
 
     // Assert
-    expect(command).toContain('claude; export PATH=/tmp/aumx:"$PATH"; exec "${SHELL:-/bin/sh}"');
+    expect(command).toContain('claude; export PATH=/tmp/muxbase:"$PATH"; exec "${SHELL:-/bin/sh}"');
   });
 });

@@ -4,10 +4,10 @@ import { homedir } from 'os';
 import { join } from 'path';
 import { shQuote } from './shellEscape.js';
 
-const AUMX_INTERNAL_DIR = join(homedir(), '.aumx', 'internal');
+const MUXBASE_INTERNAL_DIR = join(homedir(), '.muxbase', 'internal');
 const CODEX_DIR = join(homedir(), '.codex');
 const CODEX_HOOKS_PATH = join(CODEX_DIR, 'hooks.json');
-const CODEX_HOOK_SCRIPT_PATH = join(AUMX_INTERNAL_DIR, 'record-codex-activity.cjs');
+const CODEX_HOOK_SCRIPT_PATH = join(MUXBASE_INTERNAL_DIR, 'record-codex-activity.cjs');
 
 const CODEX_ACTIVITY_EVENTS = [
   'SessionStart',
@@ -30,9 +30,9 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('data', (chunk) => { raw += chunk; });
 process.stdin.on('end', () => {
   try {
-    const journal = process.env.AUMX_ACTIVITY_JOURNAL;
-    const paneId = process.env.AUMX_PANE_ID;
-    const paneIncarnationId = process.env.AUMX_PANE_INCARNATION_ID;
+    const journal = process.env.MUXBASE_ACTIVITY_JOURNAL;
+    const paneId = process.env.MUXBASE_PANE_ID;
+    const paneIncarnationId = process.env.MUXBASE_PANE_INCARNATION_ID;
     const data = JSON.parse(raw || '{}');
     const kind = eventKind(data.hook_event_name);
     if (!journal || !paneId || !paneIncarnationId || !kind) return;
@@ -69,9 +69,9 @@ process.stdin.on('end', () => {
         paneId,
         paneIncarnationId,
         sessionId: data.session_id,
-        adapterVersion: process.env.AUMX_ACTIVITY_ADAPTER_VERSION || data.version || 'unknown',
-        adapterSupport: process.env.AUMX_ACTIVITY_ADAPTER_SUPPORT === 'full' || process.env.AUMX_ACTIVITY_ADAPTER_SUPPORT === 'partial'
-          ? process.env.AUMX_ACTIVITY_ADAPTER_SUPPORT
+        adapterVersion: process.env.MUXBASE_ACTIVITY_ADAPTER_VERSION || data.version || 'unknown',
+        adapterSupport: process.env.MUXBASE_ACTIVITY_ADAPTER_SUPPORT === 'full' || process.env.MUXBASE_ACTIVITY_ADAPTER_SUPPORT === 'partial'
+          ? process.env.MUXBASE_ACTIVITY_ADAPTER_SUPPORT
           : 'partial',
         adapterCapabilities: parseAdapterCapabilities(),
         emittedAt: Date.now(),
@@ -88,7 +88,7 @@ process.stdin.on('end', () => {
 
 function parseAdapterCapabilities() {
   try {
-    const value = JSON.parse(process.env.AUMX_ACTIVITY_ADAPTER_CAPABILITIES || '[]');
+    const value = JSON.parse(process.env.MUXBASE_ACTIVITY_ADAPTER_CAPABILITIES || '[]');
     return Array.isArray(value) ? value : [];
   } catch (_) {
     return [];
@@ -138,7 +138,7 @@ type CodexHooksFile = { description?: string; hooks?: Record<string, HookGroup[]
  */
 export function ensureCodexActivityHookSettings(): string | null {
   try {
-    mkdirSync(AUMX_INTERNAL_DIR, { recursive: true, mode: 0o700 });
+    mkdirSync(MUXBASE_INTERNAL_DIR, { recursive: true, mode: 0o700 });
     mkdirSync(CODEX_DIR, { recursive: true, mode: 0o700 });
     if (readFileSafe(CODEX_HOOK_SCRIPT_PATH) !== HOOK_SCRIPT) {
       writeFileSync(CODEX_HOOK_SCRIPT_PATH, HOOK_SCRIPT, { mode: 0o700 });
@@ -172,7 +172,7 @@ export function ensureCodexActivityHookSettings(): string | null {
   }
 }
 
-/** Removes only Amux-owned groups, preserving every user-defined hook. */
+/** Removes only MuxBase-owned groups, preserving every user-defined hook. */
 export function removeCodexActivityHookSettings(): boolean {
   const settings = readHooksFile();
   if (!settings?.hooks) return false;

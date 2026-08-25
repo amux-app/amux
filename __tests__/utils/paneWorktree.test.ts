@@ -62,14 +62,14 @@ vi.mock('../../src/services/TmuxService.js', () => ({
 }));
 
 vi.mock('../../src/utils/worktreePaths.js', () => ({
-  getManagedWorktreePath: (root: string, slug: string) => `${root}/.aumx/worktrees/${slug}`,
+  getManagedWorktreePath: (root: string, slug: string) => `${root}/.muxbase/worktrees/${slug}`,
 }));
 
-import type { AumxPane } from '../../src/types.js';
+import type { MuxBasePane } from '../../src/types.js';
 import { createWorktreeForPane } from '../../src/utils/paneWorktree.js';
 
-const basePane: AumxPane = {
-  id: 'aumx-1',
+const basePane: MuxBasePane = {
+  id: 'muxbase-1',
   slug: 'swift-otter',
   prompt: '',
   paneId: '%1',
@@ -105,14 +105,14 @@ describe('createWorktreeForPane', () => {
     const result = await createWorktreeForPane(basePane, '/repo');
 
     expect(result).toEqual({
-      worktreePath: '/repo/.aumx/worktrees/swift-otter',
+      worktreePath: '/repo/.muxbase/worktrees/swift-otter',
       branchName: 'swift-otter',
     });
 
     // The actual git command is an argv array, NOT a shell or tmux send.
     expect(execFileAsyncMock).toHaveBeenCalledWith(
       'git',
-      ['worktree', 'add', '-b', 'swift-otter', '--', '/repo/.aumx/worktrees/swift-otter'],
+      ['worktree', 'add', '-b', 'swift-otter', '--', '/repo/.muxbase/worktrees/swift-otter'],
       { cwd: '/repo', timeout: 60000 },
     );
   });
@@ -130,7 +130,7 @@ describe('createWorktreeForPane', () => {
 
     expect(execFileAsyncMock).toHaveBeenCalledWith(
       'git',
-      ['worktree', 'add', '--', '/repo/.aumx/worktrees/swift-otter', 'swift-otter'],
+      ['worktree', 'add', '--', '/repo/.muxbase/worktrees/swift-otter', 'swift-otter'],
       { cwd: '/repo', timeout: 60000 },
     );
   });
@@ -147,7 +147,7 @@ describe('createWorktreeForPane', () => {
   });
 
   it('rejects an invalid branch name without calling git', async () => {
-    const bad: AumxPane = { ...basePane, slug: 'has spaces' };
+    const bad: MuxBasePane = { ...basePane, slug: 'has spaces' };
     await expect(createWorktreeForPane(bad, '/repo')).rejects.toThrow(/Invalid branch name/);
     expect(worktreeAddCalls()).toHaveLength(0);
   });
@@ -166,7 +166,7 @@ describe('createWorktreeForPane', () => {
 
     expect(execFileAsyncMock).toHaveBeenCalledWith(
       'git',
-      ['worktree', 'add', '-b', 'swift-otter', '--', '/repo/.aumx/worktrees/swift-otter', 'main'],
+      ['worktree', 'add', '-b', 'swift-otter', '--', '/repo/.muxbase/worktrees/swift-otter', 'main'],
       { cwd: '/repo', timeout: 60000 },
     );
   });
@@ -189,7 +189,7 @@ describe('createWorktreeForPane', () => {
   });
 
   it('returns null when the pane already has a worktree', async () => {
-    const already: AumxPane = { ...basePane, worktreePath: '/repo/.aumx/worktrees/swift-otter' };
+    const already: MuxBasePane = { ...basePane, worktreePath: '/repo/.muxbase/worktrees/swift-otter' };
     const result = await createWorktreeForPane(already, '/repo');
     expect(result).toBeNull();
     expect(worktreeAddCalls()).toHaveLength(0);

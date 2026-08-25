@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ActionContext } from '../../../src/actions/types.js';
 import { executeMultiMerge } from '../../../src/actions/merge/multiMergeOrchestrator.js';
 import type { MergeQueueItem } from '../../../src/actions/merge/types.js';
-import type { AumxPane } from '../../../src/types.js';
+import type { MuxBasePane } from '../../../src/types.js';
 import { createConflictResolutionPane } from '../../../src/utils/conflictResolutionPane.js';
 
 vi.mock('../../../src/services/LogService.js', () => ({
@@ -45,7 +45,7 @@ vi.mock('../../../src/utils/conflictMonitor.js', () => ({
 
 describe('multi-merge conflict telemetry', () => {
   it('threads the action-context OTLP endpoint into its conflict agent launch', async () => {
-    const pane: AumxPane = {
+    const pane: MuxBasePane = {
       id: 'source-1',
       slug: 'source',
       prompt: 'source',
@@ -55,7 +55,7 @@ describe('multi-merge conflict telemetry', () => {
     const context: ActionContext = {
       panes: [pane],
       projectName: 'project',
-      sessionName: 'aumx-project',
+      sessionName: 'muxbase-project',
       otlpEndpoint: 'http://127.0.0.1:4318',
       savePanes: vi.fn(async () => undefined),
     };

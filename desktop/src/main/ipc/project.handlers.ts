@@ -1,6 +1,6 @@
 import { IPC } from '../../shared/ipc-channels.js';
 import type { ProjectFileSearchRequest, ProjectInfo, ProjectSwitchRequest, ProjectTextSearchRequest } from '../../shared/ipc-types.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { discoverProjects } from '../services/ProjectDiscovery.js';
 import { isApprovedProjectRoot, UNAUTHORIZED_PROJECT_ROOT_ERROR } from '../services/projectRootAuthorization.js';
 import { projectSearchService, resolveProjectSearchRoot } from '../services/ProjectSearchService.js';
@@ -9,7 +9,7 @@ import { log } from '../services/Logger.js';
 import { formatError } from '../utils/formatError.js';
 import { secureHandle } from './ipc-security.js';
 
-function mergeWithBridgeProject(projects: ProjectInfo[], bridge: AumxBridge): ProjectInfo[] {
+function mergeWithBridgeProject(projects: ProjectInfo[], bridge: MuxBaseBridge): ProjectInfo[] {
   const root = bridge.getProjectRoot();
   if (!root) return projects;
 
@@ -35,7 +35,7 @@ function mergeWithBridgeProject(projects: ProjectInfo[], bridge: AumxBridge): Pr
   return next;
 }
 
-export function registerProjectHandlers(bridge: AumxBridge): void {
+export function registerProjectHandlers(bridge: MuxBaseBridge): void {
   secureHandle(IPC.PROJECT_LIST, async () => {
     try {
       const projects = mergeWithBridgeProject(await discoverProjects(), bridge);

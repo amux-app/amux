@@ -4,21 +4,21 @@ import { defineConfig } from 'electron-vite';
 import { resolve } from 'path';
 import type { Plugin } from 'vite';
 
-const buildCrashReportUrl = process.env.AUMX_CRASH_REPORT_URL?.trim() ?? '';
+const buildCrashReportUrl = process.env.MUXBASE_CRASH_REPORT_URL?.trim() ?? '';
 
-// Worktree-scoped dev sets AUMX_RENDERER_PORT to avoid colliding with main
+// Worktree-scoped dev sets MUXBASE_RENDERER_PORT to avoid colliding with main
 // checkout's `make dev` (which sticks to the default 5273).
-const rendererPort = Number(process.env.AUMX_RENDERER_PORT) || 5273;
+const rendererPort = Number(process.env.MUXBASE_RENDERER_PORT) || 5273;
 
-function externalizeAumx(): Plugin {
+function externalizeMuxBase(): Plugin {
   return {
-    name: 'externalize-aumx',
+    name: 'externalize-muxbase',
     enforce: 'pre',
     resolveId(source) {
       // This leaf is browser-safe and intentionally bundled into the renderer.
-      // The rest of aumx/core remains a main-process-only external dependency.
-      if (source === 'aumx/pane-name' || source === 'aumx/pane-terminal-profile') return null;
-      if (source === 'aumx' || source === 'aumx/core' || source.startsWith('aumx/')) {
+      // The rest of muxbase/core remains a main-process-only external dependency.
+      if (source === 'muxbase/pane-name' || source === 'muxbase/pane-terminal-profile') return null;
+      if (source === 'muxbase' || source === 'muxbase/core' || source.startsWith('muxbase/')) {
         return { id: source, external: true };
       }
       return null;
@@ -29,9 +29,9 @@ function externalizeAumx(): Plugin {
 export default defineConfig({
   main: {
     define: {
-      'process.env.AUMX_BUILD_CRASH_REPORT_URL': JSON.stringify(buildCrashReportUrl),
+      'process.env.MUXBASE_BUILD_CRASH_REPORT_URL': JSON.stringify(buildCrashReportUrl),
     },
-    plugins: [externalizeAumx()],
+    plugins: [externalizeMuxBase()],
     build: {
       rollupOptions: {
         input: {
@@ -56,7 +56,7 @@ export default defineConfig({
     },
   },
   renderer: {
-    plugins: [externalizeAumx(), react(), tailwindcss()],
+    plugins: [externalizeMuxBase(), react(), tailwindcss()],
     root: resolve(__dirname, 'src/renderer'),
     server: {
       port: rendererPort,

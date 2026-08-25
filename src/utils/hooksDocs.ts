@@ -1,7 +1,7 @@
 /**
  * Embedded Hooks Documentation
  *
- * This file contains all documentation that gets written to .amux-hooks/
+ * This file contains all documentation that gets written to .muxbase-hooks/
  * when the directory is initialized. The AGENTS_MD content is auto-generated
  * and imported from generated-agents-doc.ts
  */
@@ -15,11 +15,11 @@ import { AGENTS_MD } from './generated-agents-doc.js';
 export const HOOKS_DOCUMENTATION = AGENTS_MD;
 
 /**
- * README for the .amux-hooks/ directory
+ * README for the .muxbase-hooks/ directory
  */
-export const HOOKS_README = `# aumx Hooks
+export const HOOKS_README = `# muxbase Hooks
 
-This directory contains local hooks that run automatically at key lifecycle events in aumx.
+This directory contains local hooks that run automatically at key lifecycle events in muxbase.
 
 ## Quick Start
 
@@ -39,8 +39,8 @@ This directory contains local hooks that run automatically at key lifecycle even
 
 4. **Test it**:
    \`\`\`bash
-   export AUMX_ROOT="\$(pwd)"
-   export AUMX_WORKTREE_PATH="\$(pwd)"
+   export MUXBASE_ROOT="\$(pwd)"
+   export MUXBASE_WORKTREE_PATH="\$(pwd)"
    ./worktree_created
    \`\`\`
 
@@ -83,11 +83,11 @@ const EXAMPLE_WORKTREE_CREATED = `#!/bin/bash
 
 set -e  # Exit on error
 
-echo "[Hook] Setting up worktree: $AUMX_SLUG"
+echo "[Hook] Setting up worktree: $MUXBASE_SLUG"
 
-cd "$AUMX_WORKTREE_PATH"
+cd "$MUXBASE_WORKTREE_PATH"
 
-# Install dependencies in background (don't block aumx)
+# Install dependencies in background (don't block muxbase)
 if [ -f "pnpm-lock.yaml" ]; then
   echo "[Hook] Installing dependencies with pnpm..."
   pnpm install --prefer-offline &
@@ -100,19 +100,19 @@ elif [ -f "yarn.lock" ]; then
 fi
 
 # Copy environment file if it exists
-if [ -f "$AUMX_ROOT/.env.local" ]; then
+if [ -f "$MUXBASE_ROOT/.env.local" ]; then
   echo "[Hook] Copying .env.local"
-  cp "$AUMX_ROOT/.env.local" "$AUMX_WORKTREE_PATH/.env.local"
+  cp "$MUXBASE_ROOT/.env.local" "$MUXBASE_WORKTREE_PATH/.env.local"
 fi
 
 # Set custom git config for this worktree
 echo "[Hook] Configuring git"
-git config user.name "aumx-agent/$AUMX_SLUG"
-git config user.email "agent@aumx.local"
+git config user.name "muxbase-agent/$MUXBASE_SLUG"
+git config user.email "agent@muxbase.local"
 
 # Create a log entry
-echo "[\$(date)] Created worktree: $AUMX_SLUG | Agent: $AUMX_AGENT | Prompt: $AUMX_PROMPT" \\
-  >> "$AUMX_METADATA_DIR/worktree_history.log"
+echo "[\$(date)] Created worktree: $MUXBASE_SLUG | Agent: $MUXBASE_AGENT | Prompt: $MUXBASE_PROMPT" \\
+  >> "$MUXBASE_METADATA_DIR/worktree_history.log"
 
 echo "[Hook] Worktree setup complete!"
 `;
@@ -127,13 +127,13 @@ const EXAMPLE_RUN_DEV = `#!/bin/bash
 
 set -e
 
-echo "[Hook] Starting dev server for $AUMX_SLUG"
+echo "[Hook] Starting dev server for $MUXBASE_SLUG"
 
-cd "$AUMX_WORKTREE_PATH"
+cd "$MUXBASE_WORKTREE_PATH"
 
 # Start dev server in background
 # Adjust the command for your project (pnpm dev, npm run dev, vite, etc.)
-LOG_FILE="/tmp/aumx-dev-$AUMX_PANE_ID.log"
+LOG_FILE="/tmp/muxbase-dev-$MUXBASE_PANE_ID.log"
 pnpm dev > "$LOG_FILE" 2>&1 &
 DEV_PID=$!
 
@@ -180,14 +180,14 @@ const EXAMPLE_RUN_TEST = `#!/bin/bash
 #
 set -e
 
-echo "[Hook] Running tests for $AUMX_SLUG"
+echo "[Hook] Running tests for $MUXBASE_SLUG"
 
-cd "$AUMX_WORKTREE_PATH"
+cd "$MUXBASE_WORKTREE_PATH"
 
 echo "[Hook] Running test suite..."
 
 # Capture test output
-OUTPUT_FILE="/tmp/aumx-test-$AUMX_PANE_ID.txt"
+OUTPUT_FILE="/tmp/muxbase-test-$MUXBASE_PANE_ID.txt"
 
 # Run tests (adjust command for your project)
 # Examples:
@@ -221,14 +221,14 @@ const EXAMPLE_POST_MERGE = `#!/bin/bash
 
 set -e
 
-echo "[Hook] Post-merge processing for $AUMX_SLUG → $AUMX_TARGET_BRANCH"
+echo "[Hook] Post-merge processing for $MUXBASE_SLUG → $MUXBASE_TARGET_BRANCH"
 
-cd "$AUMX_ROOT"
+cd "$MUXBASE_ROOT"
 
 # Push to remote if merging to main/master
-if [ "$AUMX_TARGET_BRANCH" = "main" ] || [ "$AUMX_TARGET_BRANCH" = "master" ]; then
-  echo "[Hook] Pushing to origin/$AUMX_TARGET_BRANCH"
-  git push origin "$AUMX_TARGET_BRANCH"
+if [ "$MUXBASE_TARGET_BRANCH" = "main" ] || [ "$MUXBASE_TARGET_BRANCH" = "master" ]; then
+  echo "[Hook] Pushing to origin/$MUXBASE_TARGET_BRANCH"
+  git push origin "$MUXBASE_TARGET_BRANCH"
 
   # Optional: Trigger deployment
   # if [ -n "$VERCEL_TOKEN" ]; then
@@ -247,12 +247,12 @@ if [ "$AUMX_TARGET_BRANCH" = "main" ] || [ "$AUMX_TARGET_BRANCH" = "master" ]; t
 fi
 
 # Close related GitHub issue (if prompt contains #123 format)
-ISSUE_NUM=\$(echo "$AUMX_PROMPT" | grep -oP '#\\K\\d+' | head -1)
+ISSUE_NUM=\$(echo "$MUXBASE_PROMPT" | grep -oP '#\\K\\d+' | head -1)
 if [ -n "$ISSUE_NUM" ]; then
   echo "[Hook] Closing GitHub issue #$ISSUE_NUM"
   if command -v gh &> /dev/null; then
     gh issue close "$ISSUE_NUM" \\
-      -c "Resolved in branch $AUMX_SLUG, merged to $AUMX_TARGET_BRANCH" \\
+      -c "Resolved in branch $MUXBASE_SLUG, merged to $MUXBASE_TARGET_BRANCH" \\
       2>/dev/null || echo "[Hook] Warning: Failed to close issue (maybe already closed?)"
   else
     echo "[Hook] GitHub CLI (gh) not found, skipping issue close"
@@ -265,13 +265,13 @@ fi
 #   curl -s -X POST "$SLACK_WEBHOOK" \\
 #     -H "Content-Type: application/json" \\
 #     -d "{
-#       \\"text\\": \\"Merged: $AUMX_SLUG → $AUMX_TARGET_BRANCH\\",
+#       \\"text\\": \\"Merged: $MUXBASE_SLUG → $MUXBASE_TARGET_BRANCH\\",
 #       \\"blocks\\": [
 #         {
 #           \\"type\\": \\"section\\",
 #           \\"text\\": {
 #             \\"type\\": \\"mrkdwn\\",
-#             \\"text\\": \\"*Branch Merged* :rocket:\\n\\n*From:* \\\`$AUMX_SLUG\\\`\\n*To:* \\\`$AUMX_TARGET_BRANCH\\\`\\n*Task:* $AUMX_PROMPT\\"
+#             \\"text\\": \\"*Branch Merged* :rocket:\\n\\n*From:* \\\`$MUXBASE_SLUG\\\`\\n*To:* \\\`$MUXBASE_TARGET_BRANCH\\\`\\n*Task:* $MUXBASE_PROMPT\\"
 #           }
 #         }
 #       ]

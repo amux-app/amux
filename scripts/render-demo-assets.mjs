@@ -11,10 +11,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT_DIR = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const DEMO_DIR = resolve(ROOT_DIR, '.tmp/demo');
 const HERO_INPUT = join(DEMO_DIR, 'hero.webm');
-const HERO_OUTPUT = resolve(ROOT_DIR, 'docs/assets/amux-demo.webp');
-const HERO_MP4_OUTPUT = resolve(ROOT_DIR, 'docs/public/amux-demo-hero.mp4');
+const HERO_OUTPUT = resolve(ROOT_DIR, 'docs/assets/muxbase-demo.webp');
+const HERO_MP4_OUTPUT = resolve(ROOT_DIR, 'docs/public/muxbase-demo-hero.mp4');
 const FULL_INPUT = join(DEMO_DIR, 'full.webm');
-const FULL_OUTPUT = join(DEMO_DIR, 'amux-demo-full.mp4');
+const FULL_OUTPUT = join(DEMO_DIR, 'muxbase-demo-full.mp4');
 
 const TARGET_WIDTH = 1600;
 const TARGET_HEIGHT = 900;
@@ -98,7 +98,7 @@ function encodeHero(inputPath, outputPath, trimStartSec = 0, maxBytes = HERO_MAX
   const scaleFilter = buildScaleFilter(probe.width, probe.height);
   const tempOutput = tempPathFor(outputPath);
 
-  const framesDir = mkdtempSync(join(tmpdir(), 'amux-demo-frames-'));
+  const framesDir = mkdtempSync(join(tmpdir(), 'muxbase-demo-frames-'));
   try {
     const frames = extractFrames(inputPath, framesDir, scaleFilter, trimStartSec);
 
@@ -204,7 +204,7 @@ function runFfmpeg(args) {
 }
 
 async function selfTest() {
-  const tempDir = mkdtempSync(join(tmpdir(), 'amux-demo-selftest-'));
+  const tempDir = mkdtempSync(join(tmpdir(), 'muxbase-demo-selftest-'));
   try {
     for (const [width, height] of [[TARGET_WIDTH, TARGET_HEIGHT], [3200, 1800]]) {
       console.log(`\nSelf-test: ${width}x${height} synthetic source`);

@@ -2,7 +2,7 @@ import { readdirSync, unlinkSync } from 'fs';
 import { homedir } from 'os';
 import { basename, join } from 'path';
 
-const JOURNAL_DIR = join(homedir(), '.aumx', 'activity-journals');
+const JOURNAL_DIR = join(homedir(), '.muxbase', 'activity-journals');
 
 /** A journal is deliberately per-incarnation, never per mutable pane id. */
 export function getPaneActivityJournalPath(paneIncarnationId: string): string {

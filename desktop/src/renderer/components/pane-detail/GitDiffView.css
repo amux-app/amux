@@ -2,22 +2,22 @@
   font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
 }
 
-.aumx-resize-handle--git-diff[aria-orientation="vertical"] {
+.muxbase-resize-handle--git-diff[aria-orientation="vertical"] {
   width: 9px;
 }
 
-.aumx-resize-handle--git-diff[aria-orientation="vertical"]::before {
+.muxbase-resize-handle--git-diff[aria-orientation="vertical"]::before {
   left: 4px;
   opacity: 0.72;
 }
 
-.aumx-resize-handle--git-diff[aria-orientation="vertical"]:hover::before,
-.aumx-resize-handle--git-diff[aria-orientation="vertical"][data-separator="hover"]::before,
-.aumx-resize-handle--git-diff[aria-orientation="vertical"][data-separator="active"]::before {
+.muxbase-resize-handle--git-diff[aria-orientation="vertical"]:hover::before,
+.muxbase-resize-handle--git-diff[aria-orientation="vertical"][data-separator="hover"]::before,
+.muxbase-resize-handle--git-diff[aria-orientation="vertical"][data-separator="active"]::before {
   left: 3.5px;
 }
 
-.aumx-resize-handle--git-diff::after {
+.muxbase-resize-handle--git-diff::after {
   content: '';
   position: absolute;
   z-index: 2;
@@ -36,22 +36,22 @@
     opacity 0.15s ease;
 }
 
-.aumx-resize-handle--git-diff:hover::after,
-.aumx-resize-handle--git-diff[data-separator="hover"]::after {
+.muxbase-resize-handle--git-diff:hover::after,
+.muxbase-resize-handle--git-diff[data-separator="hover"]::after {
   opacity: 0.78;
 }
 
-.aumx-resize-handle--git-diff:focus-visible {
+.muxbase-resize-handle--git-diff:focus-visible {
   outline: none;
 }
 
-.aumx-resize-handle--git-diff:focus-visible::after {
+.muxbase-resize-handle--git-diff:focus-visible::after {
   background: color-mix(in srgb, var(--accent) 35%, var(--text-muted));
   box-shadow: 0 0 0 1px var(--focus-ring);
   opacity: 1;
 }
 
-.aumx-resize-handle--git-diff[data-separator="active"]::after {
+.muxbase-resize-handle--git-diff[data-separator="active"]::after {
   background: var(--accent);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
   opacity: 1;

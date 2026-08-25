@@ -4,7 +4,7 @@
  */
 
 import type { ActionResult, ActionContext } from '../../types.js';
-import type { AumxPane } from '../../../types.js';
+import type { MuxBasePane } from '../../../types.js';
 import { handleCommitWithOptions } from '../commitMessageHandler.js';
 import { LogService } from '../../../services/LogService.js';
 import { stashChanges } from '../../../utils/mergeValidation.js';
@@ -19,7 +19,7 @@ export async function handleMainDirty(
   issue: MainDirtyIssue,
   mainBranch: string,
   mainRepoPath: string,
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   retryMerge: () => Promise<ActionResult>
 ): Promise<ActionResult> {

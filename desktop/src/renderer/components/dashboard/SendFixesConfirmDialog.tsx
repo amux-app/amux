@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { Loader2, SendHorizontal, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { extractReviewFindings, type ReviewFindingsResult } from '../../../shared/review-findings';
@@ -7,7 +7,7 @@ import { useAgentSessionStore } from '../../stores/agent-session.store';
 import { usePaneActions } from '../../hooks/usePaneActions';
 
 interface SendFixesConfirmDialogProps {
-  reviewPane: AumxPane;
+  reviewPane: MuxBasePane;
   onClose: () => void;
 }
 

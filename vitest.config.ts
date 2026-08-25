@@ -10,8 +10,7 @@ export default defineConfig({
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
-      '**/.amux/**',
-      '**/.aumx/**',
+      '**/.muxbase/**',
       '**/coverage/**',
     ],
     coverage: {

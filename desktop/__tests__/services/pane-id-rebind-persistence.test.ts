@@ -5,7 +5,7 @@
  * tests pin the persistence, the "only on a real id rebind" churn guardrail,
  * and the absence of a config-write feedback loop.
  */
-import { StateManager, atomicWriteJsonSync, type AumxPane } from 'aumx/core';
+import { StateManager, atomicWriteJsonSync, type MuxBasePane } from 'muxbase/core';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -20,8 +20,8 @@ vi.mock('electron', () => ({
   BrowserWindow: class {},
 }));
 
-vi.mock('aumx/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('aumx/core')>();
+vi.mock('muxbase/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('muxbase/core')>();
   return { ...actual, execFileAsync: execFileAsyncMock, stampTmuxPaneIdOption: stampMock };
 });
 
@@ -31,16 +31,16 @@ vi.mock('../../src/main/services/Logger.js', () => ({
 
 interface StoredConfig {
   lastUpdated?: string;
-  panes: AumxPane[];
+  panes: MuxBasePane[];
 }
 
-const SESSION_NAME = 'aumx-rebind';
+const SESSION_NAME = 'muxbase-rebind';
 
 let root: string;
 let configPath: string;
 let bridge: ConfigBridge | null = null;
 
-function makePane(paneId: string, overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(paneId: string, overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'claude',
     agentStatus: 'working',
@@ -56,12 +56,12 @@ function readConfig(): StoredConfig {
   return JSON.parse(readFileSync(configPath, 'utf-8')) as StoredConfig;
 }
 
-function writeConfig(panes: AumxPane[]): void {
+function writeConfig(panes: MuxBasePane[]): void {
   atomicWriteJsonSync(configPath, { lastUpdated: new Date().toISOString(), panes });
 }
 
-/** Mirrors AumxBridge.persistPanesToConfig, which is what the watcher calls. */
-function persistPanesToConfig(panes: AumxPane[]): void {
+/** Mirrors MuxBaseBridge.persistPanesToConfig, which is what the watcher calls. */
+function persistPanesToConfig(panes: MuxBasePane[]): void {
   const config = readConfig();
   config.panes = panes;
   config.lastUpdated = new Date().toISOString();
@@ -69,7 +69,7 @@ function persistPanesToConfig(panes: AumxPane[]): void {
 }
 
 /** Models any other writer touching the config: panes come back off disk. */
-function rebroadcastFromDisk(patch: Partial<AumxPane>): void {
+function rebroadcastFromDisk(patch: Partial<MuxBasePane>): void {
   const config = readConfig();
   config.panes = config.panes.map((pane) => ({ ...pane, ...patch }));
   config.lastUpdated = new Date().toISOString();
@@ -80,7 +80,7 @@ function createWatcher(onPaneRemoved?: (paneId: string) => void): {
   persist: ReturnType<typeof vi.fn>;
   watcher: PaneWatcher;
 } {
-  const persist = vi.fn((panes: AumxPane[]) => persistPanesToConfig(panes));
+  const persist = vi.fn((panes: MuxBasePane[]) => persistPanesToConfig(panes));
   return { persist, watcher: new PaneWatcher(null, configPath, null, onPaneRemoved, persist) };
 }
 
@@ -104,9 +104,9 @@ async function settle(ms: number): Promise<void> {
 }
 
 beforeEach(() => {
-  root = mkdtempSync(join(tmpdir(), 'aumx-pane-rebind-'));
-  configPath = join(root, '.aumx', 'aumx.config.json');
-  mkdirSync(join(root, '.aumx'), { recursive: true });
+  root = mkdtempSync(join(tmpdir(), 'muxbase-pane-rebind-'));
+  configPath = join(root, '.muxbase', 'muxbase.config.json');
+  mkdirSync(join(root, '.muxbase'), { recursive: true });
   writeConfig([]);
   execFileAsyncMock.mockReset();
   stampMock.mockClear();

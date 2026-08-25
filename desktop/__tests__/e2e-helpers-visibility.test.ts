@@ -27,7 +27,7 @@ describe('setAppWindowVisibility', () => {
       browserWindow: vi.fn().mockResolvedValue({ evaluate: windowEvaluate }),
       evaluate: vi.fn()
         .mockResolvedValueOnce({
-          environment: { AUMX_E2E_HEADED: '1', NODE_ENV: 'test' },
+          environment: { MUXBASE_E2E_HEADED: '1', NODE_ENV: 'test' },
           platform: 'darwin',
         })
         .mockResolvedValueOnce(undefined),
@@ -58,7 +58,7 @@ describe('setAppWindowVisibility', () => {
       browserWindow: vi.fn().mockResolvedValue({ evaluate: windowEvaluate }),
       evaluate: vi.fn()
         .mockResolvedValueOnce({
-          environment: { AUMX_E2E: '1', NODE_ENV: 'test' },
+          environment: { MUXBASE_E2E: '1', NODE_ENV: 'test' },
           platform: 'darwin',
         })
         .mockImplementationOnce(async (callback, headless) => callback({ app: electronApp }, headless)),
@@ -87,7 +87,7 @@ describe('ensureAppWindowVisible', () => {
     const app = {
       evaluate: vi.fn()
         .mockResolvedValueOnce({
-          environment: { AUMX_E2E: '1', NODE_ENV: 'test' },
+          environment: { MUXBASE_E2E: '1', NODE_ENV: 'test' },
           platform: 'darwin',
         })
         .mockImplementationOnce(async (callback, headless) => callback({

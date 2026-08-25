@@ -1,6 +1,6 @@
 import type { ChildProcess } from 'node:child_process';
 import { resolve } from 'node:path';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type {
   ProjectFileSearchResult,
   ProjectTextSearchResult,
@@ -174,7 +174,7 @@ export const projectSearchService = new ProjectSearchService();
 
 export function resolveProjectSearchRoot(
   projectRoot: string,
-  panes: readonly AumxPane[],
+  panes: readonly MuxBasePane[],
   requestedRoot?: string,
 ): string {
   const defaultRoot = resolveDefaultFileRoot(projectRoot, panes);
@@ -190,7 +190,7 @@ export function resolveProjectSearchRoot(
   return defaultRoot;
 }
 
-function resolveDefaultFileRoot(projectRoot: string, panes: readonly AumxPane[]): string {
+function resolveDefaultFileRoot(projectRoot: string, panes: readonly MuxBasePane[]): string {
   if (projectRoot) return resolve(projectRoot);
 
   const firstPaneRoot = panes.find((pane) => pane.worktreePath || pane.projectRoot);

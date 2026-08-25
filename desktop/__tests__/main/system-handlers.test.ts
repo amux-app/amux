@@ -30,7 +30,7 @@ vi.mock('../../src/main/services/editorDetection.js', () => ({
 
 vi.mock('electron', () => ({
   app: {
-    getAppPath: () => '/tmp/aumx-app',
+    getAppPath: () => '/tmp/muxbase-app',
     getPath: () => '/tmp/Desktop',
     getVersion: () => '0.0.0-test',
     isPackaged: false,
@@ -45,7 +45,7 @@ vi.mock('electron', () => ({
   },
 }));
 
-vi.mock('aumx/core', () => ({
+vi.mock('muxbase/core', () => ({
   execAsync: execAsyncMock,
   parseTmuxVersion: (raw: string) => {
     const match = raw.trim().match(/^(?:tmux\s+)?(\d+)\.(\d+)([a-z])?$/);
@@ -68,8 +68,8 @@ vi.mock('../../src/main/services/Logger.js', () => ({
   log: {
     debug: vi.fn(),
     error: vi.fn(),
-    getLogDir: () => '/tmp/aumx-logs',
-    getLogFile: () => '/tmp/aumx-logs/aumx-desktop-test.log',
+    getLogDir: () => '/tmp/muxbase-logs',
+    getLogFile: () => '/tmp/muxbase-logs/muxbase-desktop-test.log',
     info: vi.fn(),
     warn: vi.fn(),
   },
@@ -87,9 +87,9 @@ function getHandler(channel: string): (...args: unknown[]) => unknown {
 function bridgeWithWorktree(): Parameters<typeof registerSystemHandlers>[0] {
   return {
     getPanes: () => [{ projectRoot: PROJECT_ROOT, worktreePath: WORKTREE_PATH }],
-    getProjectName: () => 'aumx',
+    getProjectName: () => 'muxbase',
     getProjectRoot: () => PROJECT_ROOT,
-    getSessionName: () => 'aumx-aumx',
+    getSessionName: () => 'muxbase-muxbase',
     updateAvailableAgentsCache: vi.fn(),
   } as never;
 }
@@ -111,8 +111,8 @@ describe('system IPC handlers', () => {
       errors: [],
     });
     createSupportBundleMock.mockResolvedValue({
-      includedFiles: ['/tmp/aumx-logs/aumx-desktop-test.log'],
-      path: '/tmp/Desktop/aumx-support-test.zip',
+      includedFiles: ['/tmp/muxbase-logs/muxbase-desktop-test.log'],
+      path: '/tmp/Desktop/muxbase-support-test.zip',
     });
     previewSupportBundleMock.mockReturnValue({
       files: [{ category: 'metadata', name: 'metadata/session.json', sizeBytes: 10 }],
@@ -125,9 +125,9 @@ describe('system IPC handlers', () => {
   it('includes debug log paths in session info', () => {
     // Arrange
     registerSystemHandlers({
-      getProjectName: () => 'aumx',
+      getProjectName: () => 'muxbase',
       getProjectRoot: () => '/tmp/project',
-      getSessionName: () => 'aumx-aumx',
+      getSessionName: () => 'muxbase-muxbase',
     } as never);
 
     // Act
@@ -135,11 +135,11 @@ describe('system IPC handlers', () => {
 
     // Assert
     expect(result).toEqual(expect.objectContaining({
-      logDir: '/tmp/aumx-logs',
-      logFile: '/tmp/aumx-logs/aumx-desktop-test.log',
-      projectName: 'aumx',
+      logDir: '/tmp/muxbase-logs',
+      logFile: '/tmp/muxbase-logs/muxbase-desktop-test.log',
+      projectName: 'muxbase',
       projectRoot: '/tmp/project',
-      sessionName: 'aumx-aumx',
+      sessionName: 'muxbase-muxbase',
       homeDir: '/home/test-user',
     }));
   });
@@ -166,9 +166,9 @@ describe('system IPC handlers', () => {
     // Arrange
     registerSystemHandlers({
       getPanes: () => [{ id: 'pane-1', paneId: '%1', prompt: 'prompt', slug: 'pane-1' }],
-      getProjectName: () => 'aumx',
+      getProjectName: () => 'muxbase',
       getProjectRoot: () => '/tmp/project',
-      getSessionName: () => 'aumx-aumx',
+      getSessionName: () => 'muxbase-muxbase',
     } as never);
 
     // Act
@@ -176,18 +176,18 @@ describe('system IPC handlers', () => {
 
     // Assert
     expect(result).toEqual({
-      includedFiles: ['/tmp/aumx-logs/aumx-desktop-test.log'],
-      path: '/tmp/Desktop/aumx-support-test.zip',
+      includedFiles: ['/tmp/muxbase-logs/muxbase-desktop-test.log'],
+      path: '/tmp/Desktop/muxbase-support-test.zip',
     });
     expect(createSupportBundleMock).toHaveBeenCalledWith(expect.objectContaining({
       includeTranscripts: true,
-      logDir: '/tmp/aumx-logs',
-      logFile: '/tmp/aumx-logs/aumx-desktop-test.log',
+      logDir: '/tmp/muxbase-logs',
+      logFile: '/tmp/muxbase-logs/muxbase-desktop-test.log',
       outputDir: '/tmp/Desktop',
       panes: [{ id: 'pane-1', paneId: '%1', prompt: 'prompt', slug: 'pane-1' }],
-      projectName: 'aumx',
+      projectName: 'muxbase',
       projectRoot: '/tmp/project',
-      sessionName: 'aumx-aumx',
+      sessionName: 'muxbase-muxbase',
     }));
   });
 
@@ -242,9 +242,9 @@ describe('system IPC handlers', () => {
     // Arrange
     registerSystemHandlers(bridgeWithWorktree());
     const revealable = [
-      '/tmp/aumx-logs/aumx-desktop-test.log',
-      '/tmp/aumx-logs',
-      '/tmp/Desktop/aumx-support-2026-07-29-101530.zip',
+      '/tmp/muxbase-logs/muxbase-desktop-test.log',
+      '/tmp/muxbase-logs',
+      '/tmp/Desktop/muxbase-support-2026-07-29-101530.zip',
       WORKTREE_PATH,
     ];
 
@@ -264,8 +264,8 @@ describe('system IPC handlers', () => {
     const rejected = [
       '/tmp/Desktop',
       '/tmp/Desktop/tax-return.pdf',
-      '/tmp/Desktop/aumx-support-test.zip',
-      '/tmp/Desktop/nested/aumx-support-2026-07-29-101530.zip',
+      '/tmp/Desktop/muxbase-support-test.zip',
+      '/tmp/Desktop/nested/muxbase-support-2026-07-29-101530.zip',
     ];
 
     // Act
@@ -294,9 +294,9 @@ describe('system IPC handlers', () => {
     // Arrange
     registerSystemHandlers({
       getPanes: () => [{ id: 'pane-1', paneId: '%1', prompt: 'prompt', slug: 'pane-1' }],
-      getProjectName: () => 'aumx',
+      getProjectName: () => 'muxbase',
       getProjectRoot: () => '/tmp/project',
-      getSessionName: () => 'aumx-aumx',
+      getSessionName: () => 'muxbase-muxbase',
     } as never);
 
     // Act

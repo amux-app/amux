@@ -5,7 +5,7 @@ import { basename, resolve } from 'path';
 import type { ConsoleMessage, ElectronApplication, Locator, Page } from 'playwright';
 import { _electron as electron } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import {
   closeElectronApp,
   closePaneBestEffort,
@@ -39,7 +39,7 @@ async function hideOverlay(page: Page): Promise<void> {
 
 async function getUiState(page: Page): Promise<UiStoreState> {
   return page.evaluate(() => {
-    const store = (window as unknown as { __aumxStores?: { ui?: { getState: () => UiStoreState } } }).__aumxStores?.ui;
+    const store = (window as unknown as { __muxbaseStores?: { ui?: { getState: () => UiStoreState } } }).__muxbaseStores?.ui;
     const s = store?.getState();
     return { viewMode: s?.viewMode ?? '', duelGroupId: s?.duelGroupId ?? null, focusPaneId: s?.focusPaneId ?? null };
   }) as Promise<UiStoreState>;
@@ -112,14 +112,14 @@ async function differentiateSideBEffort(dialog: Locator): Promise<void> {
   await option.click();
 }
 
-async function findDuelPanes(page: Page): Promise<{ paneA: AumxPane; paneB: AumxPane } | null> {
+async function findDuelPanes(page: Page): Promise<{ paneA: MuxBasePane; paneB: MuxBasePane } | null> {
   const panes = await getPanes(page);
   const paneA = panes.find((p) => p.duel?.role === 'a' && p.slug?.endsWith('-a'));
   const paneB = panes.find((p) => p.duel?.role === 'b' && p.slug?.endsWith('-b'));
   return paneA && paneB ? { paneA, paneB } : null;
 }
 
-describe.runIf(process.env.AUMX_E2E === '1')('Duel E2E', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('Duel E2E', () => {
   let app: ElectronApplication;
   let page: Page;
   let e2eRoot: string;
@@ -131,16 +131,16 @@ describe.runIf(process.env.AUMX_E2E === '1')('Duel E2E', () => {
 
     try {
       const sessions = execSync('tmux list-sessions -F "#{session_name}" 2>/dev/null', { encoding: 'utf-8' });
-      for (const name of sessions.split('\n').filter((s) => s.includes('aumx-duel-e2e'))) {
+      for (const name of sessions.split('\n').filter((s) => s.includes('muxbase-duel-e2e'))) {
         execSync(`tmux kill-session -t "${name}" 2>/dev/null`, { stdio: 'ignore' });
       }
     } catch { /* no tmux server or no sessions — fine */ }
 
-    e2eRoot = realpathSync(mkdtempSync(resolve(tmpdir(), 'aumx-duel-e2e-')));
+    e2eRoot = realpathSync(mkdtempSync(resolve(tmpdir(), 'muxbase-duel-e2e-')));
     execSync('git init', { cwd: e2eRoot, stdio: 'ignore' });
-    execSync('git config user.email "e2e@aumx.test"', { cwd: e2eRoot, stdio: 'ignore' });
-    execSync('git config user.name "aumx-e2e"', { cwd: e2eRoot, stdio: 'ignore' });
-    writeFileSync(resolve(e2eRoot, '.gitignore'), '.amux/\n.aumx/\n');
+    execSync('git config user.email "e2e@muxbase.test"', { cwd: e2eRoot, stdio: 'ignore' });
+    execSync('git config user.name "muxbase-e2e"', { cwd: e2eRoot, stdio: 'ignore' });
+    writeFileSync(resolve(e2eRoot, '.gitignore'), '.muxbase/\n');
     writeFileSync(resolve(e2eRoot, 'README.md'), '# E2E duel workspace\n');
     execSync('git add .', { cwd: e2eRoot, stdio: 'ignore' });
     execSync('git commit -m "chore: duel e2e workspace"', { cwd: e2eRoot, stdio: 'ignore' });
@@ -151,12 +151,12 @@ describe.runIf(process.env.AUMX_E2E === '1')('Duel E2E', () => {
     app = await electron.launch({
       args: [MAIN_ENTRY],
       cwd: e2eRoot,
-      env: { ...inheritedEnv, NODE_ENV: 'test', AUMX_DEV: 'true', AUMX_E2E: '1' },
+      env: { ...inheritedEnv, NODE_ENV: 'test', MUXBASE_DEV: 'true', MUXBASE_E2E: '1' },
     });
 
     page = await getAppWindow(app);
     await app.context().addInitScript(() => {
-      (window as unknown as { __AUMX_E2E?: boolean }).__AUMX_E2E = true;
+      (window as unknown as { __MUXBASE_E2E?: boolean }).__MUXBASE_E2E = true;
     });
     await page.reload();
     page.on('console', (msg: ConsoleMessage) => {
@@ -192,7 +192,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Duel E2E', () => {
     if (app) await closeElectronApp(app);
     if (e2eRoot) {
       try {
-        execSync(`tmux kill-session -t "aumx-${basename(e2eRoot)}" 2>/dev/null`, { stdio: 'ignore' });
+        execSync(`tmux kill-session -t "muxbase-${basename(e2eRoot)}" 2>/dev/null`, { stdio: 'ignore' });
       } catch { /* session already gone */ }
       rmSync(e2eRoot, { recursive: true, force: true });
     }
@@ -300,7 +300,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Duel E2E', () => {
     await hideOverlay(page);
     const before = await findDuelPanes(page);
     expect(before, 'duel panes from earlier phases should still exist').not.toBeNull();
-    const { paneA, paneB } = before as { paneA: AumxPane; paneB: AumxPane };
+    const { paneA, paneB } = before as { paneA: MuxBasePane; paneB: MuxBasePane };
 
     // Phase 7: re-open the duel via the VS chip, then declare Side A the winner.
     await page.locator('[data-testid="fleet-duel-vs-chip"]').first().click();
@@ -373,6 +373,6 @@ describe.runIf(process.env.AUMX_E2E === '1')('Duel E2E', () => {
   }, 60_000);
 });
 
-function paneLabel(pane: AumxPane): string {
+function paneLabel(pane: MuxBasePane): string {
   return pane.title || pane.slug || pane.id;
 }

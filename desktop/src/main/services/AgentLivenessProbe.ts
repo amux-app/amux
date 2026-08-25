@@ -1,4 +1,4 @@
-import type { RunningAgentPaneResult } from 'aumx/core';
+import type { RunningAgentPaneResult } from 'muxbase/core';
 import type { Liveness } from '../../shared/pane-activity.js';
 
 /**

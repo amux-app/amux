@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -57,7 +57,7 @@ const TOKEN_SOURCES: Array<[string, string[]]> = [
   [STATUS_DOT_FILE, ['--attention-ready-dot', '--attention-ready-icon']],
 ];
 
-const REVIEW_PANE: AumxPane = {
+const REVIEW_PANE: MuxBasePane = {
   agent: 'claude',
   id: 'review-pane',
   paneId: '%1',

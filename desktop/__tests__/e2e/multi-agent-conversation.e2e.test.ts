@@ -5,7 +5,7 @@ import { execFileSync } from 'child_process';
 import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
-import { getProjectConfigPath, type AumxPane } from 'aumx/core';
+import { getProjectConfigPath, type MuxBasePane } from 'muxbase/core';
 import type { NormalizedSession } from '../../src/shared/agent-session-types';
 import {
   closePaneBestEffort,
@@ -41,11 +41,11 @@ const TOTAL_RUNTIME_BUDGET_MS = 600_000;
 const ACTIVE_AGENT_STATES = new Set(['working', 'analyzing', 'waiting']);
 const RUN_TOKEN = `e2e-${Date.now().toString(36)}`;
 
-// AUMX_E2E_SLOW=1 paces the test like a real user: pauses between actions,
+// MUXBASE_E2E_SLOW=1 paces the test like a real user: pauses between actions,
 // shows on-screen overlays describing each phase, drives pane creation
 // through the UI dialog instead of IPC, and keeps the window open at the end
 // so an operator can inspect the final state.
-const SLOW = process.env.AUMX_E2E_SLOW === '1';
+const SLOW = process.env.MUXBASE_E2E_SLOW === '1';
 const STEP_PAUSE_MS = SLOW ? 1500 : 0;
 const VIEW_PAUSE_MS = SLOW ? 3000 : 0;
 const HOLD_AT_END_MS = SLOW ? 15_000 : 0;
@@ -151,10 +151,10 @@ async function createPaneViaIPC(
   prompt: string,
   projectRoot: string,
   agent: AgentName,
-): Promise<AumxPane> {
+): Promise<MuxBasePane> {
   const response = await page.evaluate(
     (payload) =>
-      (window as any).aumx.invoke('pane:create', {
+      (window as any).muxbase.invoke('pane:create', {
         prompt: payload.prompt,
         agent: payload.agent,
         projectRoot: payload.projectRoot,
@@ -166,7 +166,7 @@ async function createPaneViaIPC(
   if (!response?.success || !response?.pane) {
     throw new Error(`pane:create(${agent}) failed: ${response?.error ?? 'unknown error'}`);
   }
-  return response.pane as AumxPane;
+  return response.pane as MuxBasePane;
 }
 
 const AGENT_RADIO_LABELS: Record<AgentName, string> = {
@@ -179,7 +179,7 @@ async function createPaneViaUI(
   prompt: string,
   agent: AgentName,
   existingIds: Set<string>,
-): Promise<AumxPane> {
+): Promise<MuxBasePane> {
   // Current real-user flow: dialog selects agent + (optional) name + launches.
   // The prompt is typed into the terminal AFTER the agent CLI is up — there is
   // no prompt textarea inside CreatePaneDialog.
@@ -252,7 +252,7 @@ async function createPaneViaUI(
     async () => {
       const content: { content?: string } | undefined = await page
         .evaluate(
-          (id) => (window as any).aumx.invoke('pane:get-content', { paneId: id }),
+          (id) => (window as any).muxbase.invoke('pane:get-content', { paneId: id }),
           newPane.id,
         )
         .catch(() => undefined);
@@ -260,7 +260,7 @@ async function createPaneViaUI(
       if (TRUST_PROMPT_REGEX.test(text)) {
         await page
           .evaluate(
-            (id) => (window as any).aumx.invoke('pane:send-keys', { paneId: id, command: '' }),
+            (id) => (window as any).muxbase.invoke('pane:send-keys', { paneId: id, command: '' }),
             newPane.id,
           )
           .catch(() => {});
@@ -283,35 +283,35 @@ interface StatusSnapshot {
 async function initializePaneStatusTracker(page: Page): Promise<void> {
   await page.evaluate(() => {
     const w = window as any;
-    if (w.__aumxPaneStatusTrackerInitialized) {
-      w.__aumxPaneStatusById = {};
-      w.__aumxPaneStatusHistoryById = {};
+    if (w.__muxbasePaneStatusTrackerInitialized) {
+      w.__muxbasePaneStatusById = {};
+      w.__muxbasePaneStatusHistoryById = {};
       return;
     }
-    w.__aumxPaneStatusById = {};
-    w.__aumxPaneStatusHistoryById = {};
-    w.__aumxPaneStatusTrackerUnsub = w.aumx.on(
+    w.__muxbasePaneStatusById = {};
+    w.__muxbasePaneStatusHistoryById = {};
+    w.__muxbasePaneStatusTrackerUnsub = w.muxbase.on(
       'event:pane-status-changed',
       (payload: { paneId?: string; status?: string }) => {
         const paneId = payload?.paneId;
         const status = payload?.status;
         if (!paneId || !status) return;
-        w.__aumxPaneStatusById[paneId] = status;
-        if (!Array.isArray(w.__aumxPaneStatusHistoryById[paneId])) {
-          w.__aumxPaneStatusHistoryById[paneId] = [];
+        w.__muxbasePaneStatusById[paneId] = status;
+        if (!Array.isArray(w.__muxbasePaneStatusHistoryById[paneId])) {
+          w.__muxbasePaneStatusHistoryById[paneId] = [];
         }
-        w.__aumxPaneStatusHistoryById[paneId].push({ status, ts: Date.now() });
+        w.__muxbasePaneStatusHistoryById[paneId].push({ status, ts: Date.now() });
       },
     );
-    w.__aumxPaneStatusTrackerInitialized = true;
+    w.__muxbasePaneStatusTrackerInitialized = true;
   });
 }
 
 async function getPaneStatusSnapshot(page: Page): Promise<StatusSnapshot> {
   return page.evaluate(() => {
     const w = window as any;
-    const statusByPaneId = { ...(w.__aumxPaneStatusById ?? {}) };
-    const history = w.__aumxPaneStatusHistoryById ?? {};
+    const statusByPaneId = { ...(w.__muxbasePaneStatusById ?? {}) };
+    const history = w.__muxbasePaneStatusHistoryById ?? {};
     const historyByPaneId: Record<string, Array<{ status: string; ts: number }>> = {};
     for (const [paneId, samples] of Object.entries(history)) {
       if (Array.isArray(samples)) {
@@ -503,7 +503,7 @@ function computeHistoryConcurrentActive(
 
 async function navigateToFocusView(page: Page, paneId: string): Promise<void> {
   const navigated = await page.evaluate((id) => {
-    const stores = (window as any).__aumxStores;
+    const stores = (window as any).__muxbaseStores;
     if (stores?.ui?.setState) {
       stores.ui.setState({ viewMode: 'focus', focusPaneId: id });
       return true;
@@ -522,7 +522,7 @@ async function navigateToFocusView(page: Page, paneId: string): Promise<void> {
 
 async function navigateToFleetView(page: Page): Promise<void> {
   await page.evaluate(() => {
-    const stores = (window as any).__aumxStores;
+    const stores = (window as any).__muxbaseStores;
     if (stores?.ui?.setState) {
       stores.ui.setState({ viewMode: 'fleet', focusPaneId: null });
     }
@@ -549,11 +549,11 @@ async function switchTab(page: Page, tabName: string, waitForText?: string): Pro
 // Test Suite
 // ---------------------------------------------------------------------------
 
-if (process.env.AUMX_E2E !== '1') {
-  console.warn('Multi-Agent Conversation E2E skipped — set AUMX_E2E=1 to run');
+if (process.env.MUXBASE_E2E !== '1') {
+  console.warn('Multi-Agent Conversation E2E skipped — set MUXBASE_E2E=1 to run');
 }
 
-describe.runIf(process.env.AUMX_E2E === '1')('Multi-Agent Conversation E2E (Claude + OpenCode)', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('Multi-Agent Conversation E2E (Claude + OpenCode)', () => {
   let app: ElectronApplication;
   let page: Page;
   let projectRoot: string;
@@ -573,10 +573,10 @@ describe.runIf(process.env.AUMX_E2E === '1')('Multi-Agent Conversation E2E (Clau
     // project root with one. realpathSync canonicalizes /var → /private/var
     // so the OpenCode parser's directory-startsWith check matches what
     // `opencode db` stores.
-    projectRoot = realpathSync(mkdtempSync(join(tmpdir(), 'aumx-multi-agent-e2e-')));
+    projectRoot = realpathSync(mkdtempSync(join(tmpdir(), 'muxbase-multi-agent-e2e-')));
     execFileSync('git', ['init', '--initial-branch=main', projectRoot], { stdio: 'ignore' });
-    execFileSync('git', ['-C', projectRoot, 'config', 'user.email', 'e2e@aumx.local'], { stdio: 'ignore' });
-    execFileSync('git', ['-C', projectRoot, 'config', 'user.name', 'Aumx E2E'], { stdio: 'ignore' });
+    execFileSync('git', ['-C', projectRoot, 'config', 'user.email', 'e2e@muxbase.local'], { stdio: 'ignore' });
+    execFileSync('git', ['-C', projectRoot, 'config', 'user.name', 'MuxBase E2E'], { stdio: 'ignore' });
     writeFileSync(join(projectRoot, 'README.md'), '# multi-agent-e2e fixture\n');
     execFileSync('git', ['-C', projectRoot, 'add', '.'], { stdio: 'ignore' });
     execFileSync('git', ['-C', projectRoot, 'commit', '-m', 'init'], { stdio: 'ignore' });
@@ -587,7 +587,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Multi-Agent Conversation E2E (Clau
       env: {
         ...process.env,
         NODE_ENV: 'test',
-        AUMX_DEV: 'true',
+        MUXBASE_DEV: 'true',
       },
       // In slow mode, throttle every Playwright action so cursor moves and
       // dialogs are visible to a human observer.
@@ -597,7 +597,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Multi-Agent Conversation E2E (Clau
     page = await getAppWindow(app);
 
     await app.context().addInitScript(() => {
-      (window as any).__AUMX_E2E = true;
+      (window as any).__MUXBASE_E2E = true;
     });
     await page.reload();
 
@@ -678,7 +678,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Multi-Agent Conversation E2E (Clau
       );
       await pause(STEP_PAUSE_MS);
 
-      let newPane: AumxPane;
+      let newPane: MuxBasePane;
       if (USE_UI_DRIVEN_CREATION) {
         const existingIds = new Set((await getPanes(page)).map((p) => p.id));
         newPane = await createPaneViaUI(page, def.prompt, def.agent, existingIds);
@@ -700,7 +700,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Multi-Agent Conversation E2E (Clau
       expect(newPane.paneId).toMatch(/^%\d+$/);
       expect(newPane.worktreePath).toBeTruthy();
       expect(newPane.worktreePath).toMatch(/^\//);
-      expect(newPane.worktreePath).toContain('.amux/worktrees/');
+      expect(newPane.worktreePath).toContain('.muxbase/worktrees/');
       expect(newPane.slug).toMatch(/^[a-z0-9][a-z0-9-]*$/);
       // UI flow types the prompt into the terminal after launch, so it isn't
       // stored on the pane record; IPC flow stores it as part of pane:create.
@@ -774,7 +774,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Multi-Agent Conversation E2E (Clau
             if (!trustPromptHandled) {
               const paneContent: { content?: string } | undefined = await page
                 .evaluate(
-                  (id) => (window as any).aumx.invoke('pane:get-content', { paneId: id }),
+                  (id) => (window as any).muxbase.invoke('pane:get-content', { paneId: id }),
                   pane.id,
                 )
                 .catch(() => undefined);
@@ -784,7 +784,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Multi-Agent Conversation E2E (Clau
                 await page
                   .evaluate(
                     (id) =>
-                      (window as any).aumx.invoke('pane:send-keys', {
+                      (window as any).muxbase.invoke('pane:send-keys', {
                         paneId: id,
                         command: '',
                       }),
@@ -876,8 +876,8 @@ describe.runIf(process.env.AUMX_E2E === '1')('Multi-Agent Conversation E2E (Clau
     await pause(STEP_PAUSE_MS);
     const sessionInfo = await getSessionInfo(page);
     const configPath = getProjectConfigPath(sessionInfo.projectRoot);
-    expect(existsSync(configPath), `Missing aumx config file: ${configPath}`).toBe(true);
-    const config = JSON.parse(readFileSync(configPath, 'utf-8')) as { panes?: AumxPane[] };
+    expect(existsSync(configPath), `Missing muxbase config file: ${configPath}`).toBe(true);
+    const config = JSON.parse(readFileSync(configPath, 'utf-8')) as { panes?: MuxBasePane[] };
     const configPanes = config.panes ?? [];
 
     for (const pane of createdPanes) {
@@ -885,7 +885,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Multi-Agent Conversation E2E (Clau
 
       // Config persistence
       const cfg = configPanes.find((p) => p.id === pane.id);
-      expect(cfg, `pane ${pane.slug} must be persisted in aumx.config.json`).toBeTruthy();
+      expect(cfg, `pane ${pane.slug} must be persisted in muxbase.config.json`).toBeTruthy();
       if (!USE_UI_DRIVEN_CREATION) {
         expect(cfg?.prompt).toBe(def.prompt);
       }

@@ -1,13 +1,13 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { describe, expect, it } from 'vitest';
 import { resolveSidebarDisplayOrder } from '../src/renderer/lib/sidebar-display-order';
 import type { SidebarGroup } from '../src/renderer/lib/sidebar-order';
 
-function makePane(id: string, overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(id: string, overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return { id, paneId: `%${id}`, prompt: 'do something', slug: id, ...overrides };
 }
 
-function group(key: string, panes: AumxPane[], label: string | null = key): SidebarGroup {
+function group(key: string, panes: MuxBasePane[], label: string | null = key): SidebarGroup {
   return { key, label, panes };
 }
 

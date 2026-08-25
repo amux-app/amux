@@ -3,14 +3,14 @@
  */
 
 import { spawnSync } from 'child_process';
-import type { AumxPane } from '../../types.js';
+import type { MuxBasePane } from '../../types.js';
 import type { ActionResult, ActionContext } from '../types.js';
 
 /**
  * Copy worktree path to clipboard
  */
 export async function copyPath(
-  pane: AumxPane,
+  pane: MuxBasePane,
   _context: ActionContext
 ): Promise<ActionResult> {
   if (!pane.worktreePath) {

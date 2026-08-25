@@ -1,34 +1,19 @@
-import { existsSync } from 'node:fs';
 import path from 'path';
 
-const AMUX_METADATA_DIR_NAME = '.amux';
-const LEGACY_AUMX_METADATA_DIR_NAME = '.aumx';
-const AMUX_HOOKS_DIR_NAME = '.amux-hooks';
-const LEGACY_AUMX_HOOKS_DIR_NAME = '.aumx-hooks';
-const AUMX_WORKTREES_DIR_NAME = 'worktrees';
-const AUMX_CONFIG_FILE_NAME = 'aumx.config.json';
-export const AUMX_GITIGNORE_ENTRY = `${AMUX_METADATA_DIR_NAME}/`;
+const MUXBASE_METADATA_DIR_NAME = '.muxbase';
+const MUXBASE_HOOKS_DIR_NAME = '.muxbase-hooks';
+const MUXBASE_WORKTREES_DIR_NAME = 'worktrees';
+const MUXBASE_CONFIG_FILE_NAME = 'muxbase.config.json';
+export const MUXBASE_GITIGNORE_ENTRY = `${MUXBASE_METADATA_DIR_NAME}/`;
 
-const MANAGED_WORKTREE_PATH_PATTERN = /[\\\/]\.(?:amux|aumx)[\\\/]worktrees[\\\/][^\\\/]+[\\\/]?$/;
+const MANAGED_WORKTREE_PATH_PATTERN = /[\\\/]\.muxbase[\\\/]worktrees[\\\/][^\\\/]+[\\\/]?$/;
 
-/**
- * Resolves project-local metadata without splitting an existing installation.
- * New projects use the correctly branded .amux directory; legacy projects keep
- * using .aumx until an explicit migration is introduced.
- */
 export function getProjectMetadataDir(projectRoot: string): string {
-  const currentDir = path.join(projectRoot, AMUX_METADATA_DIR_NAME);
-  const legacyDir = path.join(projectRoot, LEGACY_AUMX_METADATA_DIR_NAME);
-
-  if (existsSync(path.join(currentDir, AUMX_CONFIG_FILE_NAME))) return currentDir;
-  if (existsSync(path.join(legacyDir, AUMX_CONFIG_FILE_NAME))) return legacyDir;
-  if (existsSync(currentDir)) return currentDir;
-
-  return existsSync(legacyDir) ? legacyDir : currentDir;
+  return path.join(projectRoot, MUXBASE_METADATA_DIR_NAME);
 }
 
 export function getProjectConfigPath(projectRoot: string): string {
-  return path.join(getProjectMetadataDir(projectRoot), AUMX_CONFIG_FILE_NAME);
+  return path.join(getProjectMetadataDir(projectRoot), MUXBASE_CONFIG_FILE_NAME);
 }
 
 export function getProjectMetadataPath(projectRoot: string, ...segments: string[]): string {
@@ -40,15 +25,7 @@ export function getProjectMetadataGitignoreEntry(projectRoot: string): string {
 }
 
 export function getProjectHooksDir(projectRoot: string): string {
-  const currentDir = path.join(projectRoot, AMUX_HOOKS_DIR_NAME);
-  if (existsSync(currentDir)) return currentDir;
-
-  const legacyDir = path.join(projectRoot, LEGACY_AUMX_HOOKS_DIR_NAME);
-  if (existsSync(legacyDir)) return legacyDir;
-
-  return path.basename(getProjectMetadataDir(projectRoot)) === LEGACY_AUMX_METADATA_DIR_NAME
-    ? legacyDir
-    : currentDir;
+  return path.join(projectRoot, MUXBASE_HOOKS_DIR_NAME);
 }
 
 export function getProjectHooksGitignoreEntry(projectRoot: string): string {
@@ -56,7 +33,7 @@ export function getProjectHooksGitignoreEntry(projectRoot: string): string {
 }
 
 export function getManagedWorktreesDir(projectRoot: string): string {
-  return path.join(getProjectMetadataDir(projectRoot), AUMX_WORKTREES_DIR_NAME);
+  return path.join(getProjectMetadataDir(projectRoot), MUXBASE_WORKTREES_DIR_NAME);
 }
 
 export function getManagedWorktreePath(projectRoot: string, slug: string): string {

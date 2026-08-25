@@ -28,7 +28,7 @@ function nativeConfig(clonePath: string) {
 
 describe('native marketplace preview containment', () => {
   it('includes every recursively copied native tree in the preview graph', () => {
-    const root = mkdtempSync(path.join(tmpdir(), 'aumx-native-preview-'));
+    const root = mkdtempSync(path.join(tmpdir(), 'muxbase-native-preview-'));
     mkdirSync(path.join(root, 'nested'), { recursive: true });
     writeFileSync(path.join(root, 'nested', 'plugin.js'), 'console.log("native");\n');
 
@@ -52,8 +52,8 @@ describe('native marketplace preview containment', () => {
   });
 
   it('rejects symlinks anywhere in a native recursively copied tree', () => {
-    const root = mkdtempSync(path.join(tmpdir(), 'aumx-native-preview-'));
-    const outside = mkdtempSync(path.join(tmpdir(), 'aumx-native-outside-'));
+    const root = mkdtempSync(path.join(tmpdir(), 'muxbase-native-preview-'));
+    const outside = mkdtempSync(path.join(tmpdir(), 'muxbase-native-outside-'));
     writeFileSync(path.join(outside, 'secret.js'), 'secret');
     symlinkSync(outside, path.join(root, 'linked-directory'), 'dir');
 
@@ -65,7 +65,7 @@ describe('native marketplace preview containment', () => {
   });
 
   it('reports the plugin cache tree when the native marketplace manifest selects it', () => {
-    const root = mkdtempSync(path.join(tmpdir(), 'aumx-native-preview-'));
+    const root = mkdtempSync(path.join(tmpdir(), 'muxbase-native-preview-'));
     mkdirSync(path.join(root, '.claude-plugin'), { recursive: true });
     mkdirSync(path.join(root, 'plugins', 'native-plugin'), { recursive: true });
     writeFileSync(

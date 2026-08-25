@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as fsPromises from 'fs/promises';
 import * as path from 'path';
 import { execAsync, execAsyncRace } from './execAsync.js';
-import type { AumxPane } from '../types.js';
+import type { MuxBasePane } from '../types.js';
 import {
   getManagedWorktreePath,
   getManagedWorktreesDir,
@@ -17,7 +17,7 @@ const HAS_DOT_DOT = /\.\./;
  * Get the git branch name for a pane.
  * Returns branchName if set (prefix-based), otherwise falls back to slug.
  */
-export function getPaneBranchName(pane: AumxPane): string {
+export function getPaneBranchName(pane: MuxBasePane): string {
   return pane.branchName || pane.slug;
 }
 
@@ -31,11 +31,11 @@ export function isValidBranchName(name: string): boolean {
 }
 
 /**
- * Ensures the active Amux metadata directory is listed in the project's .gitignore.
+ * Ensures the active MuxBase metadata directory is listed in the project's .gitignore.
  * Creates the .gitignore file if it doesn't exist.
  * Idempotent — safe to call multiple times.
  */
-export async function ensureAumxGitignore(projectRoot: string): Promise<void> {
+export async function ensureMuxBaseGitignore(projectRoot: string): Promise<void> {
   const gitignorePath = path.join(projectRoot, '.gitignore');
   const metadataEntry = getProjectMetadataGitignoreEntry(projectRoot);
 
@@ -329,7 +329,7 @@ export async function getOrphanedWorktreesAsync(
 }
 
 /**
- * Gets a list of orphaned worktrees in the resolved Amux worktrees directory
+ * Gets a list of orphaned worktrees in the resolved MuxBase worktrees directory
  * but don't have an active pane tracking them
  * @deprecated Use getOrphanedWorktreesAsync for non-blocking operation
  */

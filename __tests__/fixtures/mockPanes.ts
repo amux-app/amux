@@ -1,12 +1,12 @@
 /**
- * Mock AumxPane fixtures for testing
+ * Mock MuxBasePane fixtures for testing
  */
 
-import type { AumxPane } from '../../src/types.js';
+import type { MuxBasePane } from '../../src/types.js';
 
-export function createMockPane(overrides?: Partial<AumxPane>): AumxPane {
+export function createMockPane(overrides?: Partial<MuxBasePane>): MuxBasePane {
   return {
-    id: 'aumx-1',
+    id: 'muxbase-1',
     slug: 'test-pane',
     prompt: 'test prompt',
     paneId: '%42',
@@ -17,7 +17,7 @@ export function createMockPane(overrides?: Partial<AumxPane>): AumxPane {
   };
 }
 
-export function createShellPane(overrides?: Partial<AumxPane>): AumxPane {
+export function createShellPane(overrides?: Partial<MuxBasePane>): MuxBasePane {
   return createMockPane({
     type: 'shell',
     worktreePath: undefined,
@@ -25,17 +25,17 @@ export function createShellPane(overrides?: Partial<AumxPane>): AumxPane {
   });
 }
 
-export function createWorktreePane(overrides?: Partial<AumxPane>): AumxPane {
+export function createWorktreePane(overrides?: Partial<MuxBasePane>): MuxBasePane {
   return createMockPane({
     type: 'worktree',
-    worktreePath: '/test/project/.aumx/worktrees/test-pane',
+    worktreePath: '/test/project/.muxbase/worktrees/test-pane',
     ...overrides,
   });
 }
 
-export function createMultiplePanes(count: number): AumxPane[] {
+export function createMultiplePanes(count: number): MuxBasePane[] {
   return Array.from({ length: count }, (_, i) => createMockPane({
-    id: `aumx-${i + 1}`,
+    id: `muxbase-${i + 1}`,
     slug: `test-pane-${i + 1}`,
     paneId: `%${40 + i}`,
   }));

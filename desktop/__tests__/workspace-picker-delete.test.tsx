@@ -52,21 +52,21 @@ describe('WorkspacePicker delete', () => {
 
   it('removes a project from history without opening it', async () => {
     // Arrange
-    const root = '/private/var/folders/T/aumx-file-browser-e2e';
+    const root = '/private/var/folders/T/muxbase-file-browser-e2e';
     useWorkspacePickerStore.setState({
       activeProjects: [
         {
-          configPath: `${root}/.aumx/aumx.config.json`,
-          name: 'aumx-file-browser-e2e',
+          configPath: `${root}/.muxbase/muxbase.config.json`,
+          name: 'muxbase-file-browser-e2e',
           paneCount: 0,
           root,
-          sessionName: 'aumx-aumx-file-browser-e2e',
+          sessionName: 'muxbase-muxbase-file-browser-e2e',
         },
       ],
       historyEntries: [
         {
           lastOpened: 300,
-          name: 'aumx-file-browser-e2e',
+          name: 'muxbase-file-browser-e2e',
           paneCount: 0,
           root,
         },
@@ -76,13 +76,13 @@ describe('WorkspacePicker delete', () => {
 
     // Act
     render(<WorkspacePicker />);
-    fireEvent.click(screen.getByRole('button', { name: 'Remove aumx-file-browser-e2e from history' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove muxbase-file-browser-e2e from history' }));
 
     // Assert
     await waitFor(() => {
       expect(workspaceApi.removeHistory).toHaveBeenCalledWith({ root });
     });
     expect(projectApi.switchProject).not.toHaveBeenCalled();
-    expect(screen.queryByText('aumx-file-browser-e2e')).toBeNull();
+    expect(screen.queryByText('muxbase-file-browser-e2e')).toBeNull();
   });
 });

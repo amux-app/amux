@@ -1,4 +1,4 @@
-import type { AgentName } from 'aumx/core';
+import type { AgentName } from 'muxbase/core';
 import { ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useRef } from 'react';
 import { cn } from '../../lib/cn';

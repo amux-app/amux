@@ -3,7 +3,7 @@ import { PassThrough } from 'node:stream';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorktreeCleanupService } from '../../src/services/WorktreeCleanupService.js';
 import type { WorktreeInfo } from '../../src/actions/merge/types.js';
-import type { AumxPane } from '../../src/types.js';
+import type { MuxBasePane } from '../../src/types.js';
 
 const detectAllWorktreesMock = vi.hoisted(() => vi.fn());
 const triggerHookMock = vi.hoisted(() => vi.fn());
@@ -53,9 +53,9 @@ vi.mock('../../src/utils/conflictMergeTransaction.js', () => ({
   inspectConflictMergeState: inspectConflictMergeStateMock,
 }));
 
-const rootWorktreePath = '/repo/.aumx/worktrees/feature-a';
+const rootWorktreePath = '/repo/.muxbase/worktrees/feature-a';
 
-function createPane(): AumxPane {
+function createPane(): MuxBasePane {
   return {
     branchName: 'feature/a',
     id: 'pane-1',

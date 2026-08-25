@@ -43,9 +43,9 @@ import { useConflictResolutionStore as _conflictResolutionStore } from './confli
 import { useTerminalStore as _terminalStore } from './terminal.store';
 import { useUpdateStore as _updateStore } from './update.store';
 const rendererEnv = (import.meta as unknown as { env?: { DEV?: boolean } }).env;
-const e2eFlag = typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).__AUMX_E2E === true;
+const e2eFlag = typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).__MUXBASE_E2E === true;
 if (typeof window !== 'undefined' && (rendererEnv?.DEV || e2eFlag)) {
-  (window as unknown as Record<string, unknown>).__aumxStores = {
+  (window as unknown as Record<string, unknown>).__muxbaseStores = {
     ui: _uiStore,
     pane: _paneStore,
     paneActivity: _paneActivityStore,

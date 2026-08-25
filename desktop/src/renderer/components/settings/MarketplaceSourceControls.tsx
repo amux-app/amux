@@ -2,7 +2,7 @@ import { ChevronDown, Plus, RefreshCw, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../../lib/cn';
-import type { MarketplaceSource } from 'aumx/core';
+import type { MarketplaceSource } from 'muxbase/core';
 import { Spinner } from '../shared/Spinner';
 
 export interface KnownSource {

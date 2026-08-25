@@ -4,9 +4,9 @@ import { join } from 'path';
 import { atomicWriteFileSync } from './atomicWrite.js';
 
 const PLUGIN_DIRECTORY = join(homedir(), '.config', 'opencode', 'plugins');
-const PLUGIN_PATH = join(PLUGIN_DIRECTORY, 'aumx-activity.js');
-const CONSENT_PATH = join(homedir(), '.config', 'opencode', 'aumx-activity.enabled');
-const OWNERSHIP_MARKER = '// AUMX_ACTIVITY_ADAPTER: opencode:v1';
+const PLUGIN_PATH = join(PLUGIN_DIRECTORY, 'muxbase-activity.js');
+const CONSENT_PATH = join(homedir(), '.config', 'opencode', 'muxbase-activity.enabled');
+const OWNERSHIP_MARKER = '// MUXBASE_ACTIVITY_ADAPTER: opencode:v1';
 
 const PLUGIN_SOURCE = `${OWNERSHIP_MARKER}
 import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readdirSync, renameSync, statSync, unlinkSync } from 'node:fs';
@@ -15,16 +15,16 @@ import { randomUUID } from 'node:crypto';
 
 const consentPath = ${JSON.stringify(CONSENT_PATH)};
 
-export const AumxActivityPlugin = async () => {
+export const MuxBaseActivityPlugin = async () => {
   const activeTurnIds = new Map();
   const handshakenSessions = new Set();
   return {
     event: async ({ event }) => {
       try {
         if (!existsSync(consentPath)) return;
-        const journal = process.env.AUMX_ACTIVITY_JOURNAL;
-        const paneId = process.env.AUMX_PANE_ID;
-        const paneIncarnationId = process.env.AUMX_PANE_INCARNATION_ID;
+        const journal = process.env.MUXBASE_ACTIVITY_JOURNAL;
+        const paneId = process.env.MUXBASE_PANE_ID;
+        const paneIncarnationId = process.env.MUXBASE_PANE_INCARNATION_ID;
         const properties = event.properties ?? event;
         const sessionId = properties.sessionID ?? properties.sessionId;
         const status = properties.status?.type ?? properties.status;
@@ -63,9 +63,9 @@ export const AumxActivityPlugin = async () => {
             paneId,
             paneIncarnationId,
             sessionId,
-            adapterVersion: process.env.AUMX_ACTIVITY_ADAPTER_VERSION ?? properties.version ?? 'unknown',
-            adapterSupport: process.env.AUMX_ACTIVITY_ADAPTER_SUPPORT === 'full' || process.env.AUMX_ACTIVITY_ADAPTER_SUPPORT === 'partial'
-              ? process.env.AUMX_ACTIVITY_ADAPTER_SUPPORT
+            adapterVersion: process.env.MUXBASE_ACTIVITY_ADAPTER_VERSION ?? properties.version ?? 'unknown',
+            adapterSupport: process.env.MUXBASE_ACTIVITY_ADAPTER_SUPPORT === 'full' || process.env.MUXBASE_ACTIVITY_ADAPTER_SUPPORT === 'partial'
+              ? process.env.MUXBASE_ACTIVITY_ADAPTER_SUPPORT
               : 'partial',
             adapterCapabilities: parseAdapterCapabilities(),
             emittedAt: Date.now(),
@@ -97,7 +97,7 @@ function activityKind(type, status) {
 
 function parseAdapterCapabilities() {
   try {
-    const value = JSON.parse(process.env.AUMX_ACTIVITY_ADAPTER_CAPABILITIES || '[]');
+    const value = JSON.parse(process.env.MUXBASE_ACTIVITY_ADAPTER_CAPABILITIES || '[]');
     return Array.isArray(value) ? value : [];
   } catch (_) {
     return [];

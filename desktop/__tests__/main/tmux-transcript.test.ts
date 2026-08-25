@@ -17,18 +17,18 @@ describe('tmux transcript helpers', () => {
   it('starts pipe-pane with argv and shell-quotes only the transcript path', async () => {
     const runner = vi.fn<TmuxTranscriptRunner>().mockResolvedValue(undefined);
 
-    await startTmuxTranscript('%1', "/tmp/amux logs/pane's output.ansi", runner);
+    await startTmuxTranscript('%1', "/tmp/muxbase logs/pane's output.ansi", runner);
 
     expect(runner).toHaveBeenCalledWith([
       'pipe-pane',
       '-t',
       '%1',
-      "cat >> '/tmp/amux logs/pane'\\''s output.ansi'",
+      "cat >> '/tmp/muxbase logs/pane'\\''s output.ansi'",
     ]);
   });
 
   it('creates a transcript file and reuses an existing one', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'aumx-transcript-'));
+    const root = mkdtempSync(join(tmpdir(), 'muxbase-transcript-'));
     roots.push(root);
     const runner = vi.fn<TmuxTranscriptRunner>().mockResolvedValue(undefined);
 
@@ -58,7 +58,7 @@ describe('tmux transcript helpers', () => {
 
   it('starts a new transcript instead of reusing one past the size cap', async () => {
     // Arrange
-    const root = mkdtempSync(join(tmpdir(), 'aumx-transcript-cap-'));
+    const root = mkdtempSync(join(tmpdir(), 'muxbase-transcript-cap-'));
     roots.push(root);
     const runner = vi.fn<TmuxTranscriptRunner>().mockResolvedValue(undefined);
     const oversizedPath = join(root, 'terminal', 'tmux-12-shell-oversized.ansi');

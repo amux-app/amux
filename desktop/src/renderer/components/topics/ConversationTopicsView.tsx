@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { useMemo } from 'react';
 import type { ConversationTopic, PaneTopics } from '../../../shared/topic-types';
 import { cn } from '../../lib/cn';
@@ -31,7 +31,7 @@ export function ConversationTopicsView() {
   );
 }
 
-function PaneTopicsCard({ pane, paneTopics }: { pane: AumxPane; paneTopics?: PaneTopics }) {
+function PaneTopicsCard({ pane, paneTopics }: { pane: MuxBasePane; paneTopics?: PaneTopics }) {
   const topics = paneTopics?.topics ?? [];
   const current = topics[topics.length - 1];
   const history = topics.slice(0, -1).reverse();

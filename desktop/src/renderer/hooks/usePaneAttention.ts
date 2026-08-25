@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { getPaneAttention, type PaneAttention, type PaneAttentionSession } from '../lib/pane-attention';
 import type { PaneActivity } from '../../shared/pane-activity';
 import { useAgentSessionStore } from '../stores/agent-session.store';
@@ -15,7 +15,7 @@ export interface PaneAttentionState {
 }
 
 function collectWaitingItems(
-  panes: readonly AumxPane[],
+  panes: readonly MuxBasePane[],
   sessions: Readonly<Record<string, PaneAttentionSession>>,
   justFinishedPaneIds: ReadonlySet<string>,
   activityByPaneId: Readonly<Record<string, PaneActivity>>,

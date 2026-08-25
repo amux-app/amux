@@ -61,7 +61,7 @@ const MAX_BUFFERED_BYTES = 64 * 1024;
 const OVERFLOW_PREFIX = 'overflow-';
 const OVERFLOW_RECORDS = 2_000;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const DAILY_LOG_PREFIX = 'aumx-desktop-';
+const DAILY_LOG_PREFIX = 'muxbase-desktop-';
 
 let root: string | null = null;
 
@@ -111,11 +111,11 @@ afterEach(() => {
 describe('DesktopLogger', () => {
   it('preserves existing log files when initialized', () => {
     // Arrange
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     const logDir = join(root, '.log');
     mkdirSync(logDir, { recursive: true });
     const today = new Date().toISOString().slice(0, 10);
-    const logFile = join(logDir, `aumx-desktop-${today}.log`);
+    const logFile = join(logDir, `muxbase-desktop-${today}.log`);
     writeFileSync(logFile, '{"msg":"before restart"}\n');
 
     // Act
@@ -128,9 +128,9 @@ describe('DesktopLogger', () => {
 
   it('exposes the current log file path after initialization', () => {
     // Arrange
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     const today = new Date().toISOString().slice(0, 10);
-    const expectedLogFile = join(root, '.log', `aumx-desktop-${today}.log`);
+    const expectedLogFile = join(root, '.log', `muxbase-desktop-${today}.log`);
 
     // Act
     log.initialize(root);
@@ -141,11 +141,11 @@ describe('DesktopLogger', () => {
 
   it('rotates an oversized current log file before appending', () => {
     // Arrange
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     const logDir = join(root, '.log');
     mkdirSync(logDir, { recursive: true });
     const today = new Date().toISOString().slice(0, 10);
-    const logFile = join(logDir, `aumx-desktop-${today}.log`);
+    const logFile = join(logDir, `muxbase-desktop-${today}.log`);
     writeFileSync(logFile, `${'x'.repeat(10 * 1024 * 1024 + 1)}oversized-before-rotate`);
 
     // Act
@@ -160,7 +160,7 @@ describe('DesktopLogger', () => {
 
   it('rotates on the on-disk size a second instance also appended to', () => {
     // Arrange
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     log.initialize(root);
     const logFile = currentLogFile();
 
@@ -175,7 +175,7 @@ describe('DesktopLogger', () => {
 
   it('follows the current daily log after another instance rotated it away', () => {
     // Arrange
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     log.initialize(root);
     const logFile = currentLogFile();
 
@@ -191,7 +191,7 @@ describe('DesktopLogger', () => {
 
   it('keeps writing after another instance wins the rotation race', () => {
     // Arrange
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     log.initialize(root);
     const logFile = currentLogFile();
     appendFileSync(logFile, 'x'.repeat(MAX_LOG_FILE_BYTES));
@@ -212,7 +212,7 @@ describe('DesktopLogger', () => {
 
   it('keeps writing after a rotation fails outright', () => {
     // Arrange
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     log.initialize(root);
     const logFile = currentLogFile();
     appendFileSync(logFile, 'x'.repeat(MAX_LOG_FILE_BYTES));
@@ -230,7 +230,7 @@ describe('DesktopLogger', () => {
 
   it('retains buffered records when a write fails and emits them on the next flush', () => {
     // Arrange
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     log.initialize(root);
 
     // Act
@@ -246,7 +246,7 @@ describe('DesktopLogger', () => {
 
   it('caps the retained buffer at the newest records while every write keeps failing', () => {
     // Arrange
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     vi.spyOn(console, 'log').mockImplementation(() => {});
     log.initialize(root);
 
@@ -276,12 +276,12 @@ describe('DesktopLogger', () => {
 
   it('removes expired daily log files on initialize', () => {
     // Arrange
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     const logDir = join(root, '.log');
     mkdirSync(logDir, { recursive: true });
     const today = new Date().toISOString().slice(0, 10);
-    const currentLog = join(logDir, `aumx-desktop-${today}.log`);
-    const expiredLog = join(logDir, 'aumx-desktop-2000-01-01.log');
+    const currentLog = join(logDir, `muxbase-desktop-${today}.log`);
+    const expiredLog = join(logDir, 'muxbase-desktop-2000-01-01.log');
     const expiredRotatedLog = `${expiredLog}.1`;
     const unrelatedFile = join(logDir, 'notes.txt');
     writeFileSync(currentLog, '{"msg":"current"}\n');
@@ -301,7 +301,7 @@ describe('DesktopLogger', () => {
 
   it('deletes the oldest daily logs when the directory exceeds the size cap', () => {
     // Arrange: unexpired logs that together overflow the cap, current log oldest by mtime
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     const logDir = join(root, '.log');
     mkdirSync(logDir, { recursive: true });
     const currentLog = dailyLogPath(logDir, 0);
@@ -326,7 +326,7 @@ describe('DesktopLogger', () => {
 
   it('leaves unrelated files untouched while enforcing the size cap', () => {
     // Arrange: the unrelated file is both the largest and the oldest in the directory
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     const logDir = join(root, '.log');
     mkdirSync(logDir, { recursive: true });
     const unrelatedFile = join(logDir, 'notes.txt');
@@ -347,7 +347,7 @@ describe('DesktopLogger', () => {
 
   it('buffers info records and flushes them on shutdown', () => {
     // Arrange
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     log.initialize(root);
 
     // Act
@@ -365,7 +365,7 @@ describe('DesktopLogger', () => {
 
   it('flushes error records immediately without dropping earlier buffered records', () => {
     // Arrange
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     log.initialize(root);
 
     // Act
@@ -382,7 +382,7 @@ describe('DesktopLogger', () => {
 
   it('preserves record order across buffered and immediate flushes', () => {
     // Arrange
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     log.initialize(root);
 
     // Act
@@ -410,7 +410,7 @@ describe('DesktopLogger', () => {
 
   it('flushes buffered records from the process exit hook', () => {
     // Arrange
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     const before = new Set(process.listeners('exit'));
 
     // Act
@@ -427,7 +427,7 @@ describe('DesktopLogger', () => {
 
   it('coalesces repeated throttled records and reports the suppressed count', () => {
     // Arrange
-    root = mkdtempSync(join(tmpdir(), 'aumx-logger-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-logger-'));
     vi.useFakeTimers({ toFake: ['Date'] });
     log.initialize(root);
 

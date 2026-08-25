@@ -43,7 +43,7 @@ function makeStream(transcriptPath: string): PaneStream {
     resizeRepaintTimer: null,
     rows: 24,
     screenReaderDetected: false,
-    sessionName: 'aumx-test',
+    sessionName: 'muxbase-test',
     skipScrollbackReplay: false,
     streamId: 1,
     stdinLocked: false,
@@ -85,7 +85,7 @@ afterEach(() => {
 describe('TerminalTranscriptStream', () => {
   it('follows from the current transcript end without replaying stale transcript bytes', async () => {
     // Arrange
-    const transcriptPath = join(createTempDir('aumx-transcript-'), 'pane.ansi');
+    const transcriptPath = join(createTempDir('muxbase-transcript-'), 'pane.ansi');
     writeFileSync(transcriptPath, 'stale-width-frame');
     const stream = makeStream(transcriptPath);
     const sendToRenderer = vi.fn();
@@ -115,7 +115,7 @@ describe('TerminalTranscriptStream', () => {
   });
 
   it('drains the old inode and follows its replacement without replaying stale history', async () => {
-    const directory = createTempDir('aumx-transcript-');
+    const directory = createTempDir('muxbase-transcript-');
     const transcriptPath = join(directory, 'pane.ansi');
     const replacementPath = join(directory, 'replacement.ansi');
     writeFileSync(transcriptPath, 'stale-history');
@@ -146,7 +146,7 @@ describe('TerminalTranscriptStream', () => {
 
   it('replays existing transcript bytes before following from the end', async () => {
     // Arrange
-    const transcriptPath = join(createTempDir('aumx-transcript-'), 'pane.ansi');
+    const transcriptPath = join(createTempDir('muxbase-transcript-'), 'pane.ansi');
     writeFileSync(transcriptPath, 'historic-frame');
     const stream = makeStream(transcriptPath);
     const sendToRenderer = vi.fn();
@@ -190,7 +190,7 @@ describe('TerminalTranscriptStream', () => {
 
   it('reports empty transcript replay without sending renderer bytes', async () => {
     // Arrange
-    const transcriptPath = join(createTempDir('aumx-transcript-'), 'pane.ansi');
+    const transcriptPath = join(createTempDir('muxbase-transcript-'), 'pane.ansi');
     writeFileSync(transcriptPath, '');
     const stream = makeStream(transcriptPath);
     const sendToRenderer = vi.fn();
@@ -213,7 +213,7 @@ describe('TerminalTranscriptStream', () => {
 
   it('bounds transcript replay to the configured byte tail', async () => {
     // Arrange
-    const transcriptPath = join(createTempDir('aumx-transcript-'), 'pane.ansi');
+    const transcriptPath = join(createTempDir('muxbase-transcript-'), 'pane.ansi');
     writeFileSync(transcriptPath, 'old-frame-fresh-frame');
     const stream = makeStream(transcriptPath);
     const sendToRenderer = vi.fn();
@@ -236,7 +236,7 @@ describe('TerminalTranscriptStream', () => {
 
   it('deduplicates agent startup redraws inside a capped replay tail', async () => {
     // Arrange
-    const transcriptPath = join(createTempDir('aumx-transcript-'), 'pane.ansi');
+    const transcriptPath = join(createTempDir('muxbase-transcript-'), 'pane.ansi');
     const oldHistory = 'old-history-before-retained-tail\n';
     const firstStartup = '\x1b[H╭───Claude Code v2.1.177 first-size╮\nWelcome back\n';
     const stableStartup = '\x1b[H╭───Claude Code v2.1.177 stable-size╮\nTips for getting started\n';
@@ -291,7 +291,7 @@ describe('TerminalTranscriptStream', () => {
     },
   ])('does not trim agent transcript replay with $name', async ({ transcript }) => {
     // Arrange
-    const transcriptPath = join(createTempDir('aumx-transcript-'), 'pane.ansi');
+    const transcriptPath = join(createTempDir('muxbase-transcript-'), 'pane.ansi');
     writeFileSync(transcriptPath, transcript);
     const stream = makeStream(transcriptPath);
     stream.skipScrollbackReplay = true;
@@ -315,7 +315,7 @@ describe('TerminalTranscriptStream', () => {
 
   it('collapses repeated Claude startup redraws during agent transcript replay', async () => {
     // Arrange
-    const transcriptPath = join(createTempDir('aumx-transcript-'), 'pane.ansi');
+    const transcriptPath = join(createTempDir('muxbase-transcript-'), 'pane.ansi');
     const firstStartup = '\x1b[H╭───Claude Code v2.1.177 first-size╮\nWelcome back\n';
     const stableStartup = '\x1b[H╭───Claude Code v2.1.177 stable-size╮\nTips for getting started\n';
     writeFileSync(transcriptPath, `${firstStartup}${stableStartup}first user prompt\nassistant answer`);
@@ -345,7 +345,7 @@ describe('TerminalTranscriptStream', () => {
 
   it('collapses repeated Claude prompt redraws during startup replay', async () => {
     // Arrange
-    const transcriptPath = join(createTempDir('aumx-transcript-'), 'pane.ansi');
+    const transcriptPath = join(createTempDir('muxbase-transcript-'), 'pane.ansi');
     const firstStartup = '\x1b[H╭───Claude Code v2.1.177 first-size╮\nWelcome back\n';
     const stableStartup = '\x1b[H╭───Claude Code v2.1.177 stable-size╮\nTips for getting started\n';
     const firstPrompt = '\r\x1b[48;5;237m\x1b[38;5;239m❯ \x1b[38;5;231mPlease list tools with parameters\x1b[39m\r\n';
@@ -376,7 +376,7 @@ describe('TerminalTranscriptStream', () => {
 
   it('collapses repeated Claude prompt redraws when only one startup banner exists', async () => {
     // Arrange
-    const transcriptPath = join(createTempDir('aumx-transcript-'), 'pane.ansi');
+    const transcriptPath = join(createTempDir('muxbase-transcript-'), 'pane.ansi');
     const startup = '\x1b[H╭───Claude Code v2.1.177 stable-size╮\nTips for getting started\n';
     const firstPrompt = '\r\x1b[48;5;237m\x1b[38;5;239m❯ \x1b[38;5;231mPlease list tools with parameters\x1b[39m\r\n';
     const secondPrompt = '\r\x1b[48;5;237m\x1b[38;5;239m❯ \x1b[38;5;231mPlease list tools with parameters\x1b[39m\r\n';
@@ -405,7 +405,7 @@ describe('TerminalTranscriptStream', () => {
 
   it('ignores stale transcript offsets from previous attaches', async () => {
     // Arrange
-    const transcriptPath = join(createTempDir('aumx-transcript-'), 'pane.ansi');
+    const transcriptPath = join(createTempDir('muxbase-transcript-'), 'pane.ansi');
     writeFileSync(transcriptPath, 'stale-frame');
     const stream = makeStream(transcriptPath);
     stream.transcriptOffset = 1;
@@ -437,7 +437,7 @@ describe('TerminalTranscriptStream', () => {
 
   it('drops queued resize bytes and follows new transcript bytes from the current end', async () => {
     // Arrange
-    const transcriptPath = join(createTempDir('aumx-transcript-'), 'pane.ansi');
+    const transcriptPath = join(createTempDir('muxbase-transcript-'), 'pane.ansi');
     writeFileSync(transcriptPath, 'initial-frame');
     const stream = makeStream(transcriptPath);
     const sendToRenderer = vi.fn();
@@ -469,7 +469,7 @@ describe('TerminalTranscriptStream', () => {
   });
 
   it('pauses transcript watchers and discards hidden output before following again', async () => {
-    const transcriptPath = join(createTempDir('aumx-transcript-'), 'pane.ansi');
+    const transcriptPath = join(createTempDir('muxbase-transcript-'), 'pane.ansi');
     writeFileSync(transcriptPath, 'initial-frame');
     const stream = makeStream(transcriptPath);
     const sendToRenderer = vi.fn();
@@ -508,7 +508,7 @@ describe('TerminalTranscriptStream', () => {
   });
 
   it('resumes from the replacement end after a transcript rotates while hidden', async () => {
-    const directory = createTempDir('aumx-transcript-');
+    const directory = createTempDir('muxbase-transcript-');
     const transcriptPath = join(directory, 'pane.ansi');
     const replacementPath = join(directory, 'replacement.ansi');
     writeFileSync(transcriptPath, 'initial-frame');
@@ -542,7 +542,7 @@ describe('TerminalTranscriptStream', () => {
 
   it('uses transcript changes as snapshot signals for agent panes instead of streaming raw TUI redraw bytes', async () => {
     // Arrange
-    const transcriptPath = join(createTempDir('aumx-transcript-'), 'pane.ansi');
+    const transcriptPath = join(createTempDir('muxbase-transcript-'), 'pane.ansi');
     writeFileSync(transcriptPath, 'initial-frame');
     const stream = makeStream(transcriptPath);
     stream.skipScrollbackReplay = true;
@@ -578,7 +578,7 @@ describe('TerminalTranscriptStream', () => {
 
   it('skips live transcript reads while resize output is suppressed', async () => {
     // Arrange
-    const transcriptPath = join(createTempDir('aumx-transcript-'), 'pane.ansi');
+    const transcriptPath = join(createTempDir('muxbase-transcript-'), 'pane.ansi');
     writeFileSync(transcriptPath, 'initial-frame');
     const stream = makeStream(transcriptPath);
     const sendToRenderer = vi.fn();
@@ -611,7 +611,7 @@ describe('TerminalTranscriptStream', () => {
 
   it('skips live transcript reads while a read is already in flight', async () => {
     // Arrange
-    const transcriptPath = join(createTempDir('aumx-transcript-'), 'pane.ansi');
+    const transcriptPath = join(createTempDir('muxbase-transcript-'), 'pane.ansi');
     writeFileSync(transcriptPath, 'initial-frame');
     const stream = makeStream(transcriptPath);
     const sendToRenderer = vi.fn();
@@ -643,7 +643,7 @@ describe('TerminalTranscriptStream', () => {
 
   it('skips live transcript reads while replay is in flight', async () => {
     // Arrange
-    const transcriptPath = join(createTempDir('aumx-transcript-'), 'pane.ansi');
+    const transcriptPath = join(createTempDir('muxbase-transcript-'), 'pane.ansi');
     writeFileSync(transcriptPath, 'initial-frame');
     const stream = makeStream(transcriptPath);
     const sendToRenderer = vi.fn();

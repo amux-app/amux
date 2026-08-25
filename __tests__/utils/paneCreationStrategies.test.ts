@@ -52,8 +52,8 @@ vi.mock('child_process', () => ({
 
 const mockTmuxInstance = {
   getCurrentPaneIdSync: vi.fn(() => '%0'),
-  getPaneSessionName: vi.fn(async () => 'aumx-test'),
-  getPaneSessionNameSync: vi.fn(() => 'aumx-test'),
+  getPaneSessionName: vi.fn(async () => 'muxbase-test'),
+  getPaneSessionNameSync: vi.fn(() => 'muxbase-test'),
   newWindowPane: vi.fn(async () => '%1'),
   newWindowPaneSync: vi.fn(() => '%1'),
   paneExists: vi.fn(async () => true),
@@ -462,7 +462,7 @@ describe('createPane worktree strategies (characterization)', () => {
     it.each(['claude', 'codex', 'opencode', 'pi'] as const)(
       'leaves a fresh unprompted %s pane without persisted runtime activity, including the optimistic early emit',
       async (agent) => {
-        let earlyPane: AumxPane | undefined;
+        let earlyPane: MuxBasePane | undefined;
         const createPane = await importCreatePane();
 
         const result = await createPane(baseOptions({

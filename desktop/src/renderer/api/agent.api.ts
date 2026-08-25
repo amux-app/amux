@@ -1,4 +1,4 @@
-import type { AgentCapability, AgentName } from 'aumx/core';
+import type { AgentCapability, AgentName } from 'muxbase/core';
 import { IPC } from '../../shared/ipc-channels';
 import { invoke } from './ipc';
 

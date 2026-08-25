@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { cleanup, render, screen, act } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import React, { type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PaneTerminalGrid } from '../src/renderer/components/dashboard/PaneTerminalGrid';
@@ -20,10 +20,10 @@ vi.mock('react-resizable-panels', () => ({
 }));
 
 vi.mock('../src/renderer/components/dashboard/PaneCell', () => ({
-  PaneCell: ({ pane }: { pane: AumxPane }) => <div data-testid={`mock-pane-${pane.id}`} />,
+  PaneCell: ({ pane }: { pane: MuxBasePane }) => <div data-testid={`mock-pane-${pane.id}`} />,
 }));
 
-function makeDuelPane(index: number, role: 'a' | 'b', siblingPaneId: string): AumxPane {
+function makeDuelPane(index: number, role: 'a' | 'b', siblingPaneId: string): MuxBasePane {
   return {
     agent: 'claude',
     agentStatus: 'idle',

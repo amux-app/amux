@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, cleanup, render, screen } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -143,7 +143,7 @@ const UNAUTHORIZED = 'Unauthorized terminal pane';
 const TOTAL_BACKOFF_MS = ATTACH_REJECTION_BACKOFF_MS.reduce((total, delay) => total + delay, 0);
 const resizeObserverCallbacks: Array<() => void> = [];
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agentStatus: 'idle',
     id: 'pane-1',
@@ -156,7 +156,7 @@ function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
   };
 }
 
-function resetStores(pane: AumxPane): void {
+function resetStores(pane: MuxBasePane): void {
   useAgentSessionStore.setState({ sessions: {} });
   useElectronSettingsStore.setState({ isLoading: false, settings: null });
   useNotificationStore.setState({ toasts: [] });
@@ -170,15 +170,15 @@ function resetStores(pane: AumxPane): void {
   });
   useProjectStore.setState({
     activeProject: {
-      configPath: '/repo/.aumx/aumx.config.json',
+      configPath: '/repo/.muxbase/muxbase.config.json',
       name: 'repo',
       paneCount: 1,
       root: '/repo',
-      sessionName: 'aumx-repo',
+      sessionName: 'muxbase-repo',
     },
     projectSwitching: false,
     projects: [],
-    sessionName: 'aumx-repo',
+    sessionName: 'muxbase-repo',
     sessionProjectName: 'repo',
     sessionProjectRoot: '/repo',
   });

@@ -18,7 +18,7 @@ import {
   type MarketplaceSource,
   type MarketplaceTransactionalResult,
   type NativeMarketplaceConfig,
-} from 'aumx/core';
+} from 'muxbase/core';
 import { app } from 'electron';
 import { existsSync, rmSync } from 'fs';
 import os from 'os';
@@ -42,10 +42,10 @@ import { log } from '../services/Logger.js';
 import { formatError } from '../utils/formatError.js';
 import { secureHandle } from './ipc-security.js';
 
-const CLONES_DIR = path.join(os.homedir(), '.aumx', 'marketplaces');
+const CLONES_DIR = path.join(os.homedir(), '.muxbase', 'marketplaces');
 
 // Singleton — one registry per app lifetime, backed by Electron's userData dir
-// (cross-platform: macOS ~/Library/Application Support/Amux, Windows %APPDATA%/Amux, Linux ~/.config/Amux)
+// (cross-platform: macOS ~/Library/Application Support/MuxBase, Windows %APPDATA%/MuxBase, Linux ~/.config/MuxBase)
 let registryInstance: MarketplaceRegistry | null = null;
 let recoveryFailure: Error | null = null;
 let recoverySucceeded = false;

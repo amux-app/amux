@@ -174,9 +174,9 @@ describe('resumeAgentInPane', () => {
     const command = mockTmuxInstance.respawnPane.mock.calls[0]?.[0]?.command ?? '';
     expect(command).not.toContain('-u TMUX');
     expect(command).toContain('codex --no-alt-screen resume');
-    expect(command).toContain('AUMX_ACTIVITY_JOURNAL=');
-    expect(command).toContain('AUMX_PANE_ID=%1');
-    expect(command).toContain('AUMX_PANE_INCARNATION_ID=');
+    expect(command).toContain('MUXBASE_ACTIVITY_JOURNAL=');
+    expect(command).toContain('MUXBASE_PANE_ID=%1');
+    expect(command).toContain('MUXBASE_PANE_INCARNATION_ID=');
   });
 
   it('resumes a persisted Pi session by id', async () => {

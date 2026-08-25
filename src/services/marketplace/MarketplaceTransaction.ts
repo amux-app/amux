@@ -172,10 +172,10 @@ export class MarketplaceTransaction {
         kind: mutation.kind,
         expectedDigest: mutation.expectedDigest,
         ...(mutation.content || mutation.sourcePath ? {
-          stagedPath: path.join(path.dirname(mutation.path), `.${path.basename(mutation.path)}.aumx-stage-${this.transactionId}-${index}`),
+          stagedPath: path.join(path.dirname(mutation.path), `.${path.basename(mutation.path)}.muxbase-stage-${this.transactionId}-${index}`),
         } : {}),
         ...(existsSync(mutation.path) ? {
-          backupPath: path.join(path.dirname(mutation.path), `.${path.basename(mutation.path)}.aumx-backup-${this.transactionId}-${index}`),
+          backupPath: path.join(path.dirname(mutation.path), `.${path.basename(mutation.path)}.muxbase-backup-${this.transactionId}-${index}`),
         } : {}),
         state: 'pending',
       })),

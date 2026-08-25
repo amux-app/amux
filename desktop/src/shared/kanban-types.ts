@@ -1,4 +1,4 @@
-import type { AgentName } from 'aumx/core';
+import type { AgentName } from 'muxbase/core';
 
 // Kanban board types — shared between main and renderer
 

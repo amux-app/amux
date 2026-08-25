@@ -2,7 +2,7 @@
  * Hooks System
  *
  * Executes user-defined scripts at key lifecycle events.
- * Hook scripts are stored in the project-local Amux metadata directories and
+ * Hook scripts are stored in the project-local MuxBase metadata directories and
  * receive context via environment variables.
  */
 
@@ -11,7 +11,7 @@ import { accessSync, closeSync, constants, existsSync, mkdirSync, openSync, read
 import os from 'os';
 import path from 'path';
 import { LogService } from '../services/LogService.js';
-import type { AumxPane } from '../types.js';
+import type { MuxBasePane } from '../types.js';
 import { EXAMPLE_HOOKS, HOOKS_DOCUMENTATION, HOOKS_README } from './hooksDocs.js';
 import {
   getProjectHooksDir,
@@ -63,21 +63,21 @@ export type HookType =
  */
 export interface HookEnvironment {
   // Always present
-  AUMX_ROOT: string;
+  MUXBASE_ROOT: string;
 
   // Pane-specific (present for most hooks)
-  AUMX_PANE_ID?: string;
-  AUMX_SLUG?: string;
-  AUMX_PROMPT?: string;
-  AUMX_AGENT?: string;
-  AUMX_TMUX_PANE_ID?: string;
+  MUXBASE_PANE_ID?: string;
+  MUXBASE_SLUG?: string;
+  MUXBASE_PROMPT?: string;
+  MUXBASE_AGENT?: string;
+  MUXBASE_TMUX_PANE_ID?: string;
 
   // Worktree-specific
-  AUMX_WORKTREE_PATH?: string;
-  AUMX_BRANCH?: string;
+  MUXBASE_WORKTREE_PATH?: string;
+  MUXBASE_BRANCH?: string;
 
   // Merge-specific
-  AUMX_TARGET_BRANCH?: string;
+  MUXBASE_TARGET_BRANCH?: string;
 
   // Additional custom data
   [key: string]: string | undefined;
@@ -85,15 +85,15 @@ export interface HookEnvironment {
 
 /**
  * Find a hook script with priority resolution:
- * 1. .amux-hooks/ (project-local hooks, gitignored by default)
- * 2. .amux/hooks/ (gitignored, local overrides)
- * 3. ~/.aumx/hooks/ (global user hooks)
+ * 1. .muxbase-hooks/ (project-local hooks, gitignored by default)
+ * 2. .muxbase/hooks/ (gitignored, local overrides)
+ * 3. ~/.muxbase/hooks/ (global user hooks)
  */
 export function findHook(projectRoot: string, hookName: HookType): string | null {
   const searchPaths = [
     path.join(getProjectHooksDir(projectRoot), hookName),   // Project-local hooks
     path.join(getProjectMetadataDir(projectRoot), 'hooks', hookName), // Local override
-    path.join(os.homedir(), '.aumx', 'hooks', hookName),    // Global hooks
+    path.join(os.homedir(), '.muxbase', 'hooks', hookName),    // Global hooks
   ];
 
   for (const hookPath of searchPaths) {
@@ -121,27 +121,27 @@ export function findHook(projectRoot: string, hookName: HookType): string | null
  */
 export async function buildHookEnvironment(
   projectRoot: string,
-  pane?: AumxPane,
+  pane?: MuxBasePane,
   extraData?: Record<string, string>
 ): Promise<HookEnvironment> {
   const env: HookEnvironment = {
     ...getInheritedHookEnvironment(),
-    AUMX_HOOKS_DIR: getProjectHooksDir(projectRoot),
-    AUMX_METADATA_DIR: getProjectMetadataDir(projectRoot),
-    AUMX_ROOT: projectRoot,
+    MUXBASE_HOOKS_DIR: getProjectHooksDir(projectRoot),
+    MUXBASE_METADATA_DIR: getProjectMetadataDir(projectRoot),
+    MUXBASE_ROOT: projectRoot,
   };
 
   // Add pane-specific data
   if (pane) {
-    env.AUMX_PANE_ID = pane.id;
-    env.AUMX_SLUG = pane.slug;
-    env.AUMX_PROMPT = pane.prompt;
-    env.AUMX_AGENT = pane.agent || 'unknown';
-    env.AUMX_TMUX_PANE_ID = pane.paneId;
+    env.MUXBASE_PANE_ID = pane.id;
+    env.MUXBASE_SLUG = pane.slug;
+    env.MUXBASE_PROMPT = pane.prompt;
+    env.MUXBASE_AGENT = pane.agent || 'unknown';
+    env.MUXBASE_TMUX_PANE_ID = pane.paneId;
 
     if (pane.worktreePath) {
-      env.AUMX_WORKTREE_PATH = pane.worktreePath;
-      env.AUMX_BRANCH = pane.branchName || pane.slug; // Branch name (may differ from slug with prefix)
+      env.MUXBASE_WORKTREE_PATH = pane.worktreePath;
+      env.MUXBASE_BRANCH = pane.branchName || pane.slug; // Branch name (may differ from slug with prefix)
     }
   }
 
@@ -166,7 +166,7 @@ function getInheritedHookEnvironment(): Partial<HookEnvironment> {
 }
 
 function shouldInheritHookEnv(key: string): boolean {
-  return key.startsWith('AUMX_') || INHERITED_HOOK_ENV_KEYS.has(key.toUpperCase());
+  return key.startsWith('MUXBASE_') || INHERITED_HOOK_ENV_KEYS.has(key.toUpperCase());
 }
 
 function isTrackedProjectHook(projectRoot: string, hookPath: string): boolean {
@@ -245,13 +245,13 @@ function openHookLog(projectRoot: string, hookName: HookType, hookPath: string):
 /**
  * Execute a hook script asynchronously
  *
- * Hooks run in the background and don't block aumx operations.
+ * Hooks run in the background and don't block muxbase operations.
  * Errors are logged but don't crash the application.
  */
 export async function triggerHook(
   hookName: HookType,
   projectRoot: string,
-  pane?: AumxPane,
+  pane?: MuxBasePane,
   extraData?: Record<string, string>
 ): Promise<void> {
   const hookPath = findHook(projectRoot, hookName);
@@ -313,7 +313,7 @@ export async function triggerHook(
 export async function triggerHookSync(
   hookName: HookType,
   projectRoot: string,
-  pane?: AumxPane,
+  pane?: MuxBasePane,
   extraData?: Record<string, string>,
   timeoutMs: number = 30000
 ): Promise<{ success: boolean; output?: string; error?: string }> {
@@ -382,7 +382,7 @@ export function listAvailableHooks(projectRoot: string): HookType[] {
   return allHooks.filter((hook) => hasHook(projectRoot, hook));
 }
 
-function ensureAumxMetadataGitignore(projectRoot: string): void {
+function ensureMuxBaseMetadataGitignore(projectRoot: string): void {
   if (!existsSync(path.join(projectRoot, '.git'))) {
     return;
   }
@@ -419,7 +419,7 @@ function ensureAumxMetadataGitignore(projectRoot: string): void {
  * This gets called the first time hooks are accessed or when user explicitly initializes
  */
 export function initializeHooksDirectory(projectRoot: string): void {
-  ensureAumxMetadataGitignore(projectRoot);
+  ensureMuxBaseMetadataGitignore(projectRoot);
 
   const hooksDir = getProjectHooksDir(projectRoot);
   const hooksDirName = path.basename(hooksDir);

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import React, { Profiler } from 'react';
 import { createEmptyMetrics, type NormalizedSession } from '../src/shared/agent-session-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -31,7 +31,7 @@ const TOOLTIP_DWELL_MS = 400;
 const ALPHA_ROOT = '/work/alpha';
 const BETA_ROOT = '/work/beta';
 
-function pane(id: string, overrides: Partial<AumxPane> = {}): AumxPane {
+function pane(id: string, overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'claude',
     id,
@@ -102,7 +102,7 @@ describe('sidebar organize and ordering', () => {
     usePaneStore.setState({ ...paneInitial, loaded: true, panes: [], selectedPaneId: null });
     useProjectStore.setState({
       ...projectInitial,
-      activeProject: { name: 'alpha', root: ALPHA_ROOT, sessionName: 'aumx-alpha', paneCount: 0 },
+      activeProject: { name: 'alpha', root: ALPHA_ROOT, sessionName: 'muxbase-alpha', paneCount: 0 },
       projectSwitching: false,
     });
     useUiStore.setState({ ...uiInitial, sidebarCollapsed: false, sidebarOrganize: 'project', sidebarSort: 'priority' });

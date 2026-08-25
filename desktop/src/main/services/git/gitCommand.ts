@@ -1,4 +1,4 @@
-import { execFileAsync, type ExecFileAsyncOptions } from 'aumx/core';
+import { execFileAsync, type ExecFileAsyncOptions } from 'muxbase/core';
 
 const GIT_BIN = 'git';
 

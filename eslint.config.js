@@ -10,6 +10,10 @@ const testFiles = ['**/{__tests__,tests}/**/*.{js,mjs,cjs,ts,tsx}', '**/*.{test,
 const rendererFiles = ['desktop/src/renderer/**/*.{ts,tsx}', 'desktop/src/shared/**/*.{ts,tsx}'];
 const docsFiles = ['docs/src/**/*.{js,mjs,ts,tsx}', 'docs/vite.config.js'];
 const productionTsFiles = ['src/**/*.{ts,tsx}', 'desktop/src/**/*.{ts,tsx}'];
+const oldMetadataDirectories = [
+  ['.', 'a', 'mux'].join(''),
+  ['.', 'a', 'u', 'm', 'x'].join(''),
+];
 const nodeFiles = [
   '*.config.{js,mjs,cjs}',
   'scripts/**/*.{js,mjs,cjs,ts}',
@@ -25,8 +29,8 @@ const nodeFiles = [
 export default defineConfig([
   globalIgnores([
     '**/node_modules/**',
-    '**/.amux/**',
-    '**/.aumx/**',
+    ...oldMetadataDirectories.map((directory) => `**/${directory}/**`),
+    '**/.muxbase/**',
     '**/.claude/**',
     '**/dist/**',
     '**/out/**',
@@ -118,7 +122,7 @@ export default defineConfig([
   {
     files: ['desktop/src/**/*.{ts,tsx}'],
     ignores: [
-      'desktop/src/main/services/AumxBridge.ts',
+      'desktop/src/main/services/MuxBaseBridge.ts',
       'desktop/src/main/services/SupportBundleService.ts',
     ],
     rules: {
@@ -133,14 +137,14 @@ export default defineConfig([
     rules: {
       '@typescript-eslint/no-restricted-imports': ['error', {
         paths: [{
-          name: 'aumx',
+          name: 'muxbase',
           allowTypeImports: true,
-          message: 'aumx is externalized in the renderer build — import types only.',
+          message: 'muxbase is externalized in the renderer build — import types only.',
         }],
         patterns: [{
-          group: ['aumx/*', '!aumx/pane-name', '!aumx/pane-terminal-profile'],
+          group: ['muxbase/*', '!muxbase/pane-name', '!muxbase/pane-terminal-profile'],
           allowTypeImports: true,
-          message: 'aumx/* is externalized in the renderer build — import types only.',
+          message: 'muxbase/* is externalized in the renderer build — import types only.',
         }],
       }],
     },

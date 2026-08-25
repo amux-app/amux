@@ -4,7 +4,7 @@
  */
 
 import type { ActionResult, ActionContext } from '../../types.js';
-import type { AumxPane } from '../../../types.js';
+import type { MuxBasePane } from '../../../types.js';
 import { executeMergeWithConflictHandling } from '../mergeExecution.js';
 import { createConflictResolutionPaneForMerge } from '../conflictResolution.js';
 
@@ -18,7 +18,7 @@ export async function handleMergeConflict(
   issue: MergeConflictIssue,
   mainBranch: string,
   mainRepoPath: string,
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext
 ): Promise<ActionResult> {
   const hasRealFiles = issue.files.length > 0;

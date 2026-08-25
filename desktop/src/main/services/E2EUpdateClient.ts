@@ -10,10 +10,10 @@ const E2E_UPDATE_SCENARIOS = [
 type E2EUpdateScenario = (typeof E2E_UPDATE_SCENARIOS)[number];
 
 interface E2EUpdateEnvironment extends NodeJS.ProcessEnv {
-  AUMX_E2E?: string;
-  AUMX_E2E_UPDATE_CURRENT_VERSION?: string;
-  AUMX_E2E_UPDATE_SCENARIO?: string;
-  AUMX_E2E_UPDATE_VERSION?: string;
+  MUXBASE_E2E?: string;
+  MUXBASE_E2E_UPDATE_CURRENT_VERSION?: string;
+  MUXBASE_E2E_UPDATE_SCENARIO?: string;
+  MUXBASE_E2E_UPDATE_VERSION?: string;
   NODE_ENV?: string;
 }
 
@@ -30,17 +30,17 @@ interface E2EUpdateHarness {
 export function createE2EUpdateHarness(
   environment: E2EUpdateEnvironment,
 ): E2EUpdateHarness | null {
-  if (environment.NODE_ENV !== 'test' || environment.AUMX_E2E !== '1') return null;
+  if (environment.NODE_ENV !== 'test' || environment.MUXBASE_E2E !== '1') return null;
 
   const scenario = E2E_UPDATE_SCENARIOS.find(
-    (candidate) => candidate === environment.AUMX_E2E_UPDATE_SCENARIO,
+    (candidate) => candidate === environment.MUXBASE_E2E_UPDATE_SCENARIO,
   );
   if (!scenario) return null;
 
   return {
-    currentVersion: environment.AUMX_E2E_UPDATE_CURRENT_VERSION ?? '0.0.1',
+    currentVersion: environment.MUXBASE_E2E_UPDATE_CURRENT_VERSION ?? '0.0.1',
     inApplicationsFolder: scenario !== 'not-in-applications',
-    updater: new E2EUpdateClient(scenario, environment.AUMX_E2E_UPDATE_VERSION ?? '0.0.2'),
+    updater: new E2EUpdateClient(scenario, environment.MUXBASE_E2E_UPDATE_VERSION ?? '0.0.2'),
   };
 }
 

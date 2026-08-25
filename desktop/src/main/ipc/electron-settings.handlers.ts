@@ -2,7 +2,7 @@ import { is } from '@electron-toolkit/utils';
 import { BrowserWindow } from 'electron';
 import { IPC } from '../../shared/ipc-channels.js';
 import type { ElectronSettings, ElectronSettingsUpdateRequest } from '../../shared/ipc-types.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { resolveWindowOpacity } from '../e2e-window-mode.js';
 import { syncWindowBackgroundColors } from '../services/app-theme.js';
 import { ElectronSettingsService } from '../services/ElectronSettingsService.js';
@@ -12,7 +12,7 @@ import { publishSessionColorHint } from '../utils/tmuxSession.js';
 import { secureHandle } from './ipc-security.js';
 import { stopLspServers } from './lsp.handlers.js';
 
-export function registerElectronSettingsHandlers(bridge: AumxBridge): void {
+export function registerElectronSettingsHandlers(bridge: MuxBaseBridge): void {
   const service = ElectronSettingsService.getInstance();
 
   secureHandle(IPC.ELECTRON_SETTINGS_GET, () => service.getAll());
@@ -67,7 +67,7 @@ export function applyWindowSettings(win: BrowserWindow, settings: ElectronSettin
 function applySideEffects(
   key: ElectronSettingsUpdateRequest['key'],
   updated: ElectronSettings,
-  bridge: AumxBridge,
+  bridge: MuxBaseBridge,
 ): void {
   if (WINDOW_SETTING_KEYS.has(key)) {
     const win = focusedWindow();

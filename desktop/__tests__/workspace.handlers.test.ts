@@ -37,9 +37,9 @@ vi.mock('../src/main/services/ProjectDiscovery.js', () => ({
   discoverProjects: async () => [],
 }));
 
-vi.mock('aumx/core', () => ({
+vi.mock('muxbase/core', () => ({
   execAsync: vi.fn(async () => ''),
-  getProjectConfigPath: (projectRoot: string) => `${projectRoot}/.amux/aumx.config.json`,
+  getProjectConfigPath: (projectRoot: string) => `${projectRoot}/.muxbase/muxbase.config.json`,
   shQuote: (s: string) => s,
 }));
 

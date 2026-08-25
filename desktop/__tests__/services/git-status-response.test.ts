@@ -45,7 +45,7 @@ describe('git status response from real working tree snapshots', () => {
   let repo: string;
 
   beforeEach(() => {
-    repo = mkdtempSync(join(tmpdir(), 'aumx-git-status-'));
+    repo = mkdtempSync(join(tmpdir(), 'muxbase-git-status-'));
     git(['init', '--initial-branch=main']);
     git(['config', 'user.email', 'test@example.com']);
     git(['config', 'user.name', 'Test User']);

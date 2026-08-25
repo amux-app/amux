@@ -42,7 +42,7 @@ async function createSessionFile(
 }
 
 function makePane(overrides: { id?: string; agentSessionId?: string } = {}): Parameters<PiLogParser['findSessionFile']>[0] {
-  return { id: overrides.id ?? 'aumx-1', slug: 'test', paneId: '%1', agentSessionId: overrides.agentSessionId } as Parameters<PiLogParser['findSessionFile']>[0];
+  return { id: overrides.id ?? 'muxbase-1', slug: 'test', paneId: '%1', agentSessionId: overrides.agentSessionId } as Parameters<PiLogParser['findSessionFile']>[0];
 }
 
 afterEach(async () => {
@@ -359,8 +359,8 @@ describe('PiLogParser — findSessionFile', () => {
       updatedAt: 2_000,
     });
 
-    // Act — pane id 'aumx-1' has no embedded timestamp so paneCreatedMsFromId returns null
-    const result = await new PiLogParser().findSessionFile(makePane({ id: 'aumx-1' }), projectRoot);
+    // Act — pane id 'muxbase-1' has no embedded timestamp so paneCreatedMsFromId returns null
+    const result = await new PiLogParser().findSessionFile(makePane({ id: 'muxbase-1' }), projectRoot);
 
     // Assert
     expect(result).toBe(newerFile);

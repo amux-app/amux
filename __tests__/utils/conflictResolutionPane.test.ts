@@ -10,7 +10,7 @@ import { resizePaneBeforeAgentLaunch } from '../../src/utils/paneTerminalGeometr
 import { removePaneTranscript, setupPaneTranscript } from '../../src/utils/tmuxTranscript.js';
 
 const mockTmuxInstance = vi.hoisted(() => ({
-  getPaneSessionName: vi.fn(async () => 'aumx-project'),
+  getPaneSessionName: vi.fn(async () => 'muxbase-project'),
   killPane: vi.fn(async () => undefined),
   newWindowPane: vi.fn(async () => '%9'),
   setPaneTitle: vi.fn(async () => undefined),
@@ -116,7 +116,7 @@ describe('createConflictResolutionPane', () => {
     expect(mockTmuxInstance.newWindowPane).toHaveBeenCalledWith({
       cwd: '/tmp/repo',
       name: 'merge-feature-into-main',
-      sessionName: 'aumx-project',
+      sessionName: 'muxbase-project',
     });
     expect(pane.paneId).toBe('%9');
   });
@@ -147,7 +147,7 @@ describe('createConflictResolutionPane', () => {
     expect(launchAgentInPane).toHaveBeenCalledWith({
       agent: 'claude',
       agentPrompt: pane.prompt,
-      aumxPaneId: pane.id,
+      muxbasePaneId: pane.id,
       cwd: '/tmp/repo',
       paneId: '%9',
       otlpEndpoint: 'http://127.0.0.1:4318',

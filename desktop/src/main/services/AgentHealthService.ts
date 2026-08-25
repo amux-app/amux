@@ -33,7 +33,7 @@ export class AgentHealthService {
   }
 
   async getHealth(): Promise<AgentHealthResponse> {
-    if (this.disabled || process.env.AUMX_DISABLE_EXTERNAL_STATUS) {
+    if (this.disabled || process.env.MUXBASE_DISABLE_EXTERNAL_STATUS) {
       return { snapshots: {}, fetchedAt: Date.now() };
     }
     const ttl = this.cacheComplete ? CACHE_TTL_MS : FAILURE_RETRY_MS;

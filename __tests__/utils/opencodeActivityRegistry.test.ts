@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-const fakeHome = mkdtempSync(join(tmpdir(), 'aumx-opencode-activity-home-'));
+const fakeHome = mkdtempSync(join(tmpdir(), 'muxbase-opencode-activity-home-'));
 
 vi.mock('os', async (importOriginal) => {
   const actual = await importOriginal<typeof import('os')>();
@@ -30,9 +30,9 @@ describe('ensureOpenCodeActivityPlugin', () => {
     expect(plugin).toContain('permission.asked');
     expect(plugin).toContain('session.error');
     expect(plugin).toContain('turn_failure_candidate');
-    expect(plugin).toContain('AUMX_ACTIVITY_JOURNAL');
+    expect(plugin).toContain('MUXBASE_ACTIVITY_JOURNAL');
     expect(plugin).toContain('activeTurnIds');
-    expect(plugin).toContain('AUMX_ACTIVITY_ADAPTER');
+    expect(plugin).toContain('MUXBASE_ACTIVITY_ADAPTER');
     expect(plugin).toContain('existsSync');
     expect(plugin).toContain('randomUUID()');
     expect(plugin).not.toContain('prompt');
@@ -50,7 +50,7 @@ describe('ensureOpenCodeActivityPlugin', () => {
 
   it('removes only its owned plugin and revokes the writer-side consent gate', () => {
     const pluginPath = ensureOpenCodeActivityPlugin();
-    const consentPath = join(fakeHome, '.config', 'opencode', 'aumx-activity.enabled');
+    const consentPath = join(fakeHome, '.config', 'opencode', 'muxbase-activity.enabled');
     expect(existsSync(consentPath)).toBe(true);
 
     expect(removeOpenCodeActivityPlugin()).toBe(true);

@@ -13,7 +13,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { getProjectConfigPath, type AumxPane } from 'aumx/core';
+import { getProjectConfigPath, type MuxBasePane } from 'muxbase/core';
 import type { NormalizedSession } from '../../src/shared/agent-session-types';
 import {
   type PhaseResult,
@@ -36,11 +36,11 @@ const MAIN_ENTRY = resolve(ROOT, 'out', 'main', 'index.js');
 const SCREENSHOTS_DIR = resolve(ROOT, 'out');
 const REPORT_PATH = resolve(SCREENSHOTS_DIR, 'e2e-multi-pane-report.html');
 
-const ENABLE_SCREENSHOTS = process.env.AUMX_E2E_SCREENSHOTS === '1';
+const ENABLE_SCREENSHOTS = process.env.MUXBASE_E2E_SCREENSHOTS === '1';
 const AGENT_WORK_TIMEOUT = 180_000;
 const PANE_CREATION_TIMEOUT = 20_000;
 const TOTAL_RUNTIME_BUDGET_MS = (() => {
-  const parsed = Number(process.env.AUMX_E2E_MAX_MS ?? '300000');
+  const parsed = Number(process.env.MUXBASE_E2E_MAX_MS ?? '300000');
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 300_000;
 })();
 const ACTIVE_AGENT_STATES = new Set(['working', 'analyzing', 'waiting']);
@@ -77,7 +77,7 @@ interface PaneReport {
   type: string;
   promptStored: boolean;
   worktreePathValid: boolean;
-  worktreeUnderAumx: boolean;
+  worktreeUnderMuxBase: boolean;
   tmuxPaneIdFormat: boolean;
   configHasPane: boolean;
   configPromptMatch: boolean;
@@ -173,15 +173,15 @@ const EXPECTED_PANES = PANE_PROMPTS.length;
 
 async function getSession(page: Page, paneId: string): Promise<{ session?: NormalizedSession; error?: string }> {
   return page.evaluate(
-    (id) => (window as any).aumx.invoke('agent-session:get', { paneId: id }),
+    (id) => (window as any).muxbase.invoke('agent-session:get', { paneId: id }),
     paneId,
   );
 }
 
-async function createPaneViaIPC(page: Page, prompt: string, projectRoot: string): Promise<AumxPane> {
+async function createPaneViaIPC(page: Page, prompt: string, projectRoot: string): Promise<MuxBasePane> {
   const response = await page.evaluate(
     (payload) =>
-      (window as any).aumx.invoke('pane:create', {
+      (window as any).muxbase.invoke('pane:create', {
         prompt: payload.prompt,
         agent: 'claude',
         projectRoot: payload.projectRoot,
@@ -193,14 +193,14 @@ async function createPaneViaIPC(page: Page, prompt: string, projectRoot: string)
   if (!response?.success || !response?.pane) {
     throw new Error(`pane:create failed: ${response?.error ?? 'unknown error'}`);
   }
-  return response.pane as AumxPane;
+  return response.pane as MuxBasePane;
 }
 
 async function navigateToFocusView(page: Page, paneId: string): Promise<void> {
   // Navigate to the pane's focus view by setting Zustand UI store state directly.
-  // The stores are exposed on window.__aumxStores by the renderer's store index.
+  // The stores are exposed on window.__muxbaseStores by the renderer's store index.
   const navigated = await page.evaluate((id) => {
-    const stores = (window as any).__aumxStores;
+    const stores = (window as any).__muxbaseStores;
     if (stores?.ui?.setState) {
       stores.ui.setState({ viewMode: 'focus', focusPaneId: id });
       return true;
@@ -307,7 +307,7 @@ async function hideOverlay(page: Page): Promise<void> {
 
 async function navigateToFleetView(page: Page): Promise<void> {
   const navigated = await page.evaluate(() => {
-    const stores = (window as any).__aumxStores;
+    const stores = (window as any).__muxbaseStores;
     if (stores?.ui?.setState) {
       stores.ui.setState({ viewMode: 'fleet', focusPaneId: null });
       return true;
@@ -333,35 +333,35 @@ interface StatusSnapshot {
 async function initializePaneStatusTracker(page: Page): Promise<void> {
   await page.evaluate(() => {
     const w = window as any;
-    if (w.__aumxPaneStatusTrackerInitialized) {
-      w.__aumxPaneStatusById = {};
-      w.__aumxPaneStatusHistoryById = {};
+    if (w.__muxbasePaneStatusTrackerInitialized) {
+      w.__muxbasePaneStatusById = {};
+      w.__muxbasePaneStatusHistoryById = {};
       return;
     }
-    w.__aumxPaneStatusById = {};
-    w.__aumxPaneStatusHistoryById = {};
-    w.__aumxPaneStatusTrackerUnsub = w.aumx.on(
+    w.__muxbasePaneStatusById = {};
+    w.__muxbasePaneStatusHistoryById = {};
+    w.__muxbasePaneStatusTrackerUnsub = w.muxbase.on(
       'event:pane-status-changed',
       (payload: { paneId?: string; status?: string }) => {
         const paneId = payload?.paneId;
         const status = payload?.status;
         if (!paneId || !status) return;
-        w.__aumxPaneStatusById[paneId] = status;
-        if (!Array.isArray(w.__aumxPaneStatusHistoryById[paneId])) {
-          w.__aumxPaneStatusHistoryById[paneId] = [];
+        w.__muxbasePaneStatusById[paneId] = status;
+        if (!Array.isArray(w.__muxbasePaneStatusHistoryById[paneId])) {
+          w.__muxbasePaneStatusHistoryById[paneId] = [];
         }
-        w.__aumxPaneStatusHistoryById[paneId].push({ status, ts: Date.now() });
+        w.__muxbasePaneStatusHistoryById[paneId].push({ status, ts: Date.now() });
       },
     );
-    w.__aumxPaneStatusTrackerInitialized = true;
+    w.__muxbasePaneStatusTrackerInitialized = true;
   });
 }
 
 async function getPaneStatusSnapshot(page: Page): Promise<StatusSnapshot> {
   return page.evaluate(() => {
     const w = window as any;
-    const statusByPaneId = { ...(w.__aumxPaneStatusById ?? {}) };
-    const history = w.__aumxPaneStatusHistoryById ?? {};
+    const statusByPaneId = { ...(w.__muxbasePaneStatusById ?? {}) };
+    const history = w.__muxbasePaneStatusHistoryById ?? {};
     const historyByPaneId: Record<string, Array<{ status: string; ts: number }>> = {};
     for (const [paneId, samples] of Object.entries(history)) {
       if (Array.isArray(samples)) {
@@ -574,7 +574,7 @@ function generateReport(): string {
         p.agentCompleted, p.configHasPane, p.configPromptMatch, p.configWorktreeMatch,
         p.fileExists, p.fileContentValid, p.gitIsWorktree, p.gitBranchIsFeature,
         p.expectedFileInDiff, p.agentUsedWriteTool, p.agentToolErrors === 0,
-        p.tmuxPaneIdFormat, p.worktreeUnderAumx, p.activityVerified,
+        p.tmuxPaneIdFormat, p.worktreeUnderMuxBase, p.activityVerified,
         p.conversationVerified, p.tokensVerified, p.diffVerified,
       ].filter(Boolean).length;
 
@@ -591,7 +591,7 @@ function generateReport(): string {
         { label: 'Git Worktree', ok: p.gitIsWorktree, cat: 'git' },
         { label: 'Feature Branch', ok: p.gitBranchIsFeature, cat: 'git' },
         { label: 'tmux ID Valid', ok: p.tmuxPaneIdFormat, cat: 'git' },
-        { label: 'Path Under .aumx', ok: p.worktreeUnderAumx, cat: 'git' },
+        { label: 'Path Under .muxbase', ok: p.worktreeUnderMuxBase, cat: 'git' },
         { label: 'Write Tool Used', ok: p.agentUsedWriteTool, cat: 'agent' },
         { label: 'No Tool Errors', ok: p.agentToolErrors === 0, cat: 'agent' },
         { label: 'Activity Tab', ok: p.activityVerified, cat: 'ui' },
@@ -678,7 +678,7 @@ function generateReport(): string {
           <div class="detail-section">
             <h4>Pane Configuration</h4>
             <table>
-              <tr><td>aumx ID</td><td><code>${esc(p.id)}</code></td></tr>
+              <tr><td>muxbase ID</td><td><code>${esc(p.id)}</code></td></tr>
               <tr><td>tmux Pane ID</td><td><code>${esc(p.paneId)}</code></td></tr>
               <tr><td>Slug</td><td><code>${esc(p.slug)}</code></td></tr>
               <tr><td>Branch Name</td><td><code>${esc(p.branchName || 'N/A')}</code></td></tr>
@@ -690,7 +690,7 @@ function generateReport(): string {
             </table>
           </div>
           <div class="detail-section">
-            <h4>Config Persistence (aumx.config.json)</h4>
+            <h4>Config Persistence (muxbase.config.json)</h4>
             <table>
               <tr><td>Entry Exists</td><td>${p.configHasPane ? '\u2713 Yes' : '\u2717 No'}</td></tr>
               <tr><td>Prompt Matches</td><td>${p.configPromptMatch ? '\u2713' : '\u2717'}</td></tr>
@@ -704,7 +704,7 @@ function generateReport(): string {
             <table>
               <tr><td>Worktree Path</td><td><code style="font-size:10px">${esc(p.worktreePath || 'N/A')}</code></td></tr>
               <tr><td>Path Valid</td><td>${p.worktreePathValid ? '\u2713' : '\u2717'}</td></tr>
-              <tr><td>Under .aumx/</td><td>${p.worktreeUnderAumx ? '\u2713' : '\u2717'}</td></tr>
+              <tr><td>Under .muxbase/</td><td>${p.worktreeUnderMuxBase ? '\u2713' : '\u2717'}</td></tr>
               <tr><td>Is Git Repo</td><td>${p.gitIsGitRepo ? '\u2713' : '\u2717'}</td></tr>
               <tr><td>Is Worktree</td><td>${p.gitIsWorktree ? '\u2713' : '\u2717'}</td></tr>
               <tr><td>Branch</td><td><code>${esc(p.gitBranch || 'N/A')}</code></td></tr>
@@ -776,7 +776,7 @@ function generateReport(): string {
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>aumx Multi-Pane Agent E2E Report</title>
+<title>muxbase Multi-Pane Agent E2E Report</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -1206,7 +1206,7 @@ function generateReport(): string {
       <div class="how-card">
         <div class="step-num">Phase 3</div>
         <h4>Verify Files</h4>
-        <p>Checks aumx config persistence, file existence/content, and git state via git:diff IPC (isWorktree, branch, changes).</p>
+        <p>Checks muxbase config persistence, file existence/content, and git state via git:diff IPC (isWorktree, branch, changes).</p>
       </div>
       <div class="how-card">
         <div class="step-num">Phase 4</div>
@@ -1295,7 +1295,7 @@ function generateReport(): string {
             { group: 'Agent', checks: ['Completed', 'Write Tool', 'No Errors'] },
             { group: 'Config', checks: ['Stored', 'Prompt', 'Agent', 'Pane ID', 'Worktree'] },
             { group: 'File', checks: ['Exists', 'Content Valid', 'In Diff'] },
-            { group: 'Git', checks: ['Is Worktree', 'Feature Branch', 'tmux ID', 'Under .aumx'] },
+            { group: 'Git', checks: ['Is Worktree', 'Feature Branch', 'tmux ID', 'Under .muxbase'] },
             { group: 'UI', checks: ['Activity', 'Conversation', 'Tokens', 'Diff'] },
           ].map((g) => {
             return `<tr><td colspan="${totalPanes + 1}" style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;padding-top:12px;border-bottom:none">${g.group}</td></tr>` +
@@ -1307,7 +1307,7 @@ function generateReport(): string {
                     'Pane ID': p.configPaneIdMatch, 'Worktree': p.configWorktreeMatch,
                     'Exists': p.fileExists, 'Content Valid': p.fileContentValid, 'In Diff': p.expectedFileInDiff,
                     'Is Worktree': p.gitIsWorktree, 'Feature Branch': p.gitBranchIsFeature,
-                    'tmux ID': p.tmuxPaneIdFormat, 'Under .aumx': p.worktreeUnderAumx,
+                    'tmux ID': p.tmuxPaneIdFormat, 'Under .muxbase': p.worktreeUnderMuxBase,
                     'Activity': p.activityVerified, 'Conversation': p.conversationVerified,
                     'Tokens': p.tokensVerified, 'Diff': p.diffVerified,
                   };
@@ -1354,7 +1354,7 @@ function generateReport(): string {
   </section>
 
   <div class="report-footer">
-    Generated by <strong>aumx</strong> Multi-Pane Agent E2E Test Suite
+    Generated by <strong>muxbase</strong> Multi-Pane Agent E2E Test Suite
   </div>
 </div>
 </body>
@@ -1384,11 +1384,11 @@ function writeReport(): void {
 // Test Suite
 // ---------------------------------------------------------------------------
 
-if (process.env.AUMX_E2E !== '1') {
-  console.warn('Multi-Pane Agent E2E skipped — set AUMX_E2E=1 to run');
+if (process.env.MUXBASE_E2E !== '1') {
+  console.warn('Multi-Pane Agent E2E skipped — set MUXBASE_E2E=1 to run');
 }
 
-describe.runIf(process.env.AUMX_E2E === '1')('Multi-Pane Agent E2E', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('Multi-Pane Agent E2E', () => {
   let app: ElectronApplication;
   let page: Page;
   let projectRoot = '';
@@ -1408,14 +1408,14 @@ describe.runIf(process.env.AUMX_E2E === '1')('Multi-Pane Agent E2E', () => {
 
       // Never create E2E worktrees inside the source repository. A temp Git
       // fixture is removed even if pane cleanup or Electron shutdown fails.
-      projectRoot = realpathSync(mkdtempSync(join(tmpdir(), 'aumx-multi-pane-e2e-')));
+      projectRoot = realpathSync(mkdtempSync(join(tmpdir(), 'muxbase-multi-pane-e2e-')));
       execFileSync('git', ['init', '--initial-branch=main'], {
         cwd: projectRoot,
         stdio: 'ignore',
       });
-      execFileSync('git', ['config', 'user.email', 'e2e@aumx.local'], { cwd: projectRoot });
-      execFileSync('git', ['config', 'user.name', 'Aumx E2E'], { cwd: projectRoot });
-      writeFileSync(join(projectRoot, '.gitignore'), '.amux/\n.aumx/\n');
+      execFileSync('git', ['config', 'user.email', 'e2e@muxbase.local'], { cwd: projectRoot });
+      execFileSync('git', ['config', 'user.name', 'MuxBase E2E'], { cwd: projectRoot });
+      writeFileSync(join(projectRoot, '.gitignore'), '.muxbase/\n');
       writeFileSync(join(projectRoot, 'README.md'), '# multi-pane E2E fixture\n');
       execFileSync('git', ['add', '.gitignore', 'README.md'], { cwd: projectRoot });
       execFileSync('git', ['commit', '-m', 'initial fixture'], {
@@ -1430,16 +1430,16 @@ describe.runIf(process.env.AUMX_E2E === '1')('Multi-Pane Agent E2E', () => {
         env: {
           ...process.env,
           NODE_ENV: 'test',
-          AUMX_DEV: 'true',
+          MUXBASE_DEV: 'true',
         },
       });
 
       page = await getAppWindow(app);
 
-      // Expose __aumxStores for E2E store access (e.g. navigateToFleetView).
-      // Vite replaces process.env at build time, so we use window.__AUMX_E2E instead.
+      // Expose __muxbaseStores for E2E store access (e.g. navigateToFleetView).
+      // Vite replaces process.env at build time, so we use window.__MUXBASE_E2E instead.
       await app.context().addInitScript(() => {
-        (window as any).__AUMX_E2E = true;
+        (window as any).__MUXBASE_E2E = true;
       });
       await page.reload();
       testSessionName = (await getSessionInfo(page)).sessionName;
@@ -1584,8 +1584,8 @@ describe.runIf(process.env.AUMX_E2E === '1')('Multi-Pane Agent E2E', () => {
           async () => existsSync(newPane.worktreePath!) || null,
           { timeout: 5_000, interval: 250, label: `waitForWorktree(${newPane.slug})` },
         );
-        // New projects keep worktrees under .amux/worktrees/.
-        expect(newPane.worktreePath).toContain('.amux/worktrees/');
+        // New projects keep worktrees under .muxbase/worktrees/.
+        expect(newPane.worktreePath).toContain('.muxbase/worktrees/');
 
         // Pane type should be worktree (default)
         if (newPane.type) {
@@ -1626,7 +1626,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Multi-Pane Agent E2E', () => {
           type: newPane.type ?? 'worktree',
           promptStored: newPane.prompt === prompt,
           worktreePathValid: newPane.worktreePath ? existsSync(newPane.worktreePath) : false,
-          worktreeUnderAumx: newPane.worktreePath?.includes('.amux/worktrees/') ?? false,
+          worktreeUnderMuxBase: newPane.worktreePath?.includes('.muxbase/worktrees/') ?? false,
           tmuxPaneIdFormat: /^%\d+$/.test(newPane.paneId ?? ''),
           configHasPane: false,
           configPromptMatch: false,
@@ -1819,9 +1819,9 @@ describe.runIf(process.env.AUMX_E2E === '1')('Multi-Pane Agent E2E', () => {
       // Verify pane persistence in the active project metadata config.
       const sessionInfo = await getSessionInfo(page);
       const configPath = getProjectConfigPath(sessionInfo.projectRoot);
-      expect(existsSync(configPath), `Missing aumx config file: ${configPath}`).toBe(true);
+      expect(existsSync(configPath), `Missing muxbase config file: ${configPath}`).toBe(true);
       const configRaw = readFileSync(configPath, 'utf-8');
-      const config = JSON.parse(configRaw) as { panes?: AumxPane[] };
+      const config = JSON.parse(configRaw) as { panes?: MuxBasePane[] };
       const configPanes = config.panes ?? [];
 
       const latestPanes = await getPanes(page);

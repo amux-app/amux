@@ -1,6 +1,6 @@
 import { app, ipcMain } from 'electron';
 import { IPC, IPC_SYNC } from '../../shared/ipc-channels.js';
-import type { AppFileFlushResultRequest, AumxBootSettings, ElectronSettings } from '../../shared/ipc-types.js';
+import type { AppFileFlushResultRequest, MuxBaseBootSettings, ElectronSettings } from '../../shared/ipc-types.js';
 import type { AppBootService } from '../services/AppBootService.js';
 import { ElectronSettingsService } from '../services/ElectronSettingsService.js';
 import { log } from '../services/Logger.js';
@@ -10,19 +10,19 @@ import { secureHandle } from './ipc-security.js';
  * An unreplied sync IPC message hangs the preload forever, so an unreadable
  * settings file (EACCES/EPERM/EISDIR) must degrade to defaults, never throw.
  */
-function pickBootSettings(settings: ElectronSettings): AumxBootSettings {
+function pickBootSettings(settings: ElectronSettings): MuxBaseBootSettings {
   return {
     sidebarCollapsed: settings.sidebarCollapsed,
     sidebarOrganize: settings.sidebarOrganize,
     sidebarSort: settings.sidebarSort,
     sidebarWidth: settings.sidebarWidth,
     terminalTheme: settings.terminalTheme,
-    terminalSelectionIntegrationEnabled: process.env.AUMX_DISABLE_TERMINAL_SELECTION_INTEGRATION !== '1',
+    terminalSelectionIntegrationEnabled: process.env.MUXBASE_DISABLE_TERMINAL_SELECTION_INTEGRATION !== '1',
     theme: settings.theme,
   };
 }
 
-function readBootSettings(): AumxBootSettings {
+function readBootSettings(): MuxBaseBootSettings {
   try {
     return pickBootSettings(ElectronSettingsService.getInstance().getAll());
   } catch (error) {

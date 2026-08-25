@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const settings = vi.hoisted(() => ({ piModel: '', piThinking: '' }));
 
-vi.mock('aumx/core', () => ({
+vi.mock('muxbase/core', () => ({
   SettingsManager: {
     getInstance: vi.fn(() => ({ getSettings: () => settings })),
   },
@@ -16,7 +16,7 @@ describe('readPiDefaults', () => {
     settings.piThinking = '';
   });
 
-  it('reports scoped Amux Pi model and thinking defaults', () => {
+  it('reports scoped MuxBase Pi model and thinking defaults', () => {
     settings.piModel = 'openai/gpt-5.5';
     settings.piThinking = 'high';
 

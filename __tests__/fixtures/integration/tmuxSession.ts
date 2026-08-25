@@ -29,7 +29,7 @@ export function createMockTmuxSession(
   for (let i = 0; i < numPanes; i++) {
     panes.push({
       paneId: `%${i}`,
-      title: i === 0 ? 'aumx-control' : `pane-${i}`,
+      title: i === 0 ? 'muxbase-control' : `pane-${i}`,
       width: 80,
       height: 24,
       x: i * 80,

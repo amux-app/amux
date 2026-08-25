@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { invoke } from '../api/ipc';
 import { IPC } from '../../shared/ipc-channels';
 import type { GitStatusResponse } from '../../shared/ipc-types';
@@ -9,9 +9,9 @@ import { useVisiblePolling } from './useVisiblePolling';
 const MAX_CONCURRENT = 3;
 const POLL_INTERVAL_MS = 10_000;
 
-type PanesByPath = Map<string, AumxPane[]>;
+type PanesByPath = Map<string, MuxBasePane[]>;
 
-function groupPanesByGitPath(panes: AumxPane[]): PanesByPath {
+function groupPanesByGitPath(panes: MuxBasePane[]): PanesByPath {
   const grouped: PanesByPath = new Map();
   for (const pane of panes) {
     const gitPath = pane.worktreePath || pane.projectRoot;
@@ -27,7 +27,7 @@ function groupPanesByGitPath(panes: AumxPane[]): PanesByPath {
  * Polls worktree status once per distinct working tree. Panes that share a
  * worktree read the same result instead of each issuing its own git scan.
  */
-export function useWorktreeStatus(panes: AumxPane[]): void {
+export function useWorktreeStatus(panes: MuxBasePane[]): void {
   const setStatus = useWorktreeStatusStore((s) => s.set);
   const pruneStatuses = useWorktreeStatusStore((s) => s.prune);
   const pendingRef = useRef(new Set<string>());

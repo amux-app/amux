@@ -252,7 +252,7 @@ function selectAnalysisAttempt(
 }
 
 function makeCaptureMarker(token: string, index: number): string {
-  return `__AUMX_CAPTURE_${token}_${index}__`;
+  return `__MUXBASE_CAPTURE_${token}_${index}__`;
 }
 
 function buildBatchArgs(

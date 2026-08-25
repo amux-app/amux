@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createEmptyMetrics, type NormalizedSession } from '../src/shared/agent-session-types';
 import { useSidebarSession } from '../src/renderer/hooks/useSidebarSession';
@@ -8,7 +8,7 @@ import { useAgentSessionStore } from '../src/renderer/stores/agent-session.store
 import { usePaneActivityStore } from '../src/renderer/stores/pane-activity.store';
 import { makeActivity as activity } from './helpers/pane-activity-fixtures';
 
-function pane(id: string, overrides: Partial<AumxPane> = {}): AumxPane {
+function pane(id: string, overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'claude',
     agentStatus: 'idle',

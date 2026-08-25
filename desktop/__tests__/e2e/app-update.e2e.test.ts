@@ -13,7 +13,7 @@ const MAIN_ENTRY = resolve(ROOT, 'out', 'main', 'index.js');
 const STARTUP_TIMEOUT_MS = 30_000;
 
 interface E2EUpdateWindow {
-  __aumxStores?: {
+  __muxbaseStores?: {
     ui: {
       getState: () => {
         openSettings: (category: 'about') => void;
@@ -23,14 +23,14 @@ interface E2EUpdateWindow {
       };
     };
   };
-  aumx: {
+  muxbase: {
     invoke: <T>(channel: string) => Promise<T>;
   };
 }
 
 async function invokeUpdate<T>(page: Page, channel: string): Promise<T> {
   return page.evaluate(
-    (ipcChannel) => (window as unknown as E2EUpdateWindow).aumx.invoke<T>(ipcChannel),
+    (ipcChannel) => (window as unknown as E2EUpdateWindow).muxbase.invoke<T>(ipcChannel),
     channel,
   );
 }
@@ -40,7 +40,7 @@ async function setView(
   view: 'fleet' | 'kanban' | 'settings' | 'zen',
 ): Promise<void> {
   await page.evaluate((target) => {
-    const store = (window as unknown as E2EUpdateWindow).__aumxStores?.ui;
+    const store = (window as unknown as E2EUpdateWindow).__muxbaseStores?.ui;
     if (!store) throw new Error('E2E UI store is unavailable');
     const ui = store.getState();
     ui.setZenMode(target === 'zen');
@@ -53,7 +53,7 @@ async function setView(
   }, view);
 }
 
-describe.runIf(process.env.AUMX_E2E === '1')('Application update E2E', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('Application update E2E', () => {
   describe('eligible packaged update', () => {
     let app: ElectronApplication;
     let page: Page;
@@ -77,28 +77,28 @@ describe.runIf(process.env.AUMX_E2E === '1')('Application update E2E', () => {
 
       await invokeUpdate<AppUpdateSnapshot>(page, IPC.UPDATE_CHECK);
       await expect.poll(
-        () => page.getByRole('button', { name: 'Update Amux to 0.0.2' }).count(),
+        () => page.getByRole('button', { name: 'Update MuxBase to 0.0.2' }).count(),
         { timeout: 10_000 },
       ).toBe(1);
-      expect(await page.getByText('Amux 0.0.2 is ready to install.').count()).toBe(1);
+      expect(await page.getByText('MuxBase 0.0.2 is ready to install.').count()).toBe(1);
 
       for (const view of ['fleet', 'kanban', 'settings', 'zen'] as const) {
         await setView(page, view);
         await expect.poll(
-          () => page.getByRole('button', { name: 'Update Amux to 0.0.2' }).count(),
+          () => page.getByRole('button', { name: 'Update MuxBase to 0.0.2' }).count(),
         ).toBe(1);
       }
 
       await setView(page, 'fleet');
-      const updateButton = page.getByRole('button', { name: 'Update Amux to 0.0.2' });
+      const updateButton = page.getByRole('button', { name: 'Update MuxBase to 0.0.2' });
       await updateButton.click({ timeout: 3_000 });
       await expect.poll(
-        () => page.getByRole('dialog', { name: 'Amux update ready' }).isVisible(),
+        () => page.getByRole('dialog', { name: 'MuxBase update ready' }).isVisible(),
       ).toBe(true);
       expect(await page.getByText('0.0.1 → 0.0.2').isVisible()).toBe(true);
       await page.getByRole('button', { name: 'Later' }).click({ timeout: 3_000 });
       await expect.poll(
-        () => page.getByRole('dialog', { name: 'Amux update ready' }).count(),
+        () => page.getByRole('dialog', { name: 'MuxBase update ready' }).count(),
         { timeout: 2_000 },
       ).toBe(0);
       await expect.poll(
@@ -110,7 +110,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Application update E2E', () => {
       await page.getByRole('button', { name: 'Restart and update' }).click({ timeout: 3_000 });
       await expect.poll(
         () => page.getByRole('button', {
-          name: 'Preparing to restart and update Amux',
+          name: 'Preparing to restart and update MuxBase',
         }).isDisabled(),
         { timeout: 10_000 },
       ).toBe(true);
@@ -149,7 +149,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Application update E2E', () => {
       expect(await page.getByLabel('Automatic update setup').count()).toBe(0);
       await setView(page, 'settings');
       await expect.poll(
-        () => page.getByText('Automatic updates unavailable — move Amux to Applications').isVisible(),
+        () => page.getByText('Automatic updates unavailable — move MuxBase to Applications').isVisible(),
       ).toBe(true);
       expect(await page.getByRole('button', { name: 'Check for Updates' }).isDisabled()).toBe(true);
       expect(await page.getByRole('button', { name: /Restart and update/ }).count()).toBe(0);

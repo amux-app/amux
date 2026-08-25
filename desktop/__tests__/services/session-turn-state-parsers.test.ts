@@ -8,7 +8,7 @@ import { CodexLogParser } from '../../src/main/services/parsing/CodexLogParser';
 const tempDirs: string[] = [];
 
 function writeJsonl(lines: unknown[]): string {
-  const dir = mkdtempSync(join(tmpdir(), 'aumx-parser-'));
+  const dir = mkdtempSync(join(tmpdir(), 'muxbase-parser-'));
   tempDirs.push(dir);
   const filePath = join(dir, 'session.jsonl');
   writeFileSync(filePath, lines.map((line) => JSON.stringify(line)).join('\n'));

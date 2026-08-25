@@ -17,7 +17,7 @@ const detector = vi.hoisted(() => ({
   current: null as { getStats: () => unknown } | null,
 }));
 
-vi.mock('aumx/core', () => ({
+vi.mock('muxbase/core', () => ({
   execFileAsync: () => Promise.resolve(''),
   peekStatusDetector: () => detector.current,
 }));

@@ -4,9 +4,9 @@ import { join } from 'path';
 import { atomicWriteFileSync } from './atomicWrite.js';
 
 const EXTENSIONS_DIRECTORY = join(homedir(), '.pi', 'agent', 'extensions');
-const EXTENSION_PATH = join(EXTENSIONS_DIRECTORY, 'aumx-activity.ts');
-const CONSENT_PATH = join(homedir(), '.pi', 'agent', 'aumx-activity.enabled');
-const OWNERSHIP_MARKER = '// AUMX_ACTIVITY_ADAPTER: pi:v1';
+const EXTENSION_PATH = join(EXTENSIONS_DIRECTORY, 'muxbase-activity.ts');
+const CONSENT_PATH = join(homedir(), '.pi', 'agent', 'muxbase-activity.enabled');
+const OWNERSHIP_MARKER = '// MUXBASE_ACTIVITY_ADAPTER: pi:v1';
 
 const EXTENSION_SOURCE = `${OWNERSHIP_MARKER}
 import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readdirSync, renameSync, statSync, unlinkSync } from "node:fs";
@@ -21,9 +21,9 @@ export default function (pi: ExtensionAPI) {
   const write = (kind: string, ctx: any, turnId?: string) => {
     try {
       if (!existsSync(consentPath)) return;
-      const journal = process.env.AUMX_ACTIVITY_JOURNAL;
-      const paneId = process.env.AUMX_PANE_ID;
-      const paneIncarnationId = process.env.AUMX_PANE_INCARNATION_ID;
+      const journal = process.env.MUXBASE_ACTIVITY_JOURNAL;
+      const paneId = process.env.MUXBASE_PANE_ID;
+      const paneIncarnationId = process.env.MUXBASE_PANE_INCARNATION_ID;
       if (!journal || !paneId || !paneIncarnationId) return;
       const record = {
         eventId: randomUUID(),
@@ -48,9 +48,9 @@ export default function (pi: ExtensionAPI) {
           paneId,
           paneIncarnationId,
           sessionId: ctx.sessionManager.getSessionId(),
-          adapterVersion: process.env.AUMX_ACTIVITY_ADAPTER_VERSION || "unknown",
-          adapterSupport: process.env.AUMX_ACTIVITY_ADAPTER_SUPPORT === "full" || process.env.AUMX_ACTIVITY_ADAPTER_SUPPORT === "partial"
-            ? process.env.AUMX_ACTIVITY_ADAPTER_SUPPORT
+          adapterVersion: process.env.MUXBASE_ACTIVITY_ADAPTER_VERSION || "unknown",
+          adapterSupport: process.env.MUXBASE_ACTIVITY_ADAPTER_SUPPORT === "full" || process.env.MUXBASE_ACTIVITY_ADAPTER_SUPPORT === "partial"
+            ? process.env.MUXBASE_ACTIVITY_ADAPTER_SUPPORT
             : "partial",
           adapterCapabilities: parseAdapterCapabilities(),
           emittedAt: Date.now(),
@@ -62,7 +62,7 @@ export default function (pi: ExtensionAPI) {
   };
   function parseAdapterCapabilities() {
     try {
-      const value = JSON.parse(process.env.AUMX_ACTIVITY_ADAPTER_CAPABILITIES || "[]");
+      const value = JSON.parse(process.env.MUXBASE_ACTIVITY_ADAPTER_CAPABILITIES || "[]");
       return Array.isArray(value) ? value : [];
     } catch (_) {
       return [];

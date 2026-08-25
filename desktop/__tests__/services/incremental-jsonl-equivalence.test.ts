@@ -47,8 +47,8 @@ describe('incremental parse at every boundary class', () => {
     '$name matches a full parse when split at every decision offset',
     async (scenario) => {
       // Arrange
-      const incrementalPath = createTempFile('aumx-incr-boundary-');
-      const fullPath = createTempFile('aumx-full-boundary-');
+      const incrementalPath = createTempFile('muxbase-incr-boundary-');
+      const fullPath = createTempFile('muxbase-full-boundary-');
       const offsets = boundaryClassOffsets(scenario.content, BOUNDARY_WALK_STRIDE);
 
       // Act
@@ -67,13 +67,13 @@ describe('incremental parse equivalence', () => {
     '$name matches a full parse across newline and mid-record splits',
     async (scenario) => {
       // Arrange
-      const fullPath = createTempFile('aumx-full-split-');
+      const fullPath = createTempFile('muxbase-full-split-');
       const full = await scenario.parseFull(fullPath);
       const schedules = [newlineOffsets(scenario.content), midRecordOffsets(scenario.content)];
 
       // Act + Assert
       for (const [index, offsets] of schedules.entries()) {
-        const incrementalPath = createTempFile(`aumx-incr-split-${index}-`);
+        const incrementalPath = createTempFile(`muxbase-incr-split-${index}-`);
         expect(await scenario.feed(incrementalPath, offsets), `schedule ${index}`).toEqual(full);
       }
     },
@@ -83,13 +83,13 @@ describe('incremental parse equivalence', () => {
     '$name matches a full parse for every randomized split schedule',
     async (scenario) => {
       // Arrange
-      const fullPath = createTempFile('aumx-full-random-');
+      const fullPath = createTempFile('muxbase-full-random-');
       const full = await scenario.parseFull(fullPath);
 
       // Act + Assert
       for (let seed = 1; seed <= RANDOM_SCHEDULES; seed++) {
         const offsets = randomOffsets(scenario.content, seed, RANDOM_SPLITS_PER_SCHEDULE);
-        const incrementalPath = createTempFile(`aumx-incr-random-${seed}-`);
+        const incrementalPath = createTempFile(`muxbase-incr-random-${seed}-`);
         expect(await scenario.feed(incrementalPath, offsets), `seed ${seed}`).toEqual(full);
       }
     },
@@ -100,7 +100,7 @@ describe('claude incremental parse content', () => {
   it('carries every cross-line accumulator into the session', async () => {
     // Arrange
     const scenario = claudeScenario();
-    const filePath = createTempFile('aumx-incr-content-');
+    const filePath = createTempFile('muxbase-incr-content-');
 
     // Act
     const session = await scenario.feed(filePath, midRecordOffsets(scenario.content));
@@ -130,8 +130,8 @@ describe('turn completion carried across chunks', () => {
     const codex = codexScenario(CODEX_SETTLED_FIXTURE_LINES);
 
     // Act
-    const claudeSession = await claude.feed(createTempFile('aumx-settled-claude-'), newlineOffsets(claude.content));
-    const codexSession = await codex.feed(createTempFile('aumx-settled-codex-'), newlineOffsets(codex.content));
+    const claudeSession = await claude.feed(createTempFile('muxbase-settled-claude-'), newlineOffsets(claude.content));
+    const codexSession = await codex.feed(createTempFile('muxbase-settled-codex-'), newlineOffsets(codex.content));
 
     // Assert
     expect(claudeSession.turnCompleted).toBe(true);
@@ -143,7 +143,7 @@ describe('turn completion carried across chunks', () => {
     const codex = codexScenario(CODEX_UNSETTLED_FIXTURE_LINES);
 
     // Act
-    const session = await codex.feed(createTempFile('aumx-unsettled-codex-'), newlineOffsets(codex.content));
+    const session = await codex.feed(createTempFile('muxbase-unsettled-codex-'), newlineOffsets(codex.content));
 
     // Assert
     expect(session.turnCompleted).toBe(false);
@@ -155,7 +155,7 @@ describe('codex incremental parse content', () => {
   it('carries every cross-line accumulator into the session', async () => {
     // Arrange
     const scenario = codexScenario();
-    const filePath = createTempFile('aumx-incr-codex-content-');
+    const filePath = createTempFile('muxbase-incr-codex-content-');
 
     // Act
     const session = await scenario.feed(filePath, midRecordOffsets(scenario.content));

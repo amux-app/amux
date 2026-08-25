@@ -22,9 +22,9 @@ describe('file browser resize layout contract', () => {
   it('lets separators own the file browser seams', () => {
     expect(FILE_BROWSER_PANEL_CLASS.split(' ')).not.toContain('border-r');
     expect(FILE_VIEWER_PANEL_CLASS.split(' ')).not.toContain('border-l');
-    expect(FILE_BROWSER_RESIZE_HANDLE_CLASS.split(' ')).toContain('aumx-resize-handle--file-browser');
-    expect(FILE_BROWSER_SHELL_RESIZE_HANDLE_CLASS.split(' ')).toContain('aumx-resize-handle--file-browser-shell');
-    expect(FILE_BROWSER_VIEWER_RESIZE_HANDLE_CLASS.split(' ')).toContain('aumx-resize-handle--file-browser-viewer');
+    expect(FILE_BROWSER_RESIZE_HANDLE_CLASS.split(' ')).toContain('muxbase-resize-handle--file-browser');
+    expect(FILE_BROWSER_SHELL_RESIZE_HANDLE_CLASS.split(' ')).toContain('muxbase-resize-handle--file-browser-shell');
+    expect(FILE_BROWSER_VIEWER_RESIZE_HANDLE_CLASS.split(' ')).toContain('muxbase-resize-handle--file-browser-viewer');
   });
 
   it('uses a larger resize hit target for file browser splits', () => {
@@ -41,17 +41,17 @@ describe('file browser resize layout contract', () => {
   });
 
   it('defines a crowded-state cue when the viewer becomes too narrow', () => {
-    expect(FILE_BROWSER_CROWDED_RESIZE_HANDLE_CLASS).toBe('aumx-resize-handle--file-browser-crowded');
-    expect(FILE_BROWSER_CROWDED_VIEWER_CLASS).toBe('aumx-file-viewer--crowded');
+    expect(FILE_BROWSER_CROWDED_RESIZE_HANDLE_CLASS).toBe('muxbase-resize-handle--file-browser-crowded');
+    expect(FILE_BROWSER_CROWDED_VIEWER_CLASS).toBe('muxbase-file-viewer--crowded');
     expect(FILE_BROWSER_CROWDED_VIEWER_THRESHOLD).toBe(220);
   });
 
   it('defines a dedicated file browser separator affordance', () => {
     const css = readFileSync(new URL('../src/renderer/styles/globals.css', import.meta.url), 'utf8');
 
-    expect(css).toContain('.aumx-resize-handle--file-browser');
-    expect(css).toContain('.aumx-resize-handle--file-browser-crowded');
-    expect(css).toContain('.aumx-file-viewer--crowded');
+    expect(css).toContain('.muxbase-resize-handle--file-browser');
+    expect(css).toContain('.muxbase-resize-handle--file-browser-crowded');
+    expect(css).toContain('.muxbase-file-viewer--crowded');
     expect(css).toContain('width: 11px;');
     expect(css).toContain('height: 34px;');
     expect(css).toContain('translate(calc(-50% - 3px), -50%)');

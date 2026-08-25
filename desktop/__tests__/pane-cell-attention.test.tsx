@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PaneCell } from '../src/renderer/components/dashboard/PaneCell';
@@ -56,7 +56,7 @@ const TEXT_TOKEN = 'text-[var(--attention-waiting-text)]';
 const CONTAINER_QUERY = '@min-[360px]/panecell:inline';
 const QUESTION = 'Which migration should I run first?';
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'claude',
     agentStatus: 'idle',
@@ -66,7 +66,7 @@ function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
     prompt: 'ship it',
     slug: 'task-one',
     type: 'worktree',
-    worktreePath: '/repo/.aumx/worktrees/task-one',
+    worktreePath: '/repo/.muxbase/worktrees/task-one',
     ...overrides,
   };
 }
@@ -75,7 +75,7 @@ function makeSession(overrides: Partial<NormalizedSession>): NormalizedSession {
   return { ...createEmptySession('claude', 'session-1'), ...overrides };
 }
 
-function resetStores(pane: AumxPane, options: { justFinished?: boolean; selected?: boolean } = {}): void {
+function resetStores(pane: MuxBasePane, options: { justFinished?: boolean; selected?: boolean } = {}): void {
   useAgentSessionStore.setState({ sessions: {} });
   usePaneStore.setState({
     isCreating: false,

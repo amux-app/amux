@@ -2,18 +2,18 @@ import {
   isSettingKey,
   SETTING_DEFINITIONS,
   SettingsManager,
-  type AumxSettings,
+  type MuxBaseSettings,
   validateSettingValue,
-} from 'aumx/core';
+} from 'muxbase/core';
 import { IPC } from '../../shared/ipc-channels.js';
 import type { SettingsGetRequest, SettingsUpdateRequest } from '../../shared/ipc-types.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { log } from '../services/Logger.js';
 import { formatError } from '../utils/formatError.js';
 import { authorizeProjectRoot } from '../services/projectRootAuthorization.js';
 import { secureHandle } from './ipc-security.js';
 
-export function registerSettingsHandlers(bridge: AumxBridge): void {
+export function registerSettingsHandlers(bridge: MuxBaseBridge): void {
   secureHandle(IPC.SETTINGS_DEFINITIONS, () => SETTING_DEFINITIONS);
 
   secureHandle(IPC.SETTINGS_GET, async (_event, request?: SettingsGetRequest) => {
@@ -36,8 +36,8 @@ export function registerSettingsHandlers(bridge: AumxBridge): void {
       }
       const root = bridge.getProjectRoot();
       SettingsManager.getInstance(root).updateSetting(
-        request.key as keyof AumxSettings,
-        request.value as AumxSettings[keyof AumxSettings],
+        request.key as keyof MuxBaseSettings,
+        request.value as MuxBaseSettings[keyof MuxBaseSettings],
         request.scope,
       );
       return { success: true };

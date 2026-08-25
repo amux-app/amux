@@ -278,7 +278,7 @@ describe('ipc request validation', () => {
         gitStatus: 'clean',
         registration: 'registered',
       },
-      worktreePath: '/repo/.aumx/worktrees/preserved',
+      worktreePath: '/repo/.muxbase/worktrees/preserved',
     };
 
     expect(() => validateIpcInvokeArgs(IPC.WORKTREE_REMOVE, [request])).not.toThrow();

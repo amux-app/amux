@@ -1,4 +1,4 @@
-import type { AgentName } from 'aumx/core';
+import type { AgentName } from 'muxbase/core';
 import type { AgentDefaultsResponse } from '../../../shared/ipc-types';
 import { AgentSelector } from './AgentSelector';
 import { AgentTuning } from './AgentTuning';

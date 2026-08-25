@@ -1,7 +1,7 @@
 /**
  * TmuxHookManager - Manages tmux hooks for event-driven updates
  *
- * Instead of polling every 5 seconds, tmux hooks notify aumx immediately
+ * Instead of polling every 5 seconds, tmux hooks notify muxbase immediately
  * when panes are created, closed, or resized. This reduces CPU usage and
  * improves responsiveness.
  *
@@ -121,7 +121,7 @@ export class TmuxHookManager extends EventEmitter {
 
   /**
    * Quick check if hooks are installed AND targeting the current process PID.
-   * Detects stale hooks left by a prior aumx instance that crashed/restarted.
+   * Detects stale hooks left by a prior muxbase instance that crashed/restarted.
    */
   async areHooksInstalled(): Promise<boolean> {
     if (!this.sessionName) return false;
@@ -136,7 +136,7 @@ export class TmuxHookManager extends EventEmitter {
 
     const output = result.stdout;
     // Must contain our marker AND the current PID to be considered valid
-    return output.includes('aumx-hook') && output.includes(`kill -USR2 ${this.pid}`);
+    return output.includes('muxbase-hook') && output.includes(`kill -USR2 ${this.pid}`);
   }
 
   /**
@@ -151,10 +151,10 @@ export class TmuxHookManager extends EventEmitter {
     try {
       const sn = shQuote(this.sessionName);
       const hookCommands = [
-        `tmux set-hook -t ${sn} after-split-window 'run-shell "kill -USR2 ${this.pid} 2>/dev/null || true # aumx-hook"'`,
-        `tmux set-hook -t ${sn} pane-exited 'run-shell "kill -USR2 ${this.pid} 2>/dev/null || true # aumx-hook"'`,
-        `tmux set-hook -t ${sn} client-resized 'run-shell "kill -USR2 ${this.pid} 2>/dev/null || true # aumx-hook"'`,
-        `tmux set-hook -t ${sn} after-select-pane 'run-shell "kill -USR2 ${this.pid} 2>/dev/null || true # aumx-hook"'`,
+        `tmux set-hook -t ${sn} after-split-window 'run-shell "kill -USR2 ${this.pid} 2>/dev/null || true # muxbase-hook"'`,
+        `tmux set-hook -t ${sn} pane-exited 'run-shell "kill -USR2 ${this.pid} 2>/dev/null || true # muxbase-hook"'`,
+        `tmux set-hook -t ${sn} client-resized 'run-shell "kill -USR2 ${this.pid} 2>/dev/null || true # muxbase-hook"'`,
+        `tmux set-hook -t ${sn} after-select-pane 'run-shell "kill -USR2 ${this.pid} 2>/dev/null || true # muxbase-hook"'`,
       ];
 
       for (const cmd of hookCommands) {
@@ -171,7 +171,7 @@ export class TmuxHookManager extends EventEmitter {
   }
 
   /**
-   * Remove all aumx hooks from this session
+   * Remove all muxbase hooks from this session
    */
   async uninstallHooks(): Promise<boolean> {
     if (!this.sessionName) return false;

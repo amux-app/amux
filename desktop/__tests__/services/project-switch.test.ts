@@ -1,7 +1,7 @@
 /**
  * Integration test for the project-switch race surface.
  *
- * AumxBridge.switchProject() tears down per-project services, swaps the action
+ * MuxBaseBridge.switchProject() tears down per-project services, swaps the action
  * callback registry, and purges StateManager panes before booting the new
  * project. These tests exercise that lifecycle and the concurrency guards that
  * protect it when an operation (e.g. a pane creation) is in flight.
@@ -17,7 +17,7 @@ import {
   resumeAgentInPane,
   type AgentName,
   triggerHook,
-} from 'aumx/core';
+} from 'muxbase/core';
 import type { BrowserWindow } from 'electron';
 import { accessSync, constants, existsSync, mkdirSync, readFileSync, statSync } from 'fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -70,7 +70,7 @@ vi.mock('@electron-toolkit/utils', () => ({
   is: { dev: false },
 }));
 
-vi.mock('aumx/core', () => ({
+vi.mock('muxbase/core', () => ({
   assertClaudeFullscreenSupported: vi.fn().mockResolvedValue(undefined),
   LogService: { getInstance: () => coreState.logService },
   SettingsManager: { getInstance: () => ({ getSettings: () => ({ claudeFullscreenRendering: true }) }) },
@@ -87,17 +87,17 @@ vi.mock('aumx/core', () => ({
   generateLocalSlug: vi.fn(() => 'compare-implementations'),
   condenseTitleLocally: condenseTitleLocallyMock,
   normalizeAutomaticPaneTitle: normalizeAutomaticPaneTitleMock,
-  parseAumxConfig: vi.fn((value: unknown) => value),
+  parseMuxBaseConfig: vi.fn((value: unknown) => value),
   inspectPreservedWorktreeAsync: coreState.inspectPreservedWorktreeAsync,
   listPreservedWorktreesAsync: coreState.listPreservedWorktreesAsync,
   removePreservedWorktreeAsync: coreState.removePreservedWorktreeAsync,
   getRunningAgentPanes: coreState.getRunningAgentPanes,
   listConflictMergeTransactions: coreState.listConflictMergeTransactions,
-  getProjectConfigPath: (projectRoot: string) => `${projectRoot}/.amux/aumx.config.json`,
-  getPaneActivityJournalPath: (incarnationId: string) => `/tmp/aumx-activity-${incarnationId}.ndjson`,
-  getProjectMetadataDir: (projectRoot: string) => `${projectRoot}/.amux`,
+  getProjectConfigPath: (projectRoot: string) => `${projectRoot}/.muxbase/muxbase.config.json`,
+  getPaneActivityJournalPath: (incarnationId: string) => `/tmp/muxbase-activity-${incarnationId}.ndjson`,
+  getProjectMetadataDir: (projectRoot: string) => `${projectRoot}/.muxbase`,
   getProjectMetadataPath: (projectRoot: string, ...segments: string[]) => (
-    [projectRoot, '.amux', ...segments].join('/')
+    [projectRoot, '.muxbase', ...segments].join('/')
   ),
   reconcilePaneWorktrees: vi.fn().mockImplementation(async (panes: unknown) => ({ panes, attached: 0 })),
   createPane: vi.fn(),
@@ -125,7 +125,7 @@ vi.mock('aumx/core', () => ({
   shQuote: (s: string) => `'${s}'`,
   atomicWriteJsonSync: vi.fn(),
   triggerHook: vi.fn().mockResolvedValue(undefined),
-  ensureAumxGitignore: vi.fn().mockResolvedValue(undefined),
+  ensureMuxBaseGitignore: vi.fn().mockResolvedValue(undefined),
   getStatusDetector: () => coreState.statusDetector,
   TMUX_SHELL_READY_DELAY: 0,
 }));
@@ -222,7 +222,7 @@ vi.mock('../../src/main/services/ProjectDiscovery.js', () => ({
   discoverCurrentProject: vi.fn().mockResolvedValue(null),
 }));
 vi.mock('../../src/main/utils/tmuxSession.js', () => ({
-  ensureTmuxSession: vi.fn().mockResolvedValue({ paneId: '%0', sessionName: 'aumx-test', created: false }),
+  ensureTmuxSession: vi.fn().mockResolvedValue({ paneId: '%0', sessionName: 'muxbase-test', created: false }),
   publishSessionColorHint: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('../../src/main/services/GitRepositoryBootstrap.js', () => ({
@@ -237,7 +237,7 @@ vi.mock('fs', () => ({
   statSync: vi.fn(() => ({ isDirectory: () => true })),
 }));
 
-import { AumxBridge } from '../../src/main/services/AumxBridge';
+import { MuxBaseBridge } from '../../src/main/services/MuxBaseBridge';
 import { ActionCallbackRegistry } from '../../src/main/services/ActionCallbackRegistry';
 import { AgentSessionService } from '../../src/main/services/agent-session/AgentSessionService.js';
 import { ensureGitRepository } from '../../src/main/services/GitRepositoryBootstrap.js';
@@ -282,12 +282,12 @@ interface BridgeInternals {
 }
 
 function resetSingleton(): void {
-  // AumxBridge is a singleton with a private constructor — clear it so each
+  // MuxBaseBridge is a singleton with a private constructor — clear it so each
   // test starts from a clean instance.
-  (AumxBridge as unknown as { instance: AumxBridge | undefined }).instance = undefined;
+  (MuxBaseBridge as unknown as { instance: MuxBaseBridge | undefined }).instance = undefined;
 }
 
-function asInternals(bridge: AumxBridge): BridgeInternals {
+function asInternals(bridge: MuxBaseBridge): BridgeInternals {
   return bridge as unknown as BridgeInternals;
 }
 
@@ -298,7 +298,7 @@ function getStatusUpdatedHandler(): (event: { paneId: string; status: string }) 
   return paneMonitorState.onStatusDetected;
 }
 
-describe('AumxBridge.switchProject — project switch race surface', () => {
+describe('MuxBaseBridge.switchProject — project switch race surface', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(existsSync).mockReturnValue(false);
@@ -322,14 +322,14 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
     vi.mocked(isAgentRunningInPane).mockResolvedValue(false);
     vi.mocked(resumeAgentInPane).mockResolvedValue(true);
     fileBrowserWatchSpies.stop.mockResolvedValue(undefined);
-    delete process.env.AUMX_EXPERIMENTAL_OPENROUTER_TITLES;
-    delete process.env.AUMX_EXPERIMENTAL_OPENROUTER_TITLE_MODEL;
+    delete process.env.MUXBASE_EXPERIMENTAL_OPENROUTER_TITLES;
+    delete process.env.MUXBASE_EXPERIMENTAL_OPENROUTER_TITLE_MODEL;
     delete process.env.OPENROUTER_API_KEY;
     resetSingleton();
   });
 
   it('injects the active OTLP receiver endpoint into action contexts', () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     const internals = asInternals(bridge);
     internals.otlpReceiver = { getPort: () => 4318 };
 
@@ -337,7 +337,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('starts the transcript rollover interval and clears it during project teardown', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval');
 
     try {
@@ -355,7 +355,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('coalesces overlapping transcript rollover sweeps', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     coreState.panes.push({
       id: 'pane-a',
@@ -381,7 +381,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('rejects action persistence before exposing an uncommitted pane in memory', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     const existingPane = { id: 'existing', paneId: '%1', prompt: '', slug: 'existing' };
     const conflictPane = { id: 'conflict', paneId: '%9', prompt: 'resolve', slug: 'conflict' };
@@ -402,7 +402,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('switches project root and purges StateManager panes before booting the new project', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     coreState.panes.push({ id: 'stale-pane', slug: 'stale', prompt: '', paneId: '%1' });
 
     // Act
@@ -416,11 +416,11 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('refuses to switch projects while a conflict merge is active', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     coreState.listConflictMergeTransactions.mockReturnValue([{
       id: 'conflict-1',
-      repoPath: '/tmp/project-a/.amux/worktrees/feature',
+      repoPath: '/tmp/project-a/.muxbase/worktrees/feature',
       state: 'active',
     }]);
     terminalStreamSpies.reset.mockClear();
@@ -435,7 +435,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('clears a partially booted project so the same switch can be retried', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     vi.mocked(ensureTmuxSession).mockRejectedValueOnce(new Error('tmux unavailable'));
 
     await expect(bridge.switchProject('/tmp/project-a')).rejects.toThrow('tmux unavailable');
@@ -451,7 +451,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('does not send renderer events after the window has been destroyed', () => {
     const send = vi.fn();
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     bridge.setWindow({
       isDestroyed: () => true,
       webContents: { send },
@@ -463,7 +463,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('shutdown clears every owned project service and runtime tracking collection', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     const internals = asInternals(bridge);
     internals.worktreeMutationPaths.add('/tmp/project-a/wt');
@@ -484,8 +484,8 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('resolves a pane working directory as tmux arguments rather than a shell string', async () => {
     // Arrange: a pane id that would break out of a quoted shell command.
-    const hostilePaneId = "%1'; touch /tmp/aumx-pwn; #";
-    const bridge = AumxBridge.getInstance();
+    const hostilePaneId = "%1'; touch /tmp/muxbase-pwn; #";
+    const bridge = MuxBaseBridge.getInstance();
     displayPaneFormatMock.mockResolvedValue('/tmp/worktree\n');
     await bridge.switchProject('/tmp/project-a');
     const resolvePaneCwd = vi.mocked(AgentSessionService).mock.calls.at(-1)?.[1];
@@ -502,16 +502,16 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('creates an initial config before booting a first-time project', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     const projectRoot = '/tmp/example-rag';
 
     // Act
     await bridge.switchProject(projectRoot);
 
     // Assert
-    expect(mkdirSync).toHaveBeenCalledWith('/tmp/example-rag/.amux', { recursive: true });
+    expect(mkdirSync).toHaveBeenCalledWith('/tmp/example-rag/.muxbase', { recursive: true });
     expect(atomicWriteJsonSync).toHaveBeenCalledWith(
-      '/tmp/example-rag/.amux/aumx.config.json',
+      '/tmp/example-rag/.muxbase/muxbase.config.json',
       expect.objectContaining({
         controlPaneSize: 40,
         panes: [],
@@ -524,7 +524,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('starts fresh without resurrecting saved panes when requested', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockImplementation(() => JSON.stringify({
       controlPaneSize: 40,
@@ -551,9 +551,9 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
     // Assert
     expect(coreState.panes).toEqual([]);
-    expect(coreExecAsync).toHaveBeenCalledWith("tmux kill-session -t 'aumx-project-a'", { silent: true });
+    expect(coreExecAsync).toHaveBeenCalledWith("tmux kill-session -t 'muxbase-project-a'", { silent: true });
     expect(atomicWriteJsonSync).toHaveBeenCalledWith(
-      '/tmp/project-a/.amux/aumx.config.json',
+      '/tmp/project-a/.muxbase/muxbase.config.json',
       expect.objectContaining({
         panes: [],
         projectName: 'project-a',
@@ -568,7 +568,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('persists all legacy title backfills in one write and sends one pane-list notification', async () => {
     const send = vi.fn();
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     bridge.setWindow({
       isDestroyed: () => false,
       webContents: { send },
@@ -624,7 +624,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
     expect(atomicWriteJsonSync).toHaveBeenCalledOnce();
     expect(atomicWriteJsonSync).toHaveBeenCalledWith(
-      '/tmp/project-a/.amux/aumx.config.json',
+      '/tmp/project-a/.muxbase/muxbase.config.json',
       expect.objectContaining({
         panes: [
           expect.objectContaining({ id: 'missing-a', title: 'condensed:Please fix a' }),
@@ -640,7 +640,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('defers service boot when no project is discovered and cwd is not a project root', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/');
 
     try {
@@ -661,7 +661,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('reuses agents detected by startup preflight during initial service boot', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/tmp/project-a');
     vi.mocked(existsSync).mockImplementation((path) => String(path) === '/tmp/project-a');
 
@@ -676,7 +676,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('finishes initial service boot while optional agent discovery continues in the background', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/tmp/project-a');
     vi.mocked(existsSync).mockImplementation((path) => String(path) === '/tmp/project-a');
     let resolveAgents: (agents: AgentName[]) => void = () => {};
@@ -700,7 +700,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('waits for deferred discovery before creating a pane without an explicit agent', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/tmp/project-a');
     vi.mocked(existsSync).mockImplementation((path) => String(path) === '/tmp/project-a');
     let resolveAgents: (agents: AgentName[]) => void = () => {};
@@ -733,7 +733,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('does not begin bridge discovery when startup is already cancelled', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     const controller = new AbortController();
     controller.abort();
 
@@ -744,7 +744,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('serves agent-list requests from the startup cache', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/tmp/project-a');
     vi.mocked(existsSync).mockImplementation((path) => String(path) === '/tmp/project-a');
 
@@ -761,7 +761,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('coalesces concurrent explicit agent refreshes into one executable probe', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     let resolveAgents: (agents: AgentName[]) => void = () => {};
     vi.mocked(coreGetAvailableAgents).mockImplementationOnce(
       () => new Promise((resolve) => { resolveAgents = resolve; }),
@@ -781,7 +781,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('defers service boot when launch cwd is not writable', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/System');
     vi.mocked(existsSync).mockImplementation((path) => String(path) === '/System');
     vi.mocked(accessSync).mockImplementation(() => {
@@ -805,7 +805,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('blocks pane creation while waiting for a project selection', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     const send = vi.fn();
     bridge.setWindow({
       isDestroyed: () => false,
@@ -836,7 +836,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('blocks terminal creation without also emitting a duplicate toast', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     const send = vi.fn();
     bridge.setWindow({
       isDestroyed: () => false,
@@ -867,7 +867,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('returns an actionable Git validation error without emitting a duplicate toast', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     const send = vi.fn();
     bridge.setWindow({
       isDestroyed: () => false,
@@ -895,7 +895,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('rejects an unsupported fullscreen Claude before Git or pane mutation', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     vi.mocked(assertClaudeFullscreenSupported).mockRejectedValueOnce(
       new Error('Claude Code 2.1.219 is unsupported. Update Claude or Use classic compatibility mode.'),
@@ -915,7 +915,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('preflights every Duel side before creating a non-Claude survivor', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     vi.mocked(assertClaudeFullscreenSupported).mockRejectedValueOnce(
       new Error('Claude Code 2.1.219 is unsupported. Update Claude or Use classic compatibility mode.'),
@@ -936,7 +936,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('persists one fullscreen profile write before resuming the exact registered session', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     const pane = {
       agent: 'claude' as const,
@@ -970,7 +970,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
     expect(result).toMatchObject({ type: 'success' });
     expect(atomicWriteJsonSync).toHaveBeenCalledTimes(1);
     expect(atomicWriteJsonSync).toHaveBeenCalledWith(
-      '/tmp/project-a/.amux/aumx.config.json',
+      '/tmp/project-a/.muxbase/muxbase.config.json',
       expect.objectContaining({
         panes: [expect.objectContaining({
           claudeRenderer: 'fullscreen',
@@ -989,12 +989,12 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
       expect.any(Object),
       'session-exact',
       'fullscreen',
-      { aumxPaneId: 'pane-classic' },
+      { muxbasePaneId: 'pane-classic' },
     );
   });
 
   it('never interrupts a running Claude pane for a fullscreen resume', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     coreState.panes.push({
       agent: 'claude',
@@ -1011,13 +1011,13 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
     expect(result).toEqual({
       type: 'info',
-      message: 'Exit Claude first; Amux will not interrupt a live conversation.',
+      message: 'Exit Claude first; MuxBase will not interrupt a live conversation.',
     });
     expect(resumeAgentInPane).not.toHaveBeenCalled();
   });
 
   it('rejects a fullscreen resume when the pane is missing from canonical state', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
 
     const result = await bridge.resumePaneInFullscreenAction('missing-pane');
@@ -1031,7 +1031,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('rejects a fullscreen resume when the persisted tmux pane is stale', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     coreState.panes.push({
       agent: 'claude', claudeRenderer: 'classic', id: 'pane-classic', paneId: '%12',
@@ -1047,7 +1047,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('rejects a fullscreen resume until the pane returns to a shell prompt', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     coreState.panes.push({
       agent: 'claude', claudeRenderer: 'classic', id: 'pane-classic', paneId: '%12',
@@ -1066,7 +1066,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('requires an exact registered session and never falls back to continue', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     coreState.panes.push({
       agent: 'claude', claudeRenderer: 'classic', id: 'pane-classic', paneId: '%12',
@@ -1078,13 +1078,13 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
     expect(result).toEqual({
       type: 'info',
-      message: 'Amux could not find an exact registered Claude session for this pane.',
+      message: 'MuxBase could not find an exact registered Claude session for this pane.',
     });
     expect(resumeAgentInPane).not.toHaveBeenCalled();
   });
 
   it('rechecks shell eligibility after confirmation before persisting', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     coreState.panes.push({
       agent: 'claude', claudeRenderer: 'classic', id: 'pane-classic', paneId: '%12',
@@ -1098,14 +1098,14 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
     expect(result).toEqual({
       type: 'info',
-      message: 'Exit Claude first; Amux will not interrupt a live conversation.',
+      message: 'Exit Claude first; MuxBase will not interrupt a live conversation.',
     });
     expect(atomicWriteJsonSync).not.toHaveBeenCalled();
     expect(resumeAgentInPane).not.toHaveBeenCalled();
   });
 
   it('keeps classic state when the atomic profile write fails', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     const pane = {
       agent: 'claude' as const, claudeRenderer: 'classic' as const, id: 'pane-classic', paneId: '%12',
@@ -1125,7 +1125,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('keeps the fullscreen profile and offers retry when resume fails', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     const pane = {
       agent: 'claude' as const, claudeRenderer: 'classic' as const, id: 'pane-classic', paneId: '%12',
@@ -1147,7 +1147,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('serializes duplicate confirmed resumes per pane', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     const pane = {
       agent: 'claude' as const, claudeRenderer: 'classic' as const, id: 'pane-classic', paneId: '%12',
@@ -1174,7 +1174,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('abandons a confirmed resume if the active project changed', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     coreState.panes.push({
       agent: 'claude', claudeRenderer: 'classic', id: 'pane-classic', paneId: '%12',
@@ -1194,7 +1194,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   it('republishes COLORFGBG on the createPane fast path that skips ensureTmuxSession', async () => {
     // Arrange — boot project-a so the control pane is already valid, then let
     // the next createPane take the fast path (tmuxService.paneExists stays true).
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     vi.mocked(ensureTmuxSession).mockClear();
     vi.mocked(publishSessionColorHint).mockClear();
@@ -1206,11 +1206,11 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
     // Assert — fast path skipped ensureTmuxSession but still republished the hint
     expect(ensureTmuxSession).not.toHaveBeenCalled();
     expect(publishSessionColorHint).toHaveBeenCalledTimes(1);
-    expect(publishSessionColorHint).toHaveBeenCalledWith('aumx-test');
+    expect(publishSessionColorHint).toHaveBeenCalledWith('muxbase-test');
   });
 
   it('attaches the same local title to the early and final pane objects', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     condenseTitleLocallyMock.mockClear();
     let earlyTitle: string | undefined;
@@ -1239,7 +1239,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('strips legacy runtime activity from the final pane config write', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     let config = {
       controlPaneSize: 40,
@@ -1275,7 +1275,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('never writes config for activity-only transitions but still writes for a genuine metadata mutation', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     let config = {
       controlPaneSize: 40,
@@ -1335,7 +1335,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('backfills only missing unlocked legacy titles without downgrading persisted titles', () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     condenseTitleLocallyMock.mockClear();
 
     const panes = asInternals(bridge).backfillMissingPaneTitles([
@@ -1358,11 +1358,11 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
     { flag: '1', key: undefined, model: 'model' },
     { flag: '1', key: 'key', model: undefined },
   ])('does not invoke the title experiment without all three opt-in values: %j', async ({ flag, key, model }) => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     coreState.panes.push({ id: 'pane-1', paneId: '%1', prompt: 'Fix auth', slug: 'fix-auth', title: 'Fix auth' });
-    if (flag) process.env.AUMX_EXPERIMENTAL_OPENROUTER_TITLES = flag;
+    if (flag) process.env.MUXBASE_EXPERIMENTAL_OPENROUTER_TITLES = flag;
     if (key) process.env.OPENROUTER_API_KEY = key;
-    if (model) process.env.AUMX_EXPERIMENTAL_OPENROUTER_TITLE_MODEL = model;
+    if (model) process.env.MUXBASE_EXPERIMENTAL_OPENROUTER_TITLE_MODEL = model;
 
     await asInternals(bridge).maybeRequestExperimentalPaneTitle('pane-1', 'Fix auth');
 
@@ -1370,11 +1370,11 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('invokes the experiment once when all three explicit opt-in values are present', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     coreState.panes.push({ id: 'pane-1', paneId: '%1', prompt: 'Fix auth', slug: 'fix-auth', title: 'Fix auth' });
-    process.env.AUMX_EXPERIMENTAL_OPENROUTER_TITLES = '1';
+    process.env.MUXBASE_EXPERIMENTAL_OPENROUTER_TITLES = '1';
     process.env.OPENROUTER_API_KEY = 'key';
-    process.env.AUMX_EXPERIMENTAL_OPENROUTER_TITLE_MODEL = 'openai/explicit-model';
+    process.env.MUXBASE_EXPERIMENTAL_OPENROUTER_TITLE_MODEL = 'openai/explicit-model';
 
     await asInternals(bridge).maybeRequestExperimentalPaneTitle('pane-1', 'Fix auth');
 
@@ -1388,7 +1388,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('preserves an explicit pane title against automatic session title harvesting', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     vi.mocked(coreCreatePane).mockResolvedValueOnce({
       needsAgentChoice: false,
@@ -1429,7 +1429,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
     });
     expect(condenseTitleLocallyMock).not.toHaveBeenCalledWith('Polish the left sidebar');
     expect(atomicWriteJsonSync).toHaveBeenCalledWith(
-      '/tmp/project-a/.amux/aumx.config.json',
+      '/tmp/project-a/.muxbase/muxbase.config.json',
       expect.objectContaining({
         panes: [expect.objectContaining({
           id: 'pane-named',
@@ -1442,7 +1442,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('is a no-op when switching to the project root that is already active', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     const watcherCountAfterFirstSwitch = paneWatcherInstances.length;
 
@@ -1455,7 +1455,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('queues a second project switch while the first switch is in progress', async () => {
     // Arrange — hang the first teardown step so the first switch stays in flight
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     let releaseFirstSwitch: () => void = () => {};
     fileBrowserWatchSpies.stop.mockImplementationOnce(
       () => new Promise<void>((resolve) => { releaseFirstSwitch = resolve; }),
@@ -1480,7 +1480,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('swaps the action callback registry so stale callbacks from the old project cannot fire', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     const registryBeforeSwitch = asInternals(bridge).callbackRegistry;
     // Register a callback that belongs to project-a
@@ -1501,9 +1501,9 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('clears per-project transient pane tracking on project switch', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
-    asInternals(bridge).worktreeMutationPaths.add('/tmp/project-a/.aumx/worktrees/closed-worktree');
+    asInternals(bridge).worktreeMutationPaths.add('/tmp/project-a/.muxbase/worktrees/closed-worktree');
     asInternals(bridge).untrackablePanes.add('project-a-pane');
 
     // Act
@@ -1516,7 +1516,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('re-probes a previously untrackable pane once a working/analyzing status is delivered for it', async () => {
     // Arrange — a pane was marked untrackable (e.g. a launch-fail first-idle edge)
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     asInternals(bridge).untrackablePanes.add('pane-1');
     const handler = getStatusUpdatedHandler();
@@ -1530,7 +1530,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('leaves an untrackable pane alone on an idle status delivery', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     asInternals(bridge).untrackablePanes.add('pane-1');
     const handler = getStatusUpdatedHandler();
@@ -1544,7 +1544,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('removes a pane\'s terminal stream status watcher when the pane is destroyed', async () => {
     // Arrange — a live terminal stream lazily added an entry for this pane
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     asInternals(bridge).paneStreamStatusWatchers.set('pane-1', {});
     const onPaneDestroyed = vi.mocked(PaneWatcher).mock.calls[0][3];
@@ -1557,7 +1557,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('removes runtime activity immediately when an action closes a pane', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     const internals = asInternals(bridge);
     internals.paneActivityService!.registerPane('pane-1', 'incarnation-1');
@@ -1571,7 +1571,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('tears down per-project services in order when switching away from a booted project', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     const projectAWatcher = paneWatcherInstances[0];
 
@@ -1589,7 +1589,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('waits for an in-flight pane creation before switching projects', async () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
     terminalStreamSpies.reset.mockClear();
     const watcherDuringCreate = asInternals(bridge).paneWatcher;
@@ -1630,7 +1630,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('drops a pane-id rebind that resolves after its project was switched away from', async () => {
     // Arrange — boot project-a and capture the rebind-persist callback wired for it
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockImplementation(() => JSON.stringify({
       controlPaneSize: 40,
@@ -1652,8 +1652,8 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('reopens a preserved worktree by attaching a new tmux pane to the existing directory', async () => {
-    const bridge = AumxBridge.getInstance();
-    const worktreePath = '/tmp/project-a/.aumx/worktrees/closed-worktree';
+    const bridge = MuxBaseBridge.getInstance();
+    const worktreePath = '/tmp/project-a/.muxbase/worktrees/closed-worktree';
     coreState.inspectPreservedWorktreeAsync.mockResolvedValue({
       branch: 'feature/closed-worktree',
       gitStatus: 'dirty',
@@ -1681,7 +1681,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
     });
     expect(coreState.tmuxService.newWindowPane).toHaveBeenCalledWith({
       cwd: worktreePath,
-      sessionName: 'aumx-test',
+      sessionName: 'muxbase-test',
     });
     expect(coreState.tmuxService.setPaneTitle).toHaveBeenCalledWith('%42', 'closed-worktree');
     expect(triggerHook).toHaveBeenCalledWith('pane_reopened', '/tmp/project-a', result.pane);
@@ -1689,13 +1689,13 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('keeps reopened panes visible and warns when config persistence fails', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     const send = vi.fn();
     bridge.setWindow({
       isDestroyed: () => false,
       webContents: { send },
     } as unknown as BrowserWindow);
-    const worktreePath = '/tmp/project-a/.aumx/worktrees/closed-worktree';
+    const worktreePath = '/tmp/project-a/.muxbase/worktrees/closed-worktree';
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockImplementation(() => JSON.stringify({
       controlPaneSize: 40,
@@ -1731,8 +1731,8 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('replaces stale config entries for the same worktree when reopening a pane', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
-    const worktreePath = '/tmp/project-a/.aumx/worktrees/closed-worktree';
+    const bridge = MuxBaseBridge.getInstance();
+    const worktreePath = '/tmp/project-a/.muxbase/worktrees/closed-worktree';
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockImplementation(() => JSON.stringify({
       controlPaneSize: 40,
@@ -1751,7 +1751,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
           prompt: '',
           slug: 'other-worktree',
           type: 'worktree',
-          worktreePath: '/tmp/project-a/.aumx/worktrees/other-worktree',
+          worktreePath: '/tmp/project-a/.muxbase/worktrees/other-worktree',
         },
       ],
       projectName: 'project-a',
@@ -1775,7 +1775,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
     // Assert
     expect(result.success).toBe(true);
     expect(atomicWriteJsonSync).toHaveBeenLastCalledWith(
-      '/tmp/project-a/.amux/aumx.config.json',
+      '/tmp/project-a/.muxbase/muxbase.config.json',
       expect.objectContaining({
         panes: [
           expect.objectContaining({ id: 'other-pane' }),
@@ -1788,8 +1788,8 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('serializes duplicate reopen requests for the same preserved worktree', async () => {
-    const bridge = AumxBridge.getInstance();
-    const worktreePath = '/tmp/project-a/.aumx/worktrees/closed-worktree';
+    const bridge = MuxBaseBridge.getInstance();
+    const worktreePath = '/tmp/project-a/.muxbase/worktrees/closed-worktree';
     coreState.inspectPreservedWorktreeAsync.mockResolvedValue({
       branch: 'feature/closed-worktree',
       gitStatus: 'dirty',
@@ -1815,13 +1815,13 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('lists preserved worktree metadata without inspecting every Git worktree', async () => {
-    const bridge = AumxBridge.getInstance();
-    const activePath = '/tmp/project-a/.aumx/worktrees/active';
+    const bridge = MuxBaseBridge.getInstance();
+    const activePath = '/tmp/project-a/.muxbase/worktrees/active';
     coreState.listPreservedWorktreesAsync.mockResolvedValue([{
       branch: null,
       gitStatus: 'unchecked',
       lastModified: new Date(1_700_000_000_000),
-      path: '/tmp/project-a/.aumx/worktrees/preserved',
+      path: '/tmp/project-a/.muxbase/worktrees/preserved',
       registration: 'unchecked',
       slug: 'preserved',
     }]);
@@ -1847,7 +1847,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
         branch: null,
         gitStatus: 'unchecked',
         lastModifiedMs: 1_700_000_000_000,
-        path: '/tmp/project-a/.aumx/worktrees/preserved',
+        path: '/tmp/project-a/.muxbase/worktrees/preserved',
         registration: 'unchecked',
         slug: 'preserved',
       }],
@@ -1855,9 +1855,9 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 
   it('revalidates active worktrees and data-loss consent when removing a preserved worktree', async () => {
-    const bridge = AumxBridge.getInstance();
-    const activePath = '/tmp/project-a/.aumx/worktrees/active';
-    const preservedPath = '/tmp/project-a/.aumx/worktrees/preserved';
+    const bridge = MuxBaseBridge.getInstance();
+    const activePath = '/tmp/project-a/.muxbase/worktrees/active';
+    const preservedPath = '/tmp/project-a/.muxbase/worktrees/preserved';
     await bridge.switchProject('/tmp/project-a');
     coreState.panes.push({
       id: 'active-pane',
@@ -1886,7 +1886,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('opens a terminal pane in the requested project root instead of the session root', async () => {
     // Arrange — session is booted on project-a, but the request targets project-b
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
 
     // Act
@@ -1896,7 +1896,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
     expect(result.success).toBe(true);
     expect(coreState.tmuxService.newWindowPane).toHaveBeenCalledWith({
       cwd: '/tmp/project-b',
-      sessionName: 'aumx-test',
+      sessionName: 'muxbase-test',
     });
     expect(result.pane).toMatchObject({
       paneId: '%42',
@@ -1908,7 +1908,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
 
   it('falls back to the session project root when no terminal root is requested', async () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     await bridge.switchProject('/tmp/project-a');
 
     // Act
@@ -1918,7 +1918,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
     expect(result.success).toBe(true);
     expect(coreState.tmuxService.newWindowPane).toHaveBeenCalledWith({
       cwd: '/tmp/project-a',
-      sessionName: 'aumx-test',
+      sessionName: 'muxbase-test',
     });
     expect(result.pane).toMatchObject({
       projectName: 'project-a',
@@ -1928,7 +1928,7 @@ describe('AumxBridge.switchProject — project switch race surface', () => {
   });
 });
 
-describe('AumxBridge.applyHarvestedPaneTitle — native title guards', () => {
+describe('MuxBaseBridge.applyHarvestedPaneTitle — native title guards', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(existsSync).mockReturnValue(false);
@@ -1943,14 +1943,14 @@ describe('AumxBridge.applyHarvestedPaneTitle — native title guards', () => {
     title: string;
   }
 
-  function applyHarvestedTitle(bridge: AumxBridge, paneId: string, harvested: HarvestedTitleInput): void {
+  function applyHarvestedTitle(bridge: MuxBaseBridge, paneId: string, harvested: HarvestedTitleInput): void {
     (bridge as unknown as { applyHarvestedPaneTitle(paneId: string, harvested: HarvestedTitleInput): void })
       .applyHarvestedPaneTitle(paneId, harvested);
   }
 
   it('normalizes and writes a native title onto the matching pane', () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     coreState.panes.push({ id: 'pane-1', paneId: '%1', prompt: '', slug: 'task' });
     coreState.updatePanes.mockClear();
 
@@ -1963,7 +1963,7 @@ describe('AumxBridge.applyHarvestedPaneTitle — native title guards', () => {
 
   it('never overwrites a title the user locked', () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     coreState.panes.push({ id: 'pane-1', paneId: '%1', prompt: '', slug: 'task', title: 'Manual name', titleLocked: true });
     coreState.updatePanes.mockClear();
 
@@ -1977,7 +1977,7 @@ describe('AumxBridge.applyHarvestedPaneTitle — native title guards', () => {
 
   it('skips persistence and notification when normalized titles are identical', () => {
     // Arrange
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     coreState.panes.push({ id: 'pane-1', paneId: '%1', prompt: '', slug: 'task', title: 'Same title' });
     coreState.updatePanes.mockClear();
 
@@ -1989,7 +1989,7 @@ describe('AumxBridge.applyHarvestedPaneTitle — native title guards', () => {
   });
 
   it('rejects placeholders and malformed automatic candidates', () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     coreState.panes.push({ id: 'pane-1', paneId: '%1', prompt: '', slug: 'task', title: 'Local title' });
     coreState.updatePanes.mockClear();
 
@@ -2000,7 +2000,7 @@ describe('AumxBridge.applyHarvestedPaneTitle — native title guards', () => {
   });
 
   it('allows a later valid native title to refine an unlocked local title', () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     coreState.panes.push({ id: 'pane-1', paneId: '%1', prompt: '', slug: 'task', title: 'Local title' });
 
     applyHarvestedTitle(bridge, 'pane-1', { title: 'Native agent title' });
@@ -2009,7 +2009,7 @@ describe('AumxBridge.applyHarvestedPaneTitle — native title guards', () => {
   });
 
   it('drops a title when its pane was deleted before commit', () => {
-    const bridge = AumxBridge.getInstance();
+    const bridge = MuxBaseBridge.getInstance();
     coreState.updatePanes.mockClear();
 
     applyHarvestedTitle(bridge, 'deleted-pane', { title: 'Late agent title' });

@@ -1,4 +1,4 @@
-import { peekStatusDetector } from 'aumx/core';
+import { peekStatusDetector } from 'muxbase/core';
 import { app, BrowserWindow } from 'electron';
 import { IPC_EVENT } from '../../shared/ipc-channels.js';
 import type { PerformanceMetricsEvent } from '../../shared/ipc-types.js';

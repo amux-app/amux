@@ -1,17 +1,17 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { execFileAsync } from 'aumx/core';
+import { execFileAsync } from 'muxbase/core';
 import { PaneWatcher } from '../../src/main/services/PaneWatcher';
 
 const execFileAsyncMock = vi.hoisted(() => vi.fn());
 const stampMock = vi.hoisted(() => vi.fn(async () => {}));
 const stateManagerMock = vi.hoisted(() => ({
   getPanes: vi.fn(() => []),
-  getState: vi.fn(() => ({ sessionName: "aumx-o'hara" })),
+  getState: vi.fn(() => ({ sessionName: "muxbase-o'hara" })),
   updatePanes: vi.fn(),
 }));
 
-vi.mock('aumx/core', () => ({
-  AUMX_PANE_ID_OPTION: '@aumx_pane_id',
+vi.mock('muxbase/core', () => ({
+  MUXBASE_PANE_ID_OPTION: '@muxbase_pane_id',
   PaneEventService: {
     getInstance: () => ({
       cleanup: vi.fn().mockResolvedValue(undefined),
@@ -35,7 +35,7 @@ async function flushMicrotasks(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-const CONFIG_PATH = '/tmp/.aumx/aumx.config.json';
+const CONFIG_PATH = '/tmp/.muxbase/muxbase.config.json';
 const TRACKED_PANE = { id: 'pane-1', paneId: '%404', slug: 'task' };
 
 describe('PaneWatcher', () => {
@@ -43,14 +43,14 @@ describe('PaneWatcher', () => {
     execFileAsyncMock.mockReset();
     stampMock.mockClear();
     stateManagerMock.getPanes.mockReturnValue([]);
-    stateManagerMock.getState.mockReturnValue({ sessionName: "aumx-o'hara" });
+    stateManagerMock.getState.mockReturnValue({ sessionName: "muxbase-o'hara" });
     stateManagerMock.updatePanes.mockClear();
   });
 
   it('passes session names as literal tmux arguments without a shell', async () => {
     // Arrange
     execFileAsyncMock.mockResolvedValue('');
-    const watcher = new PaneWatcher(null, '/tmp/.aumx/aumx.config.json', null);
+    const watcher = new PaneWatcher(null, '/tmp/.muxbase/muxbase.config.json', null);
 
     // Act
     await watcher.syncPanes();
@@ -58,7 +58,7 @@ describe('PaneWatcher', () => {
     // Assert
     expect(execFileAsync).toHaveBeenCalledWith(
       'tmux',
-      ['list-panes', '-s', '-t', "aumx-o'hara", '-F', '#{pane_id}|#{@aumx_pane_id}|#{pane_title}'],
+      ['list-panes', '-s', '-t', "muxbase-o'hara", '-F', '#{pane_id}|#{@muxbase_pane_id}|#{pane_title}'],
       { silent: true },
     );
   });

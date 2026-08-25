@@ -1,12 +1,12 @@
 import type {
   AgentName,
-  AumxPane,
+  MuxBasePane,
   ReviewMetadata,
-} from 'aumx/core';
+} from 'muxbase/core';
 import {
   agentHasCapability,
   getProjectMetadataDir,
-} from 'aumx/core';
+} from 'muxbase/core';
 import {
   existsSync,
   mkdirSync,
@@ -74,12 +74,12 @@ interface ReviewWorkflowDependencies {
     options: ReviewPaneLaunchOptions,
   ): Promise<PaneCreateResponse>;
   getAvailableAgents(): readonly AgentName[];
-  getPane(paneId: string): AumxPane | undefined;
+  getPane(paneId: string): MuxBasePane | undefined;
   getPaneActivity(paneId: string): PaneActivity | undefined;
-  getPanes(): AumxPane[];
+  getPanes(): MuxBasePane[];
   getProjectRoot(): string;
   getSession(paneId: string): NormalizedSession | null;
-  replacePanesBestEffort(panes: AumxPane[]): void;
+  replacePanesBestEffort(panes: MuxBasePane[]): void;
   revalidateReadinessOrReject<T extends { id: string }>(
     pane: T | undefined,
     token: ReadinessToken | undefined,
@@ -125,7 +125,7 @@ function sweepStaleFindings(reviewDirectory: string): void {
   }
 }
 
-function writeAumxFile(absolutePath: string, content: string): void {
+function writeMuxBaseFile(absolutePath: string, content: string): void {
   mkdirSync(dirname(absolutePath), { recursive: true, mode: 0o700 });
   writeFileSync(absolutePath, content, { encoding: 'utf-8', mode: 0o600 });
 }
@@ -347,7 +347,7 @@ export class ReviewWorkflow {
       );
       findingsAbsolutePath = join(sourceRoot, findingsRelativePath);
       sweepStaleFindings(join(sourceRoot, reviewFindingsDirectory));
-      writeAumxFile(
+      writeMuxBaseFile(
         findingsAbsolutePath,
         buildFindingsFile(
           findings.text,
@@ -395,7 +395,7 @@ export class ReviewWorkflow {
   }
 
   private async gatherReviewContext(
-    pane: AumxPane,
+    pane: MuxBasePane,
   ): Promise<{
     changedFiles: string[];
     launchMessage: string;
@@ -445,7 +445,7 @@ export class ReviewWorkflow {
     };
   }
 
-  private getFixHandoffSourceReadinessBlockReason(pane: AumxPane): string | undefined {
+  private getFixHandoffSourceReadinessBlockReason(pane: MuxBasePane): string | undefined {
     const capabilityBlockReason = getFixHandoffSourceCapabilityBlockReason(pane);
     if (capabilityBlockReason) return capabilityBlockReason;
     return getFixHandoffSourceBlockReason(
@@ -454,14 +454,14 @@ export class ReviewWorkflow {
     );
   }
 
-  private getReviewPaneReadinessBlockReason(pane: AumxPane): string | undefined {
+  private getReviewPaneReadinessBlockReason(pane: MuxBasePane): string | undefined {
     return getReviewPaneHandoffBlockReason(
       pane,
       this.dependencies.getPaneActivity(pane.id),
     );
   }
 
-  private getReviewSourceReadinessBlockReason(pane: AumxPane): string | undefined {
+  private getReviewSourceReadinessBlockReason(pane: MuxBasePane): string | undefined {
     const capabilityBlockReason = getReviewSourceCapabilityBlockReason(pane);
     if (capabilityBlockReason) return capabilityBlockReason;
     return getReviewSourceBlockReason(pane, this.dependencies.getPaneActivity(pane.id));
@@ -472,7 +472,7 @@ export class ReviewWorkflow {
     review: ReviewMetadata,
     reviewToken: ReadinessToken | undefined,
     sourceToken: ReadinessToken | undefined,
-  ): { ok: true; sourcePane: AumxPane } | { ok: false; reason: string } {
+  ): { ok: true; sourcePane: MuxBasePane } | { ok: false; reason: string } {
     const reviewRevalidation = this.dependencies.revalidateReadinessOrReject(
       this.dependencies.getPane(reviewPaneId),
       reviewToken,
@@ -493,7 +493,7 @@ export class ReviewWorkflow {
 
   private resolveReadyFixHandoffSourcePane(
     review: ReviewMetadata,
-  ): { error?: string; pane?: AumxPane } {
+  ): { error?: string; pane?: MuxBasePane } {
     const sourcePane = resolveReviewSourcePane(review, this.dependencies.getPanes());
     if (!sourcePane?.paneId) return { error: 'The original pane is no longer open' };
     const sourceBlockReason = this.getFixHandoffSourceReadinessBlockReason(sourcePane);

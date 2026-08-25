@@ -3,7 +3,7 @@ import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import type { ElectronApplication, Page } from 'playwright';
 
-// UI/UX baseline capture helpers. Used by the opt-in (AUMX_UI_BASELINE=1) capture
+// UI/UX baseline capture helpers. Used by the opt-in (MUXBASE_UI_BASELINE=1) capture
 // test in app.e2e.test.ts; they record artifacts and assert nothing.
 
 const BASELINE_ROOT = resolve(__dirname, '..', '..');
@@ -68,7 +68,7 @@ interface BaselineStore {
 }
 
 export interface BaselineStoreWindow {
-  __aumxStores?: { pane?: BaselineStore; paneActivity?: BaselineStore; ui?: BaselineStore };
+  __muxbaseStores?: { pane?: BaselineStore; paneActivity?: BaselineStore; ui?: BaselineStore };
 }
 
 interface BaselineAxeCheckData {
@@ -256,7 +256,7 @@ export function buildBaselinePanes(
     slug: `ui-baseline-${index + 1}`,
     title: BASELINE_TITLES[index % BASELINE_TITLES.length],
     type: 'worktree' as const,
-    worktreePath: `/tmp/aumx-ui-baseline/ui-baseline-${index + 1}`,
+    worktreePath: `/tmp/muxbase-ui-baseline/ui-baseline-${index + 1}`,
   }));
 }
 
@@ -286,7 +286,7 @@ export async function seedBaselineFleet(
   selectedPaneId: string | null = null,
 ): Promise<void> {
   await page.evaluate(({ fixtures, selected }) => {
-    const stores = (window as unknown as BaselineStoreWindow).__aumxStores;
+    const stores = (window as unknown as BaselineStoreWindow).__muxbaseStores;
     stores?.pane?.setState({ loaded: true, panes: fixtures, selectedPaneId: selected });
     stores?.paneActivity?.setState({
       activityByPaneId: Object.fromEntries(fixtures.map((pane) => [pane.id, {
@@ -309,7 +309,7 @@ export async function seedBaselineFleet(
 
 export async function applyBaselineTheme(page: Page, theme: BaselineTheme): Promise<string> {
   await page.evaluate((value) => {
-    (window as unknown as BaselineStoreWindow).__aumxStores?.ui?.setState({ theme: value });
+    (window as unknown as BaselineStoreWindow).__muxbaseStores?.ui?.setState({ theme: value });
   }, theme);
   await page.waitForTimeout(BASELINE_SETTLE_MS);
   return page.evaluate(() => document.documentElement.getAttribute('data-theme') ?? 'none');
@@ -317,7 +317,7 @@ export async function applyBaselineTheme(page: Page, theme: BaselineTheme): Prom
 
 async function seedBaselinePanes(page: Page, panes: BaselinePaneFixture[]): Promise<number> {
   await page.evaluate((fixtures) => {
-    (window as unknown as BaselineStoreWindow).__aumxStores?.pane?.setState({
+    (window as unknown as BaselineStoreWindow).__muxbaseStores?.pane?.setState({
       loaded: true,
       panes: fixtures,
       selectedPaneId: null,

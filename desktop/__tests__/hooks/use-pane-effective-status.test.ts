@@ -1,13 +1,13 @@
 // @vitest-environment happy-dom
 import { cleanup, renderHook } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { usePaneEffectiveStatus } from '../../src/renderer/hooks/usePaneEffectiveStatus';
 import { useAgentSessionStore } from '../../src/renderer/stores/agent-session.store';
 import { usePaneActivityStore } from '../../src/renderer/stores/pane-activity.store';
 import { makeActivity as activity } from '../helpers/pane-activity-fixtures';
 
-function pane(overrides: Partial<AumxPane> = {}): AumxPane {
+function pane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     id: 'p1',
     paneId: '%1',
