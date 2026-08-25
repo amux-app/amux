@@ -6,7 +6,10 @@ const BASELINE_DIR = resolve(__dirname, 'visual-baselines');
 const FAILURE_DIR = resolve(__dirname, '..', '..', 'out', 'visual-regression');
 const CHANNEL_TOLERANCE = 24;
 const MAX_CHANGED_PIXEL_RATIO = 0.01;
-const MAX_MEAN_CHANNEL_DELTA = 1.5;
+// Chromium's macOS software/GPU paths can produce a small full-frame delta for
+// identical gradients and antialiased text. Keep enough headroom for the
+// observed runner variance while the changed-pixel budget guards local changes.
+const MAX_MEAN_CHANNEL_DELTA = 2;
 
 export interface VisualDiff {
   actualHeight: number;

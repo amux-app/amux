@@ -13,6 +13,17 @@ describe('visual regression thresholds', () => {
     })).not.toThrow();
   });
 
+  it('accepts the observed macOS runner rasterization variance', () => {
+    expect(() => assertVisualDiff('fleet-dark', {
+      actualHeight: 720,
+      actualWidth: 1000,
+      baselineHeight: 720,
+      baselineWidth: 1000,
+      changedPixelRatio: 0.009,
+      meanChannelDelta: 1.55,
+    })).not.toThrow();
+  });
+
   it('rejects a materially changed pixel area', () => {
     expect(() => assertVisualDiff('fleet-dark', {
       actualHeight: 720,
