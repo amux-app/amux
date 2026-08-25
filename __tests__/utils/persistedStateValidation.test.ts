@@ -75,6 +75,40 @@ describe('persisted state validation', () => {
     })).toThrow('conflictMerge.targetCommit');
   });
 
+  it.each([
+    '0123456789abcdef0123456789abcdef01234567',
+    '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+  ])('accepts a %s git object id in review metadata', (snapshotSha) => {
+    const pane = {
+      ...VALID_PANE,
+      review: {
+        changedFiles: 1,
+        reviewId: 'review-1',
+        snapshotSha,
+        sourcePaneId: 'pane-0',
+        sourceSlug: 'source',
+        startedAt: Date.now(),
+      },
+    };
+
+    expect(parseMuxBaseConfig({ panes: [pane] }).panes[0]).toMatchObject({ review: { snapshotSha } });
+  });
+
+  it('rejects a malformed review snapshot object id while accepting legacy metadata without one', () => {
+    const review = {
+      changedFiles: 1,
+      reviewId: 'review-1',
+      sourcePaneId: 'pane-0',
+      sourceSlug: 'source',
+      startedAt: Date.now(),
+    };
+
+    expect(parseMuxBaseConfig({ panes: [{ ...VALID_PANE, review }] }).panes[0]).toMatchObject({ review });
+    expect(() => parseMuxBaseConfig({
+      panes: [{ ...VALID_PANE, review: { ...review, snapshotSha: 'not-a-git-object' } }],
+    })).toThrow('review.snapshotSha');
+  });
+
   it('rejects invalid persisted control pane geometry', () => {
     expect(() => parseMuxBaseConfig({ controlPaneSize: 0, panes: [] }))
       .toThrow('controlPaneSize');

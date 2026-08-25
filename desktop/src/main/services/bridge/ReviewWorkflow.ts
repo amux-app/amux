@@ -6,6 +6,7 @@ import type {
 import {
   agentHasCapability,
   getProjectMetadataDir,
+  isGitObjectId,
 } from 'muxbase/core';
 import {
   existsSync,
@@ -25,6 +26,7 @@ import type {
   PaneCreateResponse,
   PaneSendFixResponse,
   PaneStartReviewResponse,
+  ReviewSnapshotDrift,
 } from '../../../shared/ipc-types.js';
 import { sanitizeReviewIdToken } from '../../../shared/review-constants.js';
 import { formatError } from '../../utils/formatError.js';
@@ -32,6 +34,7 @@ import {
   collectSnapshotDiffData,
   collectWorkingDiffData,
   createReviewSnapshot,
+  hasReviewSnapshotChanged,
   resolveBaseBranch,
   sh,
   type WorkingTreeDiffData,
@@ -231,6 +234,7 @@ export class ReviewWorkflow {
           sourceSlug: sourcePane.slug,
           sourceWorktreePath: sourcePane.worktreePath,
           startedAt: Date.now(),
+          snapshotSha,
         },
         role: 'review',
         slugBase: `review-${sourcePane.slug}`,
@@ -311,6 +315,14 @@ export class ReviewWorkflow {
         return { success: false, error: 'No review findings to send yet' };
       }
 
+      const snapshotSourceRoot = sourceReadiness.pane.worktreePath
+        ?? sourceReadiness.pane.projectRoot
+        ?? this.dependencies.getProjectRoot();
+      const snapshotDrift = await this.resolveReviewSnapshotDrift(
+        snapshotSourceRoot,
+        reviewPane.review.snapshotSha,
+      );
+
       const readiness = this.revalidateFixHandoffPanes(
         reviewPaneId,
         reviewPane.review,
@@ -331,7 +343,12 @@ export class ReviewWorkflow {
           elapsedMs: Date.now() - startedAt,
           reviewPaneId,
         });
-        return { success: true, noIssues: true, sourcePaneId: sourceReadiness.pane.id };
+        return {
+          snapshotDrift,
+          success: true,
+          noIssues: true,
+          sourcePaneId: sourceReadiness.pane.id,
+        };
       }
 
       const sourceRoot = readiness.sourcePane.worktreePath
@@ -353,6 +370,11 @@ export class ReviewWorkflow {
           findings.text,
           reviewPane.agent ?? 'reviewer',
           reviewPane.review.reviewId,
+          {
+            snapshotDrift,
+            snapshotSha: reviewPane.review.snapshotSha,
+            startedAt: reviewPane.review.startedAt,
+          },
         ),
       );
 
@@ -368,7 +390,7 @@ export class ReviewWorkflow {
         reviewPaneId,
         sourcePaneId: readiness.sourcePane.id,
       });
-      return { success: true, sourcePaneId: readiness.sourcePane.id };
+      return { snapshotDrift, success: true, sourcePaneId: readiness.sourcePane.id };
     } catch (error) {
       if (findingsAbsolutePath && !promptDelivered) {
         rmSync(findingsAbsolutePath, { force: true });
@@ -418,9 +440,11 @@ export class ReviewWorkflow {
     ]);
 
     this.dependencies.setProgress('Reviewing changes: collecting diff…', true);
+    const hasWorktree = Boolean(pane.worktreePath);
+    const scope: 'worktree' | 'uncommitted' = hasWorktree ? 'worktree' : 'uncommitted';
     const { diffData, diffCommand } = await this.collectReviewDiff(
       reviewRoot,
-      Boolean(pane.worktreePath),
+      hasWorktree,
       snapshot.sha,
       branch,
     );
@@ -434,6 +458,7 @@ export class ReviewWorkflow {
       repositoryPath: projectRoot,
       sessionDigest: buildReviewSessionDigest(this.dependencies.getSession(pane.id)),
       skippedFiles: snapshot.skippedFiles.length > 0 ? snapshot.skippedFiles : undefined,
+      scope,
     };
 
     return {
@@ -501,12 +526,39 @@ export class ReviewWorkflow {
     return { pane: sourcePane };
   }
 
+  private async resolveReviewSnapshotDrift(
+    sourcePath: string,
+    snapshotSha: string | undefined,
+  ): Promise<ReviewSnapshotDrift> {
+    if (snapshotSha === undefined) return 'unknown';
+    if (!isGitObjectId(snapshotSha)) {
+      log.warn('bridge', 'Review snapshot drift unavailable: malformed snapshot sha', { snapshotSha });
+      return 'unknown';
+    }
+
+    try {
+      const changed = await hasReviewSnapshotChanged(sourcePath, snapshotSha);
+      return changed ? 'changed' : 'unchanged';
+    } catch (error) {
+      log.warn('bridge', 'Review snapshot drift unavailable: git comparison failed', { error });
+      return 'unknown';
+    }
+  }
+
   private updateReviewPane(paneId: string, reviewOverrides: Partial<ReviewMetadata>): void {
     const panes = this.dependencies.getPanes();
     const index = panes.findIndex((pane) => pane.id === paneId);
-    if (index < 0 || !panes[index].review) return;
+    if (index < 0) {
+      log.warn('bridge', 'Review metadata update skipped: pane missing', { paneId });
+      return;
+    }
+    if (!panes[index].review) {
+      log.warn('bridge', 'Review metadata update skipped: review metadata absent', { paneId });
+      return;
+    }
+    const review = panes[index].review;
     const updated = panes.map((pane, currentIndex) => currentIndex === index
-      ? { ...pane, review: { ...pane.review!, ...reviewOverrides } }
+      ? { ...pane, review: { ...review, ...reviewOverrides } }
       : pane);
     this.dependencies.replacePanesBestEffort(updated);
   }

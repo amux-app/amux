@@ -281,7 +281,7 @@ function ZenCellHeader({
   const { renamePane, closePane } = usePaneActions();
   const focusPane = useUiStore((s) => s.focusPane);
   const hidePane = useHiddenPanesStore((s) => s.hidePane);
-  const { canReview } = useReviewControls(pane, status);
+  const { canReview, scope } = useReviewControls(pane, status);
   const onFocus = () => focusPane(pane.id);
   const onClose = () => closePane(pane.id);
   const onMinimize = () => hidePane(pane.id);
@@ -372,7 +372,7 @@ function ZenCellHeader({
 
       {canReview && (
         <span className={pane.agent ? undefined : 'ml-auto inline-flex'}>
-          <ReviewLaunchButton paneId={pane.id} defaultAgent={pane.agent} />
+          <ReviewLaunchButton paneId={pane.id} defaultAgent={pane.agent} scope={scope} />
         </span>
       )}
 
@@ -446,6 +446,7 @@ function CellHeader({
     openReviewPaneId,
     reviewSourcePaneId,
     showHandedOffPill,
+    scope,
   } = useReviewControls(pane, status);
   const completionLabel = isReviewPane ? 'Review complete' : 'Ready for review';
   const dotStatus: PaneActivityState = waiting ? 'waiting' : activityState ?? status;
@@ -523,7 +524,7 @@ function CellHeader({
         {openReviewPaneId && (
           <ReviewNavigationButton direction="forward" label="Open review" targetPaneId={openReviewPaneId} />
         )}
-        {canReview && <ReviewLaunchButton paneId={pane.id} defaultAgent={pane.agent} highlight={justFinished} />}
+        {canReview && <ReviewLaunchButton paneId={pane.id} defaultAgent={pane.agent} highlight={justFinished} scope={scope} />}
         {canSendFixes && (
           <HoverTooltip label="Review findings before sending to the author" className="flex shrink-0 items-center">
             <button

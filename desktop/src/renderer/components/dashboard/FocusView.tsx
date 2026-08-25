@@ -185,6 +185,7 @@ function FocusHeader({
     isReviewSourceMissing,
     openReviewPaneId,
     reviewSourcePaneId,
+    scope,
     showHandedOffPill,
   } = useReviewControls(pane, status);
   const completionLabel = isReviewPane ? 'Review complete' : 'Ready for review';
@@ -256,7 +257,7 @@ function FocusHeader({
         {openReviewPaneId && (
           <ReviewNavigationButton direction="forward" label="Open review" targetPaneId={openReviewPaneId} />
         )}
-        {canReview && <ReviewLaunchButton paneId={pane.id} defaultAgent={pane.agent as AgentName | undefined} highlight={justFinished} />}
+        {canReview && <ReviewLaunchButton paneId={pane.id} defaultAgent={pane.agent as AgentName | undefined} highlight={justFinished} scope={scope} />}
         {canSendFixes && (
           <HoverTooltip label="Review findings before sending to the author" className="flex shrink-0 items-center">
             <button

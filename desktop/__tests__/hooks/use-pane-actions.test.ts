@@ -304,6 +304,22 @@ describe('usePaneActions', () => {
     expect(storeState.focusPane).toHaveBeenCalledWith('source-pane');
   });
 
+  it('warns when findings may cite line numbers from a changed source', async () => {
+    paneApiSpies.sendFix.mockResolvedValue({
+      success: true,
+      snapshotDrift: 'changed',
+      sourcePaneId: 'source-pane',
+    });
+    const actions = renderActions();
+
+    await actions.current.sendFixesToAuthor('review-pane');
+
+    expect(storeState.addToast).toHaveBeenCalledWith(
+      "The author's code changed since this review — findings may cite outdated line numbers.",
+      'warning',
+    );
+  });
+
   it('moves Focus view back to the author pane when the review is clean', async () => {
     storeState.viewMode = 'focus';
     paneApiSpies.sendFix.mockResolvedValue({

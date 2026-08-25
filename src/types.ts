@@ -77,6 +77,7 @@ export interface ReviewMetadata {
   changedFiles: number;
   startedAt: number;
   handedOffAt?: number;
+  snapshotSha?: string;
 }
 
 export interface DuelMetadata {

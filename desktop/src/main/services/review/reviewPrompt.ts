@@ -118,6 +118,7 @@ export interface ReviewPromptInput {
   diffCommand: string;
   sessionDigest?: string;
   skippedFiles?: string[];
+  scope?: 'worktree' | 'uncommitted';
 }
 
 function buildChangeSection(input: ReviewPromptInput): string {
@@ -165,6 +166,12 @@ function buildReviewWorkflowSection(): string {
   ].join('\n');
 }
 
+function buildReviewScopeNotice(input: ReviewPromptInput): string | undefined {
+  return input.scope === 'uncommitted'
+    ? 'Scope: review only the uncommitted changes captured from the implementation session. Earlier commits on this branch are intentionally out of scope — do not flag them, and do not assume the branch is otherwise unmodified.'
+    : undefined;
+}
+
 export function buildReviewPrompt(input: ReviewPromptInput): string {
   const sections = [
     REVIEW_INSTRUCTIONS,
@@ -184,20 +191,26 @@ export function buildReviewPrompt(input: ReviewPromptInput): string {
     );
   }
 
-  sections.push(
-    `## See the diff\nYou are in a read-only worktree that contains exactly these changes. Read the full diff yourself with:\n\n    ${input.diffCommand}\n\nReview that diff against the rubric above. Do not rely on this summary alone — open the actual changed files.`,
-  );
+  const scopeNotice = buildReviewScopeNotice(input);
+  sections.push([
+    '## See the diff',
+    scopeNotice,
+    `You are in a read-only worktree pinned to the reviewed snapshot. Read the full diff yourself with:\n\n    ${input.diffCommand}\n\nReview that diff against the rubric above. Do not rely on this summary alone — open the actual changed files.`,
+  ].filter((line): line is string => line !== undefined).join('\n'));
 
   return sections.join('\n\n');
 }
 
 export function buildReviewLaunchMessage(input: ReviewPromptInput, rubricPath: string): string {
+  const scopeNotice = buildReviewScopeNotice(input);
   return [
     buildLaunchIntro(input),
     buildLaunchContextSection(input),
     buildFilesToInspectSection(input.changedFiles),
     buildReviewSkillSection(rubricPath),
-    `Diff:\nRun:\n\n    ${input.diffCommand}`,
+    ['Diff:', scopeNotice, `Run:\n\n    ${input.diffCommand}`]
+      .filter((line): line is string => line !== undefined)
+      .join('\n'),
     buildReviewWorkflowSection(),
   ].join('\n\n');
 }

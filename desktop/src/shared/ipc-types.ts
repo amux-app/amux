@@ -261,9 +261,12 @@ export interface PaneSendFixRequest {
   reviewPaneId: string;
 }
 
+export type ReviewSnapshotDrift = 'changed' | 'unchanged' | 'unknown';
+
 export interface PaneSendFixResponse {
   success: boolean;
   sourcePaneId?: string;
+  snapshotDrift?: ReviewSnapshotDrift;
   /** True when the reviewer reported no actionable issues — UI should treat as a non-error info state. */
   noIssues?: boolean;
   error?: string;

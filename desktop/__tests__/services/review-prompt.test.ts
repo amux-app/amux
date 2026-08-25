@@ -13,6 +13,19 @@ const SAMPLE = {
 };
 
 describe('buildReviewPrompt', () => {
+  it('discloses the limited scope of a shared-checkout review', () => {
+    const prompt = buildReviewPrompt({ ...SAMPLE, scope: 'uncommitted' });
+
+    expect(prompt).toContain('Scope: review only the uncommitted changes captured from the implementation session.');
+    expect(prompt).toContain('Earlier commits on this branch are intentionally out of scope');
+    expect(prompt).not.toContain('contains exactly these changes');
+  });
+
+  it('does not add a shared-checkout scope disclaimer to worktree reviews', () => {
+    expect(buildReviewPrompt({ ...SAMPLE, scope: 'worktree' })).not.toContain('Earlier commits on this branch');
+    expect(buildReviewPrompt(SAMPLE)).not.toContain('Earlier commits on this branch');
+  });
+
   it('gives a short brief — task, branch, files, and the diff command (no inline diff)', () => {
     const prompt = buildReviewPrompt(SAMPLE);
 
@@ -164,6 +177,14 @@ describe('prompt-injection hardening', () => {
 });
 
 describe('buildReviewLaunchMessage', () => {
+  it('discloses shared-checkout scope before the reviewer opens the rubric', () => {
+    const message = buildReviewLaunchMessage({ ...SAMPLE, scope: 'uncommitted' }, '.muxbase/review/REVIEW.md');
+
+    expect(message).toContain('Scope: review only the uncommitted changes captured from the implementation session.');
+    expect(message.indexOf('Diff:')).toBeLessThan(message.indexOf('Scope: review only'));
+    expect(message.indexOf('Scope: review only')).toBeLessThan(message.indexOf('Run:\n\n'));
+  });
+
   it('is a reviewer-friendly brief that makes the strict review skill visible and mandatory', () => {
     const msg = buildReviewLaunchMessage(SAMPLE, '.muxbase/review/REVIEW.md');
 

@@ -12,6 +12,11 @@ import {
 
 const SAFE_BRANCH_CHARS = /^[a-zA-Z0-9._\/-]*$/;
 const HAS_DOT_DOT = /\.\./;
+const GIT_OBJECT_ID = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i;
+
+export function isGitObjectId(value: unknown): value is string {
+  return typeof value === 'string' && GIT_OBJECT_ID.test(value);
+}
 
 /**
  * Get the git branch name for a pane.

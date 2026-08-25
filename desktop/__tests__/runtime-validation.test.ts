@@ -166,6 +166,52 @@ describe('runtimeValidation', () => {
     expect(panes).toEqual([reviewPane]);
   });
 
+  it.each([
+    '0123456789abcdef0123456789abcdef01234567',
+    '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+  ])('accepts a %s review snapshot object id', (snapshotSha) => {
+    const reviewPane = {
+      id: 'review-pane',
+      paneId: '%2',
+      prompt: 'review',
+      role: 'review',
+      review: {
+        changedFiles: 2,
+        reviewId: 'review-1',
+        snapshotSha,
+        sourcePaneId: 'source-pane',
+        sourceSlug: 'feature-pane',
+        startedAt: 123,
+      },
+      slug: 'review-feature-pane',
+    };
+
+    expect(sanitizePaneList([reviewPane])).toEqual([reviewPane]);
+  });
+
+  it('rejects a malformed review snapshot object id but preserves legacy metadata', () => {
+    const reviewPane = {
+      id: 'review-pane',
+      paneId: '%2',
+      prompt: 'review',
+      role: 'review',
+      review: {
+        changedFiles: 2,
+        reviewId: 'review-1',
+        sourcePaneId: 'source-pane',
+        sourceSlug: 'feature-pane',
+        startedAt: 123,
+      },
+      slug: 'review-feature-pane',
+    };
+
+    expect(sanitizePaneList([reviewPane])).toEqual([reviewPane]);
+    expect(sanitizePaneList([{
+      ...reviewPane,
+      review: { ...reviewPane.review, snapshotSha: 'invalid' },
+    }])).toEqual([]);
+  });
+
   it('accepts the complete persisted pane metadata contract', () => {
     const pane = {
       agent: 'claude',

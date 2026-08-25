@@ -44,7 +44,8 @@ export function SendFixesConfirmDialog({ reviewPane, onClose }: SendFixesConfirm
 
   const sourceSlug = reviewPane.review?.sourceSlug ?? '(unknown)';
   const reviewer = reviewPane.agent ?? 'reviewer';
-  const sendDisabled = submitting || !result || result.kind === 'no-issues';
+  const isCleanReview = result?.kind === 'no-issues';
+  const sendDisabled = submitting || !result;
 
   return (
     <div
@@ -74,8 +75,17 @@ export function SendFixesConfirmDialog({ reviewPane, onClose }: SendFixesConfirm
         </div>
 
         <div className="px-4 py-3 border-b border-[var(--border)] text-[11.5px] text-[var(--text-muted)] shrink-0">
-          The author's agent will read these findings and may start editing files.
-          Review what will be sent before confirming.
+          {isCleanReview ? (
+            <p>The reviewer found no actionable issues. Nothing will be sent to the author — this just closes out the review.</p>
+          ) : (
+            <>
+              The author's agent will read these findings and may start editing files.
+              Review what will be sent before confirming.
+            </>
+          )}
+          <p className="mt-2">
+            This review was taken from a snapshot of the code at the time it started; the author's files may have changed since.
+          </p>
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3">
@@ -93,12 +103,12 @@ export function SendFixesConfirmDialog({ reviewPane, onClose }: SendFixesConfirm
           <button
             onClick={handleSend}
             disabled={sendDisabled}
-            aria-label="Confirm send fixes"
+            aria-label={isCleanReview ? 'Acknowledge and return' : 'Send to author'}
             className="px-3 py-1.5 rounded-md bg-[var(--accent)] text-[12px] font-semibold text-[var(--accent-contrast)] hover:brightness-110 disabled:opacity-50 disabled:hover:brightness-100 flex items-center gap-1.5"
           >
             {submitting
               ? <><Loader2 size={12} className="animate-spin" /> Sending…</>
-              : <><SendHorizontal size={12} /> Send to author</>
+              : <><SendHorizontal size={12} /> {isCleanReview ? 'Acknowledge and return' : 'Send to author'}</>
             }
           </button>
         </div>
@@ -131,10 +141,7 @@ function PreviewBody({ session, result, reviewer }: PreviewBodyProps) {
 
   const isClean = result.kind === 'no-issues';
   const heading = isClean
-    ? <>
-      <p className="mb-2 font-medium text-[var(--accent)]">Reviewer found no actionable issues.</p>
-      <p className="mb-3 text-[12px] text-[var(--text-muted)]">Nothing will be sent to the author.</p>
-    </>
+    ? null
     : <p className="mb-2 text-[11px] uppercase tracking-wide font-semibold text-[var(--text-muted)]">Findings from {reviewer}</p>;
 
   return (

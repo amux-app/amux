@@ -48,6 +48,7 @@ const LIVENESS = new Set(['running', 'stopped', 'unknown']);
 const ADAPTER_SUPPORT = new Set(['full', 'partial', 'none']);
 const ADAPTER_CAPABILITIES = new Set(['turnIds', 'notifications', 'backgroundSnapshots', 'compaction', 'backgroundEntities']);
 const FILE_MOVE_ERROR_CODES = new Set(['DUPLICATE_TARGET', 'EACCES', 'EEXIST', 'ENOENT', 'INVALID', 'UNKNOWN']);
+const GIT_OBJECT_ID = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -102,7 +103,8 @@ function isReviewMetadata(value: unknown): value is ReviewMetadata {
     && isString(value.reviewId)
     && isFiniteNumber(value.changedFiles)
     && isFiniteNumber(value.startedAt)
-    && isOptionalFiniteNumber(value.handedOffAt);
+    && isOptionalFiniteNumber(value.handedOffAt)
+    && (value.snapshotSha === undefined || (isString(value.snapshotSha) && GIT_OBJECT_ID.test(value.snapshotSha)));
 }
 
 function isDuelMetadata(value: unknown): value is DuelMetadata {

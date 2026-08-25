@@ -231,7 +231,7 @@ describe('accent action labels', () => {
   it('keeps the send-fixes button on the accent contrast token and its findings gate', () => {
     // Act
     render(<SendFixesConfirmDialog reviewPane={REVIEW_PANE} onClose={vi.fn()} />);
-    const button = screen.getByRole('button', { name: 'Confirm send fixes' });
+    const button = screen.getByRole('button', { name: 'Send to author' });
 
     // Assert
     expect(button.className).toContain(ACCENT_CONTRAST_CLASS);

@@ -23,10 +23,15 @@ const SHORT_LABEL: Record<string, string> = {
 //  - Codex     → --sandbox read-only --ask-for-approval never (OS sandbox)
 //  - Claude    → --permission-mode plan (model/policy-level; user-bypassable)
 //  - OpenCode  → --agent plan (model/policy-level; user-bypassable)
-const ENFORCEMENT_INFO: Record<string, { kind: 'os' | 'model'; description: string }> = {
+type ReviewEnforcement = {
+  kind: 'os' | 'model';
+  description: string;
+};
+
+const ENFORCEMENT_INFO: Record<AgentName, ReviewEnforcement | null> = {
   codex: {
     kind: 'os',
-    description: 'Codex runs in an OS-level read-only sandbox — cannot write to disk or run commands.',
+    description: 'Codex runs with an OS-enforced read-only sandbox and approval prompts disabled; write and network attempts fail.',
   },
   claude: {
     kind: 'model',
@@ -36,6 +41,7 @@ const ENFORCEMENT_INFO: Record<string, { kind: 'os' | 'model'; description: stri
     kind: 'model',
     description: 'OpenCode runs in plan mode — read-only by policy. The reviewer can request to exit plan mode; do not approve that prompt.',
   },
+  pi: null,
 };
 
 export function ReviewAgentSegments({ agents, selected, onSelect }: ReviewAgentSegmentsProps) {
@@ -115,4 +121,3 @@ export function ReviewAgentSegments({ agents, selected, onSelect }: ReviewAgentS
     </>
   );
 }
-

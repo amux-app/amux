@@ -1,6 +1,7 @@
 import { mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { isGitObjectId } from 'muxbase/core';
 import { HEAD_REF, PATHSPEC_SEPARATOR, STATUS_ARGS, VERIFY_HEAD_ARGS } from './gitArgs.js';
 import { git, gitOrThrow } from './gitCommand.js';
 import { parsePorcelainV1Z, type ParsedStatusEntry } from './gitDiffParser.js';
@@ -101,4 +102,20 @@ export async function createReviewSnapshot(worktreePath: string): Promise<Snapsh
   } finally {
     await rm(indexDir, { recursive: true, force: true });
   }
+}
+
+export async function hasReviewSnapshotChanged(
+  sourcePath: string,
+  reviewedSha: string,
+): Promise<boolean> {
+  if (!isGitObjectId(reviewedSha)) {
+    throw new Error('Invalid reviewed snapshot object id');
+  }
+
+  const freshSnapshot = await createReviewSnapshot(sourcePath);
+  const [reviewedTree, freshTree] = await Promise.all([
+    gitOrThrow(sourcePath, ['rev-parse', `${reviewedSha}^{tree}`]),
+    gitOrThrow(sourcePath, ['rev-parse', `${freshSnapshot.sha}^{tree}`]),
+  ]);
+  return reviewedTree.trim() !== freshTree.trim();
 }

@@ -8,16 +8,26 @@ const reviewServices = vi.hoisted(() => ({
   collectWorkingDiffData: vi.fn(),
   createReviewSnapshot: vi.fn(),
   extractReviewFindings: vi.fn(),
+  hasReviewSnapshotChanged: vi.fn(),
   resolveBaseBranch: vi.fn(),
+}));
+
+const reviewLogger = vi.hoisted(() => ({
+  error: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
 }));
 
 vi.mock('../../src/main/services/git/gitDiff.js', () => ({
   collectSnapshotDiffData: reviewServices.collectSnapshotDiffData,
   collectWorkingDiffData: reviewServices.collectWorkingDiffData,
   createReviewSnapshot: reviewServices.createReviewSnapshot,
+  hasReviewSnapshotChanged: reviewServices.hasReviewSnapshotChanged,
   resolveBaseBranch: reviewServices.resolveBaseBranch,
   sh: (value: string) => `'${value}'`,
 }));
+
+vi.mock('../../src/main/services/Logger.js', () => ({ log: reviewLogger }));
 
 vi.mock('../../src/main/services/review/fixHandoff.js', async () => {
   const actual = await vi.importActual<typeof import('../../src/main/services/review/fixHandoff.js')>(
@@ -128,6 +138,7 @@ describe('ReviewWorkflow', () => {
     vi.clearAllMocks();
     vi.mocked(existsSync).mockReturnValue(false);
     reviewServices.createReviewSnapshot.mockResolvedValue({ sha: 'snapshot', skippedFiles: [] });
+    reviewServices.hasReviewSnapshotChanged.mockResolvedValue(false);
     reviewServices.resolveBaseBranch.mockResolvedValue('main');
     reviewServices.collectSnapshotDiffData.mockResolvedValue({
       changedFiles: ['src/feature.ts'],
@@ -150,6 +161,18 @@ describe('ReviewWorkflow', () => {
     await expect(harness.workflow.startReview('source', 'claude')).resolves.toMatchObject({
       success: true,
     });
+  });
+
+  it('persists the reviewed snapshot sha in the review metadata', async () => {
+    const harness = makeHarness();
+
+    await harness.workflow.startReview('source', 'claude');
+
+    expect(harness.createPane).toHaveBeenCalledWith(
+      'Review: feature',
+      'claude',
+      expect.objectContaining({ review: expect.objectContaining({ snapshotSha: 'snapshot' }) }),
+    );
   });
 
   it('does not launch when readiness revalidation fails after snapshotting', async () => {
@@ -183,7 +206,7 @@ describe('ReviewWorkflow', () => {
     const harness = makeHarness([makeSource(), makeReview()]);
     reviewServices.extractReviewFindings.mockReturnValue({ kind: 'no-issues', text: 'NO_ISSUES_FOUND' });
 
-    await expect(harness.workflow.startFixHandoff('review')).resolves.toEqual({
+    await expect(harness.workflow.startFixHandoff('review')).resolves.toMatchObject({
       success: true,
       noIssues: true,
       sourcePaneId: 'source',
@@ -191,6 +214,105 @@ describe('ReviewWorkflow', () => {
     expect(harness.sendPromptToPane).not.toHaveBeenCalled();
     expect(harness.getPanes().find((pane) => pane.id === 'review')?.review?.handedOffAt)
       .toEqual(expect.any(Number));
+  });
+
+  it('closes the source review guard after a clean handoff', async () => {
+    const harness = makeHarness([makeSource(), makeReview()]);
+    reviewServices.extractReviewFindings.mockReturnValue({ kind: 'no-issues', text: 'NO_ISSUES_FOUND' });
+
+    await harness.workflow.startFixHandoff('review');
+
+    expect(harness.getPanes().find((pane) => pane.id === 'review')?.review?.handedOffAt)
+      .toEqual(expect.any(Number));
+    expect(harness.getPanes().some((pane) => (
+      pane.role === 'review'
+      && pane.review?.sourcePaneId === 'source'
+      && !pane.review.handedOffAt
+    ))).toBe(false);
+  });
+
+  it('computes drift before readiness revalidation', async () => {
+    const snapshotSha = '0123456789abcdef0123456789abcdef01234567';
+    const harness = makeHarness([makeSource(), makeReview({ review: { ...makeReview().review!, snapshotSha } })]);
+    const order: string[] = [];
+    reviewServices.extractReviewFindings.mockReturnValue({ kind: 'findings', text: 'P1: bug' });
+    reviewServices.hasReviewSnapshotChanged.mockImplementation(async () => {
+      order.push('drift');
+      return true;
+    });
+    harness.dependencies.revalidateReadinessOrReject.mockImplementation((pane, _token, blockReason, notFoundReason) => {
+      order.push('revalidate');
+      if (!pane) return { ok: false as const, reason: notFoundReason };
+      const reason = blockReason(pane);
+      return reason ? { ok: false as const, reason } : { ok: true as const, pane };
+    });
+
+    await expect(harness.workflow.startFixHandoff('review')).resolves.toMatchObject({ success: true });
+
+    expect(order.indexOf('drift')).toBeGreaterThanOrEqual(0);
+    expect(order.indexOf('drift')).toBeLessThan(order.indexOf('revalidate'));
+  });
+
+  it('returns drift for a clean handoff without sending a prompt', async () => {
+    const snapshotSha = '0123456789abcdef0123456789abcdef01234567';
+    const harness = makeHarness([makeSource(), makeReview({ review: { ...makeReview().review!, snapshotSha } })]);
+    reviewServices.extractReviewFindings.mockReturnValue({ kind: 'no-issues', text: 'NO_ISSUES_FOUND' });
+    reviewServices.hasReviewSnapshotChanged.mockResolvedValue(true);
+
+    await expect(harness.workflow.startFixHandoff('review')).resolves.toEqual({
+      snapshotDrift: 'changed',
+      success: true,
+      noIssues: true,
+      sourcePaneId: 'source',
+    });
+    expect(harness.sendPromptToPane).not.toHaveBeenCalled();
+  });
+
+  it('maps a malformed in-memory snapshot sha to unknown without invoking Git drift detection', async () => {
+    const harness = makeHarness([makeSource(), makeReview({
+      review: { ...makeReview().review!, snapshotSha: 'not-a-git-object' },
+    })]);
+    reviewServices.extractReviewFindings.mockReturnValue({ kind: 'findings', text: 'P1: bug' });
+
+    await expect(harness.workflow.startFixHandoff('review')).resolves.toMatchObject({
+      snapshotDrift: 'unknown',
+      success: true,
+    });
+    expect(reviewServices.hasReviewSnapshotChanged).not.toHaveBeenCalled();
+  });
+
+  it('logs separately when the review pane disappears after prompt delivery', async () => {
+    const harness = makeHarness([makeSource(), makeReview()]);
+    reviewServices.extractReviewFindings.mockReturnValue({ kind: 'findings', text: 'P1: bug' });
+    harness.dependencies.getPanes
+      .mockImplementationOnce(() => [makeSource(), makeReview()])
+      .mockImplementationOnce(() => [makeSource(), makeReview()])
+      .mockImplementationOnce(() => []);
+
+    await expect(harness.workflow.startFixHandoff('review')).resolves.toMatchObject({ success: true });
+
+    expect(reviewLogger.warn).toHaveBeenCalledWith(
+      'bridge',
+      'Review metadata update skipped: pane missing',
+      { paneId: 'review' },
+    );
+  });
+
+  it('logs separately when review metadata disappears from an existing pane', async () => {
+    const harness = makeHarness([makeSource(), makeReview()]);
+    reviewServices.extractReviewFindings.mockReturnValue({ kind: 'findings', text: 'P1: bug' });
+    harness.dependencies.getPanes
+      .mockImplementationOnce(() => [makeSource(), makeReview()])
+      .mockImplementationOnce(() => [makeSource(), makeReview()])
+      .mockImplementationOnce(() => [makeSource(), { ...makeReview(), review: undefined }]);
+
+    await expect(harness.workflow.startFixHandoff('review')).resolves.toMatchObject({ success: true });
+
+    expect(reviewLogger.warn).toHaveBeenCalledWith(
+      'bridge',
+      'Review metadata update skipped: review metadata absent',
+      { paneId: 'review' },
+    );
   });
 
   it('writes findings, delivers the prompt, then marks the review handed off', async () => {
@@ -201,7 +323,7 @@ describe('ReviewWorkflow', () => {
         .toBeUndefined();
     });
 
-    await expect(harness.workflow.startFixHandoff('review')).resolves.toEqual({
+    await expect(harness.workflow.startFixHandoff('review')).resolves.toMatchObject({
       success: true,
       sourcePaneId: 'source',
     });

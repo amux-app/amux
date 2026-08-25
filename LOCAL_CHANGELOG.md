@@ -1,5 +1,67 @@
 # Local Changelog
 
+## Harden the pane-to-pane review workflow
+
+- **Date/time:** 2026-08-25 19:55 UTC (completion)
+- **Impact:** High — changes review handoff behavior, persisted review metadata, Git snapshot comparison, reviewer scope disclosure, renderer actions, and diagnostics across the core and desktop layers.
+- **What:** Implemented all seven pane2e review-hardening tasks: clean-review acknowledgement, immutable snapshot provenance and three-state drift reporting, Markdown-tolerant clean-review parsing, shared-checkout scope disclosure in both the launch message and rubric, exhaustive read-only enforcement copy, and distinct metadata-update warnings. Follow-up review fixes updated the stale accessible-name assertion, rejected malformed snapshot IDs at the trusted provenance boundary, made clean-review copy conditional, removed duplication, aligned artifact paths with the revalidated source pane, and restored a green full desktop suite.
+- **Why:** Clean reviews were previously impossible to acknowledge, findings had no record of the code snapshot they described, shared-checkout reviews could mislead users and reviewers about scope, decorated sentinels could trigger false fix handoffs, and concurrent pane changes were silently hiding handoff persistence failures.
+- **How:** Added optional `snapshotSha` validation and persistence, a tree-based `hasReviewSnapshotChanged` Git primitive, drift computation before readiness revalidation on both findings and clean paths, fenced findings provenance that accepts only `isGitObjectId` values, stale-line guidance, a shared scope-notice builder used by the launch message and rubric, renderer scope/action/toast updates, bounded sentinel normalization with fence skipping, an exhaustive agent enforcement map, and focused regression coverage across core, main, shared, renderer, and release-gate tests. Updated the architecture note in `AGENTS.md`.
+
+### Risk and compatibility
+
+Legacy review panes without `snapshotSha` remain valid and report `unknown` drift without blocking handoff or emitting a provenance block. Git comparison failures and malformed in-memory metadata also degrade to `unknown`; no new IPC channel or atomic handoff redesign was introduced. Findings remain fenced as untrusted data, snapshot capture retains its existing secret exclusion and temp-index behavior, readiness revalidation stays immediately before mutation, and all changes remain uncommitted as requested.
+The optional live review E2E/manual handoff was attempted with installed agent CLIs: isolated review launch and seeded-rubric verification passed, but the reviewer did not reach backend idle within the live harness window, so drift artifact, clean acknowledgement, and shared-checkout manual acceptance are not claimed as completed. The known live harness shim that pins legacy `agentStatus` was not retained and production readiness gating was not weakened.
+
+### Validation
+
+```
+# Working directory: /Users/i056926/projects/dmux/desktop
+$ pnpm exec vitest run --config vitest.config.ts --no-file-parallelism __tests__/services/review-workflow.test.ts __tests__/services/review-action.test.ts __tests__/services/review-prompt.test.ts __tests__/services/review-snapshot.test.ts __tests__/services/review-pane-guards.test.ts __tests__/services/fix-handoff.test.ts __tests__/hooks/use-review-controls.test.tsx __tests__/components/review-navigation-button.test.tsx
+Test Files  8 passed (8)
+Tests  136 passed (136)
+
+# Working directory: /Users/i056926/projects/dmux/desktop
+$ pnpm exec vitest run --config vitest.config.ts --no-file-parallelism __tests__/services/review-prompt.test.ts __tests__/components/send-fixes-confirm-dialog.test.tsx __tests__/services/review-workflow.test.ts
+Test Files  3 passed (3)
+Tests  29 passed (29)
+
+$ pnpm exec vitest run --config vitest.config.ts --no-file-parallelism __tests__/components/send-fixes-confirm-dialog.test.tsx __tests__/components/review-agent-segments.test.tsx __tests__/hooks/use-pane-actions.test.ts __tests__/pane-cell-menus.test.tsx __tests__/runtime-validation.test.ts
+Test Files  5 passed (5)
+Tests  102 passed (102)
+
+# Working directory: /Users/i056926/projects/dmux
+$ pnpm exec vitest run --config vitest.config.ts --no-file-parallelism __tests__/utils/persistedStateValidation.test.ts
+Test Files  1 passed (1)
+Tests  11 passed (11)
+
+$ pnpm typecheck
+Passed: root TypeScript check.
+
+# Working directory: /Users/i056926/projects/dmux/desktop
+$ pnpm typecheck
+Passed: desktop main and renderer TypeScript checks.
+
+# Working directory: /Users/i056926/projects/dmux
+$ pnpm lint:ci
+Passed: ESLint with --max-warnings 0.
+
+$ git diff --check
+Passed: no whitespace errors.
+
+# Working directory: /Users/i056926/projects/dmux (nested in pnpm release:verify)
+$ pnpm run test
+Test Files  129 passed | 1 skipped (130)
+Tests  1097 passed | 2 skipped (1099)
+
+$ pnpm release:verify
+Passed: exit 0. Audit, static checks, root tests, desktop typecheck/build/unit tests, feature/stable/UI/update E2E, smoke, and x64/arm64 package verification all passed. Desktop release verification reported 354 passed files, 22 skipped files, 3623 passed tests, and 167 skipped tests; package ASARs were clean and arm64 launch/LSP checks passed.
+
+# Working directory: /Users/i056926/projects/dmux/desktop
+$ MUXBASE_E2E=1 MUXBASE_E2E_LIVE_AGENTS=1 MUXBASE_E2E_ALLOW_STORE_COERCE=1 pnpm exec vitest run --config vitest.config.ts --no-file-parallelism __tests__/e2e/review-agent.e2e.test.ts
+Not a release-gate pass: the first temporary canonical-activity attempt passed isolated review launch/rubric verification, then timed out waiting for the live reviewer to reach backend idle; the temporary test shim was reverted. The original harness attempt also failed because it pins legacy agentStatus while the production gate reads PaneActivity.
+```
+
 ## Remediate the 14 open CodeQL findings
 
 - **Date/time:** 2026-08-25 17:52 UTC (completion)

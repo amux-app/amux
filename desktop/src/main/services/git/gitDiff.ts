@@ -15,4 +15,4 @@ export {
   releaseWorktreeSnapshot,
   type WorktreeMeta,
 } from './gitWorktreeSnapshot.js';
-export { createReviewSnapshot } from './reviewSnapshot.js';
+export { createReviewSnapshot, hasReviewSnapshotChanged } from './reviewSnapshot.js';
