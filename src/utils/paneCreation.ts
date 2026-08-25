@@ -29,6 +29,7 @@ import { resumeAgentInPane } from './paneAgentLifecycle.js';
 import { assertClaudeFullscreenSupported } from './claudeVersion.js';
 import { stampTmuxPaneIdOption, stampTmuxPaneIncarnationOption } from './paneRebinding.js';
 import { getPaneActivityJournalPath } from './paneActivityJournal.js';
+import { isHooksEditingPrompt } from './hooksEditingPrompt.js';
 import {
   resizePaneBeforeAgentLaunch,
   resolvePaneBirthGeometry,
@@ -568,10 +569,7 @@ export async function createPane(
       });
     }
 
-    const isHooksEditingSession = useWorktree && !!prompt && (
-      /(create|edit|modify).*(muxbase|\.)?.*(hooks)/i.test(prompt)
-      || /\.muxbase-hooks/i.test(prompt)
-    );
+    const isHooksEditingSession = useWorktree && isHooksEditingPrompt(prompt);
 
     if (useWorktree && worktreePath && branchName && !worktreeCreatedDirectly) {
       // Tmux-shell worktree path: send git commands through the pane's shell and poll for completion.

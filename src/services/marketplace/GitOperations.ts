@@ -82,7 +82,7 @@ export class GitOperations {
     mkdirSync(parentDir, { recursive: true });
     const tempPath = `${targetPath}.tmp-${randomBytes(6).toString('hex')}`;
     try {
-      await execFileAsync('git', ['clone', '--depth', '1', url, tempPath], { timeout: 60000 });
+      await execFileAsync('git', ['clone', '--depth', '1', '--', url, tempPath], { timeout: 60000 });
       await this.commitClone(url, tempPath, targetPath);
     } catch (error) {
       rmSync(tempPath, { recursive: true, force: true });

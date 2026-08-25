@@ -1,4 +1,5 @@
 import { callClaudeCode as callClaudeCli } from './aiCli.js';
+import { normalizeAsciiName } from './safeName.js';
 
 interface OpenRouterChatCompletionResponse {
   choices?: Array<{
@@ -111,13 +112,7 @@ export function generateDefaultSlug(): string {
  * dialog, review prefix concatenations) before it reaches `git worktree add`.
  */
 export function sanitizeSlug(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 30)
-    .replace(/-+$/g, ''); // re-trim in case slice landed mid-run
+  return normalizeAsciiName(input, { maxLength: 30 });
 }
 
 /**

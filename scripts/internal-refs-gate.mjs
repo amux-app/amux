@@ -5,12 +5,47 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { extname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// Rules are written so that this file never matches itself: an escaped `\.` in a pattern
-// is not the literal `.` the pattern looks for, and every alternation is preceded by `:`.
+function isHostnameCharacter(character) {
+  const code = character.charCodeAt(0);
+  return (code >= 48 && code <= 57)
+    || (code >= 97 && code <= 122)
+    || character === '.'
+    || character === '-';
+}
+
+function isHostTerminator(character) {
+  return character === undefined || character === ':' || character === '/' || /\s/.test(character);
+}
+
+function findInternalHostIndex(content) {
+  const normalized = content.toLowerCase();
+  const protocols = ['http://', 'https://', 'ssh://'];
+
+  for (let index = 0; index < normalized.length; index += 1) {
+    const protocol = protocols.find((candidate) => normalized.startsWith(candidate, index));
+    if (!protocol) continue;
+
+    const hostStart = index + protocol.length;
+    let hostEnd = hostStart;
+    while (hostEnd < normalized.length && isHostnameCharacter(normalized[hostEnd])) hostEnd += 1;
+    const hostname = normalized.slice(hostStart, hostEnd);
+    if (
+      (hostname.endsWith('.internal') || hostname.endsWith('.corp'))
+      && isHostTerminator(normalized[hostEnd])
+    ) {
+      return index;
+    }
+  }
+
+  return -1;
+}
+
+// Rules are written so that this file never matches itself: every literal domain
+// fragment is assembled structurally or appears only as an escaped pattern.
 const PUBLIC_RULES = [
   {
     label: 'internal-host',
-    pattern: /(?:https?|ssh):\/\/[^\s/@]+(?:\.[^\s/:@]+)*(?:\.internal|\.corp)(?=[:/\s]|$)/i,
+    findIndex: findInternalHostIndex,
   },
   {
     // Self-hosted forge hostnames such as a GitHub Enterprise instance. Public forge hosts
@@ -173,9 +208,9 @@ function findLineNumber(content, index) {
 function scanFile(relativePath, content, privatePatterns) {
   const findings = [];
   for (const rule of PUBLIC_RULES) {
-    const match = rule.pattern.exec(content);
-    if (match?.index !== undefined) {
-      findings.push({ label: rule.label, line: findLineNumber(content, match.index), path: relativePath });
+    const index = rule.findIndex ? rule.findIndex(content) : rule.pattern.exec(content)?.index ?? -1;
+    if (index !== -1) {
+      findings.push({ label: rule.label, line: findLineNumber(content, index), path: relativePath });
     }
   }
   for (const pattern of privatePatterns) {
@@ -208,7 +243,8 @@ function scanAuthors(rootDir, privatePatterns) {
       const path = `<git-commit ${hash.slice(0, 7)} ${field}>`;
       for (const rule of PUBLIC_RULES) {
         const key = `${hash}:${field}:${rule.label}`;
-        if (rule.pattern.test(value) && !seen.has(key)) {
+        const index = rule.findIndex ? rule.findIndex(value) : rule.pattern.exec(value)?.index ?? -1;
+        if (index !== -1 && !seen.has(key)) {
           seen.add(key);
           findings.push({ label: rule.label, line: 0, path });
         }

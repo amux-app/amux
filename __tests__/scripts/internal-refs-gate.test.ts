@@ -125,6 +125,15 @@ describe('internal reference gate', () => {
     expect(`${result.stdout}\n${result.stderr}`).not.toContain(privateHost);
   });
 
+  it('scans a long hostname candidate without regular-expression backtracking', () => {
+    writeFileSync(join(fixtureRoot, 'long-host.txt'), `https://${'a'.repeat(500_000)}.example/api\n`);
+
+    const result = runGate();
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('clean');
+  });
+
   it('detects a self-hosted forge host while allowing the public forge', () => {
     writeFileSync(join(fixtureRoot, 'clone.txt'), `git clone https://${['github', 'acme', 'com'].join('.')}/org/repo\n`);
     writeFileSync(join(fixtureRoot, 'public.txt'), `git clone https://${['github', 'com'].join('.')}/org/repo\n`);

@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { execSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
 import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { resolve } from 'path';
+import { basename, resolve } from 'path';
 import { _electron as electron } from 'playwright';
 import type { ElectronApplication, Page } from 'playwright';
 import { IPC, IPC_EVENT } from '../../src/shared/ipc-channels';
@@ -604,9 +604,9 @@ describe.runIf(process.env.MUXBASE_E2E === '1')('Kanban target size geometry (WC
     writeInventoryReport();
     if (app) await app.close();
     if (projectRoot) {
-      execSync(`tmux kill-session -t "muxbase-${resolve(projectRoot).split('/').pop()}" 2>/dev/null || true`, {
-        stdio: 'ignore',
-      });
+      try {
+        execFileSync('tmux', ['kill-session', '-t', `muxbase-${basename(projectRoot)}`], { stdio: 'ignore' });
+      } catch { /* session already gone */ }
       rmSync(projectRoot, { force: true, recursive: true });
     }
   }, APP_SHUTDOWN_TIMEOUT_MS);

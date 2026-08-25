@@ -192,7 +192,7 @@ describe.runIf(process.env.MUXBASE_E2E === '1')('Duel E2E', () => {
     if (app) await closeElectronApp(app);
     if (e2eRoot) {
       try {
-        execSync(`tmux kill-session -t "muxbase-${basename(e2eRoot)}" 2>/dev/null`, { stdio: 'ignore' });
+        execFileSync('tmux', ['kill-session', '-t', `muxbase-${basename(e2eRoot)}`], { stdio: 'ignore' });
       } catch { /* session already gone */ }
       rmSync(e2eRoot, { recursive: true, force: true });
     }

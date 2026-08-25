@@ -12,13 +12,15 @@ vi.mock('fs', async (importOriginal) => {
   };
 });
 
-import { writeFileSync, rmSync } from 'fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { HookTranslator, isMarketplaceHookOwnedBy } from '../../src/services/marketplace/HookTranslator.js';
 import type { HookEntry } from '../../src/services/marketplace/types.js';
 
 describe('HookTranslator', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(readFileSync).mockReturnValue('');
   });
 
   describe('claude', () => {
@@ -46,6 +48,25 @@ describe('HookTranslator', () => {
       const result = translator.translateForAgent(hook, 'claude', 'test-plugin');
       expect(result.status).toBe('partial');
       expect(result.skipped[0]).toContain('no shell command');
+    });
+
+    it('stores special event names as own properties without touching the prototype', () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(readFileSync).mockReturnValue('{"hooks":{}}');
+      const translator = new HookTranslator();
+      const hook: HookEntry = {
+        event: '__proto__',
+        command: 'true',
+        sourceFormat: 'claude',
+      };
+
+      translator.translateForAgent(hook, 'claude', 'test-plugin');
+
+      const written = vi.mocked(writeFileSync).mock.calls.at(-1)?.[1];
+      const settings = JSON.parse(String(written)) as { hooks: Record<string, unknown> };
+      expect(Object.hasOwn(settings.hooks, '__proto__')).toBe(true);
+      expect(Array.isArray(settings.hooks['__proto__'])).toBe(true);
+      expect(Object.prototype).not.toHaveProperty('__marketplace__');
     });
   });
 

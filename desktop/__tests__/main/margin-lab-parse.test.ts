@@ -6,14 +6,18 @@ const SAMPLE_DAILY = [
   { date: '2026-06-20', passRate: 68.18, ciLower: 53.44, ciUpper: 80.0, runsCount: 44, displayRunsCount: 50, passed: 30 },
 ];
 
-function buildPage(dailyJson: string): string {
+function buildPage(dailyData: unknown): string {
+  const dailyJson = JSON.stringify(dailyData).replace(/[<>\u2028\u2029]/gu, (character) => {
+    const codePoint = character.codePointAt(0);
+    return `\\u${codePoint?.toString(16).padStart(4, '0')}`;
+  });
   return `<html><head></head><body><script>(function(){const dailyChartData = ${dailyJson}, weeklyChartData = []; window.__init = 1;})()</script></body></html>`;
 }
 
 describe('parseMarginLabPage', () => {
   it('extracts the most recent daily entry and shapes it into an AgentHealthSnapshot', () => {
     // Arrange
-    const html = buildPage(JSON.stringify(SAMPLE_DAILY));
+    const html = buildPage(SAMPLE_DAILY);
 
     // Act
     const snapshot = parseMarginLabPage(html, 'claude', 1_000_000);
@@ -46,7 +50,7 @@ describe('parseMarginLabPage', () => {
 
   it('returns null when the array is empty', () => {
     // Arrange
-    const html = buildPage('[]');
+    const html = buildPage([]);
 
     // Act
     const snapshot = parseMarginLabPage(html, 'codex', 0);
@@ -61,7 +65,7 @@ describe('parseMarginLabPage', () => {
       { date: '2026-06-19', passRate: 50 }, // missing ciLower etc — filtered
       SAMPLE_DAILY[0],
     ];
-    const html = buildPage(JSON.stringify(partial));
+    const html = buildPage(partial);
 
     // Act
     const snapshot = parseMarginLabPage(html, 'codex', 1_000);
