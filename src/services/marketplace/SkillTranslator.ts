@@ -1,7 +1,8 @@
-import { cpSync, mkdirSync, rmSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, rmSync } from 'fs';
 import os from 'os';
 import path from 'path';
 import type { AgentName } from '../../utils/agentLaunch.js';
+import { materializeMarketplaceSourceTree } from './MarketplaceSourceTree.js';
 import type { SkillEntry } from './types.js';
 
 export class SkillTranslator {
@@ -16,11 +17,23 @@ export class SkillTranslator {
     }
   }
 
-  installForAgent(skill: SkillEntry, agent: AgentName): string {
+  installForAgent(skill: SkillEntry, agent: AgentName, containmentRoot?: string): string {
     const targetDir = path.join(this.getSkillsDir(agent), skill.name);
     mkdirSync(path.dirname(targetDir), { recursive: true });
     // Copy the whole skill directory (scripts/, references/, and other assets included)
-    cpSync(path.dirname(skill.path), targetDir, { recursive: true });
+    if (!containmentRoot) {
+      cpSync(path.dirname(skill.path), targetDir, { recursive: true });
+      return targetDir;
+    }
+
+    const stagingRoot = mkdtempSync(path.join(os.tmpdir(), 'muxbase-marketplace-skill-'));
+    const stagedSkill = path.join(stagingRoot, skill.name);
+    try {
+      materializeMarketplaceSourceTree(path.dirname(skill.path), stagedSkill, containmentRoot);
+      cpSync(stagedSkill, targetDir, { recursive: true });
+    } finally {
+      rmSync(stagingRoot, { force: true, recursive: true });
+    }
     return targetDir;
   }
 

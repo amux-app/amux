@@ -8,9 +8,9 @@ import { HookTranslator } from './HookTranslator.js';
 import { McpTranslator } from './McpTranslator.js';
 import { NativeInstaller, type NativeMarketplaceConfig } from './NativeInstaller.js';
 import {
-  collectNativeMarketplaceTreeEntries,
-  type NativeMarketplaceTreeEntry,
-} from './NativeMarketplaceTree.js';
+  collectMarketplaceSourceTreeEntries,
+  type MarketplaceSourceTreeEntry,
+} from './MarketplaceSourceTree.js';
 import { SkillTranslator } from './SkillTranslator.js';
 import type {
   AgentInstallInfo,
@@ -51,7 +51,7 @@ function contentHash(filePath: string): string {
   return createHash('sha256').update(readFileSync(filePath)).digest('hex');
 }
 
-function formatArtifactEntries(entries: NativeMarketplaceTreeEntry[]): string[] {
+function formatArtifactEntries(entries: MarketplaceSourceTreeEntry[]): string[] {
   return entries.map((entry) => [
     entry.entryType,
     entry.relativePath,
@@ -59,7 +59,7 @@ function formatArtifactEntries(entries: NativeMarketplaceTreeEntry[]): string[] 
   ].join(':'));
 }
 
-function collectArtifactEntries(rootPath: string, relativePath = '.'): NativeMarketplaceTreeEntry[] {
+function collectArtifactEntries(rootPath: string, relativePath = '.'): MarketplaceSourceTreeEntry[] {
   const stat = lstatSync(rootPath);
   if (stat.isSymbolicLink()) throw new Error(`Marketplace artifact symlinks are not allowed: ${rootPath}`);
   if (!stat.isDirectory() && !stat.isFile()) {
@@ -73,7 +73,7 @@ function collectArtifactEntries(rootPath: string, relativePath = '.'): NativeMar
     }];
   }
 
-  const entries: NativeMarketplaceTreeEntry[] = [{ entryType: 'directory', relativePath }];
+  const entries: MarketplaceSourceTreeEntry[] = [{ entryType: 'directory', relativePath }];
   return readdirSync(rootPath, { withFileTypes: true })
     .sort((left, right) => left.name.localeCompare(right.name))
     .reduce(
@@ -98,9 +98,6 @@ function localMcpSourcePaths(server: McpServerEntry, clonePath?: string): string
   if (!clonePath || server.type === 'http' || server.type === 'sse') return [];
 
   const rootPath = path.resolve(clonePath);
-  if (lstatSync(rootPath).isSymbolicLink()) {
-    throw new Error(`Marketplace artifact symlinks are not allowed: ${rootPath}`);
-  }
   const references = server.args.filter((value) => (
     path.isAbsolute(value) || /\.(?:cjs|js|mjs|py|ts)$/.test(value)
   ));
@@ -112,15 +109,11 @@ function localMcpSourcePaths(server: McpServerEntry, clonePath?: string): string
     }
     // Option-like values such as --output=result.js also end in a script
     // extension without naming a real file — skip rather than crash.
-    if (!existsSync(sourcePath)) return [];
-
-    const relativePath = path.relative(rootPath, sourcePath);
-    let currentPath = rootPath;
-    for (const segment of relativePath.split(path.sep).filter(Boolean)) {
-      currentPath = path.join(currentPath, segment);
-      if (lstatSync(currentPath).isSymbolicLink()) {
-        throw new Error(`Marketplace artifact symlinks are not allowed: ${currentPath}`);
-      }
+    if (!existsSync(sourcePath)) {
+      try {
+        if (lstatSync(sourcePath).isSymbolicLink()) return [sourcePath];
+      } catch { /* genuinely absent */ }
+      return [];
     }
     return [sourcePath];
   }))];
@@ -178,9 +171,12 @@ function artifact(
   sourcePaths: string[],
   destinationPaths: string[],
   executable: boolean,
+  containmentRoot?: string,
   detail?: string,
 ): MarketplacePreviewArtifact {
-  const entries = sourcePaths.flatMap((sourcePath) => collectArtifactEntries(sourcePath));
+  const entries = sourcePaths.flatMap((sourcePath) => containmentRoot
+    ? collectMarketplaceSourceTreeEntries(sourcePath, containmentRoot)
+    : collectArtifactEntries(sourcePath));
   return {
     contentHashes: formatArtifactEntries(entries),
     destinationPaths,
@@ -197,7 +193,7 @@ function nativeArtifact(
   destinationPath: string,
   containmentRoot: string,
 ): MarketplacePreviewArtifact {
-  const entries = collectNativeMarketplaceTreeEntries(sourcePath, containmentRoot);
+  const entries = collectMarketplaceSourceTreeEntries(sourcePath, containmentRoot);
   return {
     contentHashes: formatArtifactEntries(entries),
     destinationPaths: [destinationPath],
@@ -235,6 +231,7 @@ export class MarketplaceInstaller {
           [sourceDir],
           [path.join(agentSkillsDir(agent), skill.name)],
           false,
+          nativeConfig?.clonePath,
         ));
       }
 
@@ -245,17 +242,18 @@ export class MarketplaceInstaller {
           [subagent.path],
           [path.join(agentDir(agent), `${plugin.id}__${subagent.name}.md`)],
           true,
+          nativeConfig?.clonePath,
         ));
       }
 
       if (filtered.hooks.length > 0) {
         const hookSources = filtered.hooks.flatMap((hook) => hook.jsPath ? [hook.jsPath] : []);
-        assertNoSymlinks(hookSources);
         artifacts.push(artifact(
           'hooks',
           hookSources,
           [hookDestination(agent)],
           true,
+          nativeConfig?.clonePath,
           filtered.hooks.map((hook) => hook.command ?? `${hook.event}: JS hook`).join('\n'),
         ));
       }
@@ -266,6 +264,7 @@ export class MarketplaceInstaller {
           localMcpSourcePaths(server, nativeConfig?.clonePath),
           [mcpDestination(agent)],
           true,
+          nativeConfig?.clonePath,
           [
             server.command ? [server.command, ...server.args].join(' ') : server.url ?? 'remote MCP server',
             ...formatMcpEnvironmentLines(server.env),
@@ -280,6 +279,7 @@ export class MarketplaceInstaller {
             [jsPlugin.path],
             [path.join(os.homedir(), '.config', 'opencode', 'plugins', `marketplace-${plugin.id}-${jsPlugin.name}.js`)],
             true,
+            nativeConfig?.clonePath,
           ));
         }
       }
@@ -367,12 +367,12 @@ export class MarketplaceInstaller {
     }
     for (const entry of preview.agents) {
       for (const artifact of entry.artifacts) {
-        if (artifact.name.startsWith('native:')) {
-          for (const sourcePath of artifact.sourcePaths) {
-            collectNativeMarketplaceTreeEntries(sourcePath, nativeConfig?.clonePath ?? sourcePath);
+        for (const sourcePath of artifact.sourcePaths) {
+          if (nativeConfig?.clonePath) {
+            collectMarketplaceSourceTreeEntries(sourcePath, nativeConfig.clonePath);
+          } else {
+            assertNoSymlinks([sourcePath]);
           }
-        } else {
-          assertNoSymlinks(artifact.sourcePaths);
         }
       }
     }
@@ -389,7 +389,7 @@ export class MarketplaceInstaller {
       if (useNative) {
         result.agents[agent] = this.installNativeWithDirectMcp(filtered, nativeConfig!, agent);
       } else {
-        result.agents[agent] = this.installDirect(filtered, agent);
+        result.agents[agent] = this.installDirect(filtered, agent, nativeConfig?.clonePath);
       }
     }
 
@@ -452,7 +452,7 @@ export class MarketplaceInstaller {
     // Native marketplace handles plugin discovery but not skills, agents, hooks, or local-script MCPs —
     // always write those directly so every agent gets full coverage.
     for (const skill of plugin.skills) {
-      const p = this.skillTranslator.installForAgent(skill, agent);
+      const p = this.skillTranslator.installForAgent(skill, agent, config.clonePath);
       if (!installPath) installPath = p;
     }
 
@@ -487,12 +487,12 @@ export class MarketplaceInstaller {
     return firstArg.endsWith('.js') || firstArg.endsWith('.ts') || firstArg.endsWith('.py') || firstArg.startsWith('/');
   }
 
-  private installDirect(plugin: DetectedPlugin, agent: AgentName): AgentInstallInfo {
+  private installDirect(plugin: DetectedPlugin, agent: AgentName, containmentRoot?: string): AgentInstallInfo {
     const skipped: string[] = [];
     let installPath = '';
 
     for (const skill of plugin.skills) {
-      const p = this.skillTranslator.installForAgent(skill, agent);
+      const p = this.skillTranslator.installForAgent(skill, agent, containmentRoot);
       if (!installPath) installPath = p;
     }
 

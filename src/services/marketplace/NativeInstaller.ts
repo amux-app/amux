@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import os from 'os';
 import path from 'path';
 import type { AgentName } from '../../utils/agentLaunch.js';
-import { materializeNativeMarketplaceTree } from './NativeMarketplaceTree.js';
+import { materializeMarketplaceSourceTree } from './MarketplaceSourceTree.js';
 import { loadJson, safeResolveUnder } from './utils.js';
 
 export interface NativeMarketplaceConfig {
@@ -123,7 +123,7 @@ export class NativeInstaller {
   private seedClaudeMarketplaceClone(config: NativeMarketplaceConfig, home: string): void {
     const targetDir = path.join(home, '.claude', 'plugins', 'marketplaces', config.marketplaceName);
     if (!existsSync(targetDir)) {
-      materializeNativeMarketplaceTree(config.clonePath!, targetDir, config.clonePath!);
+      materializeMarketplaceSourceTree(config.clonePath!, targetDir, config.clonePath!);
     }
   }
 
@@ -133,7 +133,7 @@ export class NativeInstaller {
     if (existsSync(cacheDir)) return;
     const pluginSourceDir = this.findPluginSourceDir(config);
     if (!pluginSourceDir) return;
-    materializeNativeMarketplaceTree(pluginSourceDir, cacheDir, config.clonePath!);
+    materializeMarketplaceSourceTree(pluginSourceDir, cacheDir, config.clonePath!);
   }
 
   private findPluginSourceDir(config: NativeMarketplaceConfig): string | null {

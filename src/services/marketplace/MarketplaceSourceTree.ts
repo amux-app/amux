@@ -11,13 +11,13 @@ import {
 } from 'fs';
 import path from 'path';
 
-export interface NativeMarketplaceTreeEntry {
+export interface MarketplaceSourceTreeEntry {
   contentHash?: string;
   entryType: 'directory' | 'file';
   relativePath: string;
 }
 
-interface NativeMarketplaceTreeVisitor {
+interface MarketplaceSourceTreeVisitor {
   onDirectory: (relativePath: string) => void;
   onFile: (sourcePath: string, relativePath: string) => void;
 }
@@ -28,12 +28,12 @@ function isPathWithin(rootPath: string, candidatePath: string): boolean {
     || (!relativePath.startsWith(`..${path.sep}`) && relativePath !== '..' && !path.isAbsolute(relativePath));
 }
 
-function walkNativeMarketplaceTree(
+function walkMarketplaceSourceTree(
   sourcePath: string,
   relativePath: string,
   containmentRoot: string,
   activeDirectories: Set<string>,
-  visitor: NativeMarketplaceTreeVisitor,
+  visitor: MarketplaceSourceTreeVisitor,
   symlinkPath?: string,
 ): void {
   const sourceStat = lstatSync(sourcePath);
@@ -52,7 +52,7 @@ function walkNativeMarketplaceTree(
     if (!isPathWithin(containmentRoot, resolvedPath)) {
       throw new Error(`Marketplace artifact symlink escapes source tree: ${sourcePath}`);
     }
-    walkNativeMarketplaceTree(
+    walkMarketplaceSourceTree(
       resolvedPath,
       relativePath,
       containmentRoot,
@@ -80,7 +80,7 @@ function walkNativeMarketplaceTree(
   try {
     visitor.onDirectory(relativePath);
     for (const entryName of readdirSync(sourcePath).sort((left, right) => left.localeCompare(right))) {
-      walkNativeMarketplaceTree(
+      walkMarketplaceSourceTree(
         path.join(sourcePath, entryName),
         relativePath === '.' ? entryName : path.join(relativePath, entryName),
         containmentRoot,
@@ -93,25 +93,33 @@ function walkNativeMarketplaceTree(
   }
 }
 
-function visitNativeMarketplaceTree(
+function visitMarketplaceSourceTree(
   sourcePath: string,
   containmentRoot: string,
-  visitor: NativeMarketplaceTreeVisitor,
+  visitor: MarketplaceSourceTreeVisitor,
 ): void {
   const canonicalContainmentRoot = realpathSync(containmentRoot);
-  const canonicalSourcePath = realpathSync(sourcePath);
-  if (!isPathWithin(canonicalContainmentRoot, canonicalSourcePath)) {
-    throw new Error(`Marketplace artifact source is outside the native clone: ${sourcePath}`);
+  let canonicalSourcePath: string;
+  try {
+    canonicalSourcePath = realpathSync(sourcePath);
+  } catch {
+    let isSymlink = false;
+    try { isSymlink = lstatSync(sourcePath).isSymbolicLink(); } catch { /* missing source */ }
+    if (isSymlink) throw new Error(`Marketplace artifact has a broken or cyclic symlink: ${sourcePath}`);
+    throw new Error(`Marketplace artifact source cannot be resolved: ${sourcePath}`);
   }
-  walkNativeMarketplaceTree(sourcePath, '.', canonicalContainmentRoot, new Set(), visitor);
+  if (!isPathWithin(canonicalContainmentRoot, canonicalSourcePath)) {
+    throw new Error(`Marketplace artifact source is outside the marketplace source: ${sourcePath}`);
+  }
+  walkMarketplaceSourceTree(sourcePath, '.', canonicalContainmentRoot, new Set(), visitor);
 }
 
-export function collectNativeMarketplaceTreeEntries(
+export function collectMarketplaceSourceTreeEntries(
   sourcePath: string,
   containmentRoot: string,
-): NativeMarketplaceTreeEntry[] {
-  const entries: NativeMarketplaceTreeEntry[] = [];
-  visitNativeMarketplaceTree(sourcePath, containmentRoot, {
+): MarketplaceSourceTreeEntry[] {
+  const entries: MarketplaceSourceTreeEntry[] = [];
+  visitMarketplaceSourceTree(sourcePath, containmentRoot, {
     onDirectory: (relativePath) => entries.push({ entryType: 'directory', relativePath }),
     onFile: (filePath, relativePath) => entries.push({
       contentHash: createHash('sha256').update(readFileSync(filePath)).digest('hex'),
@@ -122,7 +130,7 @@ export function collectNativeMarketplaceTreeEntries(
   return entries;
 }
 
-export function materializeNativeMarketplaceTree(
+export function materializeMarketplaceSourceTree(
   sourcePath: string,
   destinationPath: string,
   containmentRoot: string,
@@ -130,7 +138,7 @@ export function materializeNativeMarketplaceTree(
   mkdirSync(path.dirname(destinationPath), { recursive: true });
   mkdirSync(destinationPath);
   try {
-    visitNativeMarketplaceTree(sourcePath, containmentRoot, {
+    visitMarketplaceSourceTree(sourcePath, containmentRoot, {
       onDirectory: (relativePath) => {
         if (relativePath !== '.') mkdirSync(path.join(destinationPath, relativePath));
       },

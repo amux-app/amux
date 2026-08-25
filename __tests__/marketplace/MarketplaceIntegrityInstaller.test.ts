@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MarketplaceIntegrityInstaller } from '../../src/services/marketplace/MarketplaceIntegrityInstaller.js';
+import { MarketplaceInstaller } from '../../src/services/marketplace/MarketplaceInstaller.js';
 import type { DetectedPlugin } from '../../src/services/marketplace/types.js';
 
 function setup(): { homeDir: string; journalDir: string; plugin: DetectedPlugin; skillPath: string } {
@@ -68,6 +69,83 @@ describe('MarketplaceIntegrityInstaller', () => {
       scope: 'source',
       type: 'directory',
     }));
+  });
+
+  it('materializes safe internal symlinks inside directly installed skills', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'muxbase-marketplace-integrity-'));
+    const clonePath = path.join(root, 'source');
+    const skillDir = path.join(clonePath, 'plugins', 'native-plugin', 'skills', 'safe-skill');
+    const homeDir = path.join(root, 'home');
+    mkdirSync(skillDir, { recursive: true });
+    writeFileSync(path.join(skillDir, 'SKILL.md'), '# Marketplace skill\n');
+    writeFileSync(path.join(skillDir, 'REFERENCE.md'), '# Shared reference\n');
+    symlinkSync('REFERENCE.md', path.join(skillDir, 'REFERENCE-ALIAS.md'));
+    const plugin: DetectedPlugin = {
+      agents: [],
+      hooks: [],
+      id: 'native-plugin',
+      jsPlugins: [],
+      mcpServers: [],
+      name: 'Native Plugin',
+      skills: [{ name: 'safe-skill', path: path.join(skillDir, 'SKILL.md') }],
+    };
+    const nativeConfig = {
+      clonePath,
+      marketplaceName: 'native-marketplace',
+      marketplaceUrl: 'https://example.test/native-marketplace.git',
+      pluginId: plugin.id,
+      sourceFormat: 'claude-marketplace' as const,
+    };
+
+    expect(() => new MarketplaceInstaller().preview(
+      plugin,
+      ['claude'],
+      nativeConfig,
+      undefined,
+      { headSha: 'head-1', sourceUrl: nativeConfig.marketplaceUrl },
+      'full',
+    )).not.toThrow();
+
+    new MarketplaceIntegrityInstaller().install(
+      plugin,
+      ['claude'],
+      nativeConfig,
+      undefined,
+      'full',
+      { homeDir, journalDir: path.join(root, 'journal') },
+    );
+    const installedAlias = path.join(homeDir, '.claude', 'skills', 'safe-skill', 'REFERENCE-ALIAS.md');
+
+    expect(lstatSync(installedAlias).isSymbolicLink()).toBe(false);
+    expect(readFileSync(installedAlias, 'utf8')).toBe('# Shared reference\n');
+  });
+
+  it('rejects a skill symlink that escapes the marketplace clone', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'muxbase-marketplace-integrity-'));
+    const clonePath = path.join(root, 'source');
+    const skillDir = path.join(clonePath, 'skills', 'unsafe-skill');
+    const outsidePath = path.join(root, 'outside.md');
+    mkdirSync(skillDir, { recursive: true });
+    writeFileSync(path.join(skillDir, 'SKILL.md'), '# Marketplace skill\n');
+    writeFileSync(outsidePath, '# Outside\n');
+    symlinkSync(path.relative(skillDir, outsidePath), path.join(skillDir, 'ESCAPE.md'));
+    const plugin: DetectedPlugin = {
+      agents: [],
+      hooks: [],
+      id: 'unsafe-plugin',
+      jsPlugins: [],
+      mcpServers: [],
+      name: 'Unsafe Plugin',
+      skills: [{ name: 'unsafe-skill', path: path.join(skillDir, 'SKILL.md') }],
+    };
+
+    expect(() => new MarketplaceInstaller().preview(plugin, ['claude'], {
+      clonePath,
+      marketplaceName: 'unsafe-marketplace',
+      marketplaceUrl: 'https://example.test/unsafe-marketplace.git',
+      pluginId: plugin.id,
+      sourceFormat: 'claude-marketplace',
+    })).toThrow('escapes source tree');
   });
 
   it('installs a skill transactionally and records the directory digest as ownership', () => {

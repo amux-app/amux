@@ -642,7 +642,7 @@ describe('MarketplaceInstaller', () => {
     })).toThrow('outside the source clone');
   });
 
-  it('rejects a symlinked local MCP script before installation', () => {
+  it('rejects a local MCP symlink that escapes the marketplace source', () => {
     const clonePath = mkdtempSync(path.join(tmpdir(), 'muxbase-marketplace-'));
     const outsidePath = path.join(tmpdir(), `muxbase-outside-mcp-${Date.now()}.js`);
     const scriptPath = path.join(clonePath, 'server.js');
@@ -664,6 +664,56 @@ describe('MarketplaceInstaller', () => {
       marketplaceName: 'local-marketplace',
       marketplaceUrl: 'https://example.com/source.git',
       pluginId: plugin.id,
-    })).toThrow('symlinks are not allowed');
+    })).toThrow('outside the marketplace source');
+  });
+
+  it('accepts a relative local MCP symlink contained by the marketplace source', () => {
+    const clonePath = mkdtempSync(path.join(tmpdir(), 'muxbase-marketplace-'));
+    const targetPath = path.join(clonePath, 'server-target.js');
+    const scriptPath = path.join(clonePath, 'server.js');
+    writeFileSync(targetPath, 'console.log("contained");\n');
+    symlinkSync('server-target.js', scriptPath);
+    const plugin: DetectedPlugin = {
+      id: 'symlinked-mcp-plugin',
+      name: 'Symlinked MCP Plugin',
+      skills: [],
+      agents: [],
+      hooks: [],
+      mcpServers: [{ name: 'local-server', command: 'node', args: [scriptPath] }],
+      jsPlugins: [],
+    };
+    const installer = new MarketplaceInstaller();
+
+    const preview = installer.preview(plugin, ['claude'], {
+      clonePath,
+      marketplaceName: 'local-marketplace',
+      marketplaceUrl: 'https://example.com/source.git',
+      pluginId: plugin.id,
+    });
+
+    expect(preview.agents[0].artifacts.find((artifact) => artifact.name === 'mcp:local-server'))
+      .toMatchObject({ sourcePaths: [scriptPath] });
+  });
+
+  it('rejects a broken local MCP symlink', () => {
+    const clonePath = mkdtempSync(path.join(tmpdir(), 'muxbase-marketplace-'));
+    const scriptPath = path.join(clonePath, 'server.js');
+    symlinkSync('missing.js', scriptPath);
+    const plugin: DetectedPlugin = {
+      id: 'broken-mcp-plugin',
+      name: 'Broken MCP Plugin',
+      skills: [],
+      agents: [],
+      hooks: [],
+      mcpServers: [{ name: 'local-server', command: 'node', args: [scriptPath] }],
+      jsPlugins: [],
+    };
+
+    expect(() => new MarketplaceInstaller().preview(plugin, ['claude'], {
+      clonePath,
+      marketplaceName: 'local-marketplace',
+      marketplaceUrl: 'https://example.com/source.git',
+      pluginId: plugin.id,
+    })).toThrow('broken or cyclic symlink');
   });
 });

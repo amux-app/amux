@@ -10,7 +10,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { _electron as electron } from 'playwright';
 import type { ElectronApplication, Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -72,6 +72,11 @@ describe.runIf(process.env.MUXBASE_E2E === '1' && process.env.MUXBASE_E2E_FAKE_A
         join(pluginRoot, 'skills', SKILL_NAME, 'SKILL.md'),
         '# Hermetic marketplace skill\n',
       );
+      writeFileSync(
+        join(pluginRoot, 'skills', SKILL_NAME, 'REFERENCE.md'),
+        '# Shared skill reference\n',
+      );
+      symlinkSync('REFERENCE.md', join(pluginRoot, 'skills', SKILL_NAME, 'REFERENCE-ALIAS.md'));
       writeFileSync(join(sourceClone, 'AGENTS.md'), '# Shared marketplace instructions\n');
       symlinkSync('AGENTS.md', join(sourceClone, 'CLAUDE.md'));
       execFileSync('git', ['init'], { cwd: sourceClone, stdio: 'ignore' });
@@ -154,6 +159,9 @@ describe.runIf(process.env.MUXBASE_E2E === '1' && process.env.MUXBASE_E2E_FAKE_A
       for (const destination of destinations) {
         expect(realpathSync(destination).startsWith(`${isolatedHome}/`)).toBe(true);
         expect(readFileSync(destination, 'utf8')).toBe('# Hermetic marketplace skill\n');
+        const installedAlias = join(dirname(destination), 'REFERENCE-ALIAS.md');
+        expect(realpathSync(installedAlias)).toBe(installedAlias);
+        expect(readFileSync(installedAlias, 'utf8')).toBe('# Shared skill reference\n');
       }
 
       const uninstall = await invoke<MarketplaceUninstallResponse>(page, IPC.MARKETPLACE_UNINSTALL, {

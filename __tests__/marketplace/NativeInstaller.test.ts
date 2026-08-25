@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { materializeNativeMarketplaceTree } = vi.hoisted(() => ({
-  materializeNativeMarketplaceTree: vi.fn(),
+const { materializeMarketplaceSourceTree } = vi.hoisted(() => ({
+  materializeMarketplaceSourceTree: vi.fn(),
 }));
 
 vi.mock('fs', async (importOriginal) => {
@@ -17,8 +17,8 @@ vi.mock('fs', async (importOriginal) => {
   };
 });
 
-vi.mock('../../src/services/marketplace/NativeMarketplaceTree.js', () => ({
-  materializeNativeMarketplaceTree,
+vi.mock('../../src/services/marketplace/MarketplaceSourceTree.js', () => ({
+  materializeMarketplaceSourceTree,
 }));
 
 import { existsSync, readFileSync, writeFileSync, rmSync } from 'fs';
@@ -88,14 +88,14 @@ describe('NativeInstaller', () => {
       }, 'claude');
 
       // Should seed marketplace clone
-      expect(materializeNativeMarketplaceTree).toHaveBeenCalledWith(
+      expect(materializeMarketplaceSourceTree).toHaveBeenCalledWith(
         '/tmp/clones/my-marketplace',
         expect.stringContaining('marketplaces/my-marketplace'),
         '/tmp/clones/my-marketplace',
       );
 
       // Should seed plugin cache
-      expect(materializeNativeMarketplaceTree).toHaveBeenCalledWith(
+      expect(materializeMarketplaceSourceTree).toHaveBeenCalledWith(
         '/tmp/clones/my-marketplace/plugins/my-plugin',
         expect.stringContaining('cache/my-marketplace/my-plugin/2.0.0'),
         '/tmp/clones/my-marketplace',
@@ -198,7 +198,7 @@ describe('NativeInstaller', () => {
         pluginVersion: '1.0.0',
       }, 'claude');
 
-      const cacheCpCalls = materializeNativeMarketplaceTree.mock.calls.filter(
+      const cacheCpCalls = materializeMarketplaceSourceTree.mock.calls.filter(
         (c) => typeof c[1] === 'string' && (c[1] as string).includes('cache/my-marketplace/my-plugin'),
       );
       expect(cacheCpCalls.length).toBe(1);
