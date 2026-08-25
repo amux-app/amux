@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { createParser } from '../../src/main/services/parsing/AgentLogParser';
 import { OpencodeLogParser } from '../../src/main/services/parsing/OpencodeLogParser';
 
@@ -48,9 +48,9 @@ function createTempDir(prefix: string): string {
   return dir;
 }
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
-    id: 'aumx-1778686269000',
+    id: 'muxbase-1778686269000',
     paneId: '%1',
     prompt: 'fix tests',
     slug: 'fix-tests',
@@ -240,7 +240,7 @@ describe('OpencodeLogParser', () => {
 
   it('matches the recent opencode session for the pane project root', async () => {
     // Arrange
-    const root = createTempDir('aumx-opencode-project-');
+    const root = createTempDir('muxbase-opencode-project-');
     const dbPath = join(root, 'opencode.db');
     createSessionListDatabase(dbPath, [
       {
@@ -270,7 +270,7 @@ describe('OpencodeLogParser', () => {
 
   it('parses exported opencode messages into a normalized session', async () => {
     // Arrange
-    const root = createTempDir('aumx-opencode-project-');
+    const root = createTempDir('muxbase-opencode-project-');
     const dbPath = join(root, 'opencode.db');
     const exported = {
       info: {
@@ -378,7 +378,7 @@ describe('OpencodeLogParser', () => {
 
   it('resolves providerId from the assistant message when session info has no model', async () => {
     // Arrange
-    const root = createTempDir('aumx-opencode-project-');
+    const root = createTempDir('muxbase-opencode-project-');
     const dbPath = join(root, 'opencode.db');
     const exported = {
       info: { id: 'ses_expected', time: { created: 1778686270000, updated: 1778686275000 } },
@@ -410,7 +410,7 @@ describe('OpencodeLogParser', () => {
 
   it('parses long opencode sessions from SQLite when CLI export is truncated', async () => {
     // Arrange
-    const root = createTempDir('aumx-opencode-project-');
+    const root = createTempDir('muxbase-opencode-project-');
     const dbPath = join(root, 'opencode.db');
     const sessionId = 'ses_long_export';
     const longText = `full message ${'x'.repeat(80_000)} tail`;
@@ -454,7 +454,7 @@ describe('OpencodeLogParser', () => {
   it('reads the whole recent-session window from SQLite, past the size the CLI could return', async () => {
     // Arrange — a result set far wider than the 64 KiB the `opencode db` CLI can pipe,
     // with the matching session ranked 150th so a truncated read would never reach it.
-    const root = createTempDir('aumx-opencode-project-');
+    const root = createTempDir('muxbase-opencode-project-');
     const dbPath = join(root, 'opencode.db');
     const padding = 'x'.repeat(800);
     const sessions: SessionFixture[] = [];
@@ -499,7 +499,7 @@ describe('OpencodeLogParser', () => {
   it('finds a persisted session id through a bound parameter, outside the directory and time window', async () => {
     // Arrange — the persisted session is unrelated by directory and an hour past the
     // launch window, so only the by-id lookup can reach it.
-    const root = createTempDir('aumx-opencode-project-');
+    const root = createTempDir('muxbase-opencode-project-');
     const dbPath = join(root, 'opencode.db');
     createSessionListDatabase(dbPath, [
       {
@@ -530,7 +530,7 @@ describe('OpencodeLogParser', () => {
   });
   it('never selects a session created before the pane, even as the only related row', async () => {
     // Arrange: an external OpenCode session running in the same directory.
-    const root = createTempDir('aumx-opencode-project-');
+    const root = createTempDir('muxbase-opencode-project-');
     const dbPath = join(root, 'opencode.db');
     createSessionListDatabase(dbPath, [
       {
@@ -554,7 +554,7 @@ describe('OpencodeLogParser', () => {
   it('resumes a deliberately chosen session that predates the pane by a long way', async () => {
     // Arrange: `opencode --session <id>` continues the SAME row, so its time_created
     // is older than the pane that resumed it.
-    const root = createTempDir('aumx-opencode-project-');
+    const root = createTempDir('muxbase-opencode-project-');
     const dbPath = join(root, 'opencode.db');
     createSessionListDatabase(dbPath, [
       {
@@ -580,7 +580,7 @@ describe('OpencodeLogParser', () => {
 
   it('exposes the database directory and its sidecars for event-driven discovery', async () => {
     // Arrange
-    const root = createTempDir('aumx-opencode-project-');
+    const root = createTempDir('muxbase-opencode-project-');
     const dbPath = join(root, 'opencode.db');
     createSessionListDatabase(dbPath, [
       { directory: root, id: 'ses_expected', timeCreated: 1778686270000, timeUpdated: 1778686275000 },

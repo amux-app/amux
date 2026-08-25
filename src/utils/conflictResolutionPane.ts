@@ -1,6 +1,6 @@
 import { LogService } from '../services/LogService.js';
 import { TmuxService } from '../services/TmuxService.js';
-import type { AumxPane } from '../types.js';
+import type { MuxBasePane } from '../types.js';
 import {
   abortConflictMerge,
   inspectMergeHead,
@@ -28,12 +28,12 @@ export interface ConflictResolutionPaneOptions {
   /** Main project root that owns settings, prompts, and pane metadata. */
   projectRoot: string;
   terminalTranscriptDir?: string;
-  agent: NonNullable<AumxPane['agent']>;
+  agent: NonNullable<MuxBasePane['agent']>;
   otlpEndpoint?: string;
 }
 
 export interface ConflictResolutionPaneCreation {
-  pane: AumxPane;
+  pane: MuxBasePane;
   preparation: ConflictMergePreparation;
 }
 
@@ -66,7 +66,7 @@ export async function createConflictResolutionPane(
     await assertClaudeFullscreenSupported();
   }
   const slug = sanitizeSlug(`merge-${sourceBranch}-into-${targetBranch}`).slice(0, 50);
-  const id = `aumx-${Date.now()}`;
+  const id = `muxbase-${Date.now()}`;
   const prompt = `There are conflicts merging ${targetBranch} into ${sourceBranch}. Both are valid changes, so please keep both feature sets and merge them intelligently. Check git status to see the conflicting files, then resolve each conflict to preserve both sets of changes. Once all conflicts are resolved, commit the merge.`;
 
   let paneId = '';
@@ -100,7 +100,7 @@ export async function createConflictResolutionPane(
     await launchAgentInPane({
       agent,
       agentPrompt: prompt,
-      aumxPaneId: id,
+      muxbasePaneId: id,
       cwd: targetRepoPath,
       otlpEndpoint,
       paneId,

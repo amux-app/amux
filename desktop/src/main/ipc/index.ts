@@ -1,5 +1,5 @@
 import type { AppFileFlushResultRequest } from '../../shared/ipc-types.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import type { AppBootService } from '../services/AppBootService.js';
 import type { UpdateService } from '../services/UpdateService.js';
 import { registerActionHandlers } from './action.handlers.js';
@@ -32,7 +32,7 @@ import { registerWorkspaceHandlers } from './workspace.handlers.js';
 import { registerWorktreeHandlers } from './worktree.handlers.js';
 
 export function registerAllHandlers(
-  bridge: AumxBridge,
+  bridge: MuxBaseBridge,
   bootService: AppBootService,
   completeFileFlush: (request: AppFileFlushResultRequest) => boolean,
   updateService: UpdateService,

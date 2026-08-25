@@ -5,7 +5,7 @@ import { resolve } from 'path';
 import type { ConsoleMessage, ElectronApplication, Page } from 'playwright';
 import { _electron as electron } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { PaneSendFixResponse } from '../../src/shared/ipc-types';
 import {
   closePaneBestEffort,
@@ -22,10 +22,10 @@ const PANE_CREATION_TIMEOUT = 20_000;
 const REVIEW_CREATION_TIMEOUT = 30_000;
 const SOURCE_PROMPT = 'Add a one-line code comment to README — do not change behavior.';
 
-async function createSourcePane(page: Page, projectRoot: string): Promise<AumxPane> {
+async function createSourcePane(page: Page, projectRoot: string): Promise<MuxBasePane> {
   const response = await page.evaluate(
     (payload) =>
-      (window as any).aumx.invoke('pane:create', {
+      (window as any).muxbase.invoke('pane:create', {
         prompt: payload.prompt,
         agent: 'claude',
         projectRoot: payload.projectRoot,
@@ -36,7 +36,7 @@ async function createSourcePane(page: Page, projectRoot: string): Promise<AumxPa
   if (!response?.success || !response?.pane) {
     throw new Error(`pane:create failed: ${response?.error ?? 'unknown error'}`);
   }
-  return response.pane as AumxPane;
+  return response.pane as MuxBasePane;
 }
 
 /**
@@ -46,7 +46,7 @@ async function createSourcePane(page: Page, projectRoot: string): Promise<AumxPa
  */
 async function lockPaneIdle(page: Page, paneId: string): Promise<void> {
   await page.evaluate((id) => {
-    const paneStore = (window as any).__aumxStores?.pane;
+    const paneStore = (window as any).__muxbaseStores?.pane;
     if (!paneStore) return;
     const w = window as any;
     w.__reviewIdleLockActive = true;
@@ -78,12 +78,12 @@ async function releaseIdleLock(page: Page): Promise<void> {
 
 async function navigateToFleetView(page: Page): Promise<void> {
   await page.evaluate(() => {
-    (window as any).__aumxStores?.ui?.setState?.({ viewMode: 'fleet', focusPaneId: null });
+    (window as any).__muxbaseStores?.ui?.setState?.({ viewMode: 'fleet', focusPaneId: null });
   });
   await page.locator('aside').waitFor({ state: 'visible', timeout: 5_000 });
 }
 
-describe.runIf(process.env.AUMX_E2E === '1')('Review Agent E2E', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('Review Agent E2E', () => {
   let app: ElectronApplication;
   let page: Page;
   let e2eRoot: string;
@@ -95,16 +95,16 @@ describe.runIf(process.env.AUMX_E2E === '1')('Review Agent E2E', () => {
 
     try {
       const sessions = execSync('tmux list-sessions -F "#{session_name}" 2>/dev/null', { encoding: 'utf-8' });
-      for (const name of sessions.split('\n').filter((s) => s.includes('aumx-review-e2e'))) {
+      for (const name of sessions.split('\n').filter((s) => s.includes('muxbase-review-e2e'))) {
         execSync(`tmux kill-session -t "${name}" 2>/dev/null`, { stdio: 'ignore' });
       }
     } catch { /* no tmux server or no sessions — fine */ }
 
-    e2eRoot = realpathSync(mkdtempSync(resolve(tmpdir(), 'aumx-review-e2e-')));
+    e2eRoot = realpathSync(mkdtempSync(resolve(tmpdir(), 'muxbase-review-e2e-')));
     execSync('git init', { cwd: e2eRoot, stdio: 'ignore' });
-    execSync('git config user.email "e2e@aumx.test"', { cwd: e2eRoot, stdio: 'ignore' });
-    execSync('git config user.name "aumx-e2e"', { cwd: e2eRoot, stdio: 'ignore' });
-    writeFileSync(resolve(e2eRoot, '.gitignore'), '.amux/\n.aumx/\n');
+    execSync('git config user.email "e2e@muxbase.test"', { cwd: e2eRoot, stdio: 'ignore' });
+    execSync('git config user.name "muxbase-e2e"', { cwd: e2eRoot, stdio: 'ignore' });
+    writeFileSync(resolve(e2eRoot, '.gitignore'), '.muxbase/\n');
     writeFileSync(resolve(e2eRoot, 'README.md'), '# E2E review workspace\n');
     execSync('git add .', { cwd: e2eRoot, stdio: 'ignore' });
     execSync('git commit -m "chore: review e2e workspace"', { cwd: e2eRoot, stdio: 'ignore' });
@@ -115,12 +115,12 @@ describe.runIf(process.env.AUMX_E2E === '1')('Review Agent E2E', () => {
     app = await electron.launch({
       args: [MAIN_ENTRY],
       cwd: e2eRoot,
-      env: { ...inheritedEnv, NODE_ENV: 'test', AUMX_DEV: 'true' },
+      env: { ...inheritedEnv, NODE_ENV: 'test', MUXBASE_DEV: 'true' },
     });
 
     page = await getAppWindow(app);
     await app.context().addInitScript(() => {
-      (window as any).__AUMX_E2E = true;
+      (window as any).__MUXBASE_E2E = true;
     });
     await page.reload();
     page.on('console', (msg: ConsoleMessage) => {
@@ -140,7 +140,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Review Agent E2E', () => {
     expect(sessionInfo?.projectRoot).toBe(e2eRoot);
 
     await page.evaluate(() =>
-      (window as any).aumx.invoke('electron-settings:update', { key: 'enableReviewAgent', value: true }),
+      (window as any).muxbase.invoke('electron-settings:update', { key: 'enableReviewAgent', value: true }),
     );
   }, 60_000);
 
@@ -202,7 +202,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Review Agent E2E', () => {
 
     // The rubric is seeded into the review worktree before the agent launches, so the
     // reviewer reads its contract from a file rather than a terminal dump.
-    const rubricPath = resolve(reviewPane.worktreePath as string, '.amux', 'review', 'REVIEW.md');
+    const rubricPath = resolve(reviewPane.worktreePath as string, '.muxbase', 'review', 'REVIEW.md');
     await pollUntil(
       async () => existsSync(rubricPath),
       { timeout: 10_000, interval: 500, label: 'waitForSeededRubric' },
@@ -216,7 +216,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Review Agent E2E', () => {
   it('gates Send-fixes durably and wires the handoff to the backend', async () => {
     const reviewPane = (await getPanes(page)).find((p) => p.role === 'review');
     expect(reviewPane, 'review pane from the previous test should still exist').toBeTruthy();
-    const review = reviewPane as AumxPane;
+    const review = reviewPane as MuxBasePane;
 
     // Durable gating: the Send-fixes action is available whenever the review pane is
     // idle — it does NOT depend on transient justFinished state.
@@ -228,7 +228,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Review Agent E2E', () => {
     // The handoff path is wired end-to-end; without a finished reviewer it returns the
     // well-defined "no findings yet" guard rather than throwing.
     const response = await page.evaluate(
-      (id) => (window as any).aumx.invoke('pane:send-fix', { reviewPaneId: id }) as Promise<PaneSendFixResponse>,
+      (id) => (window as any).muxbase.invoke('pane:send-fix', { reviewPaneId: id }) as Promise<PaneSendFixResponse>,
       review.id,
     );
     expect(response.success).toBe(false);

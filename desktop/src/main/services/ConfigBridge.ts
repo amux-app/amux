@@ -1,5 +1,5 @@
 import { BrowserWindow } from 'electron';
-import { ConfigWatcher, StateManager, type AumxConfig, type AumxPane } from 'aumx/core';
+import { ConfigWatcher, StateManager, type MuxBaseConfig, type MuxBasePane } from 'muxbase/core';
 import { IPC_EVENT } from '../../shared/ipc-channels.js';
 import type { PaneWatcher } from './PaneWatcher.js';
 import { log } from './Logger.js';
@@ -12,7 +12,7 @@ function definedKeyCount(value: Record<string, unknown>): number {
   return count;
 }
 
-function stripPersistedRuntimeActivity(pane: AumxPane): AumxPane {
+function stripPersistedRuntimeActivity(pane: MuxBasePane): MuxBasePane {
   const {
     agentStatus: _agentStatus,
     lastAgentCheck: _lastAgentCheck,
@@ -70,7 +70,7 @@ export class ConfigBridge {
     log.info('config-bridge', 'Starting config watcher');
     StateManager.getInstance().setConfigWatcher(this.watcher);
 
-    this.watcher.on('change', (config: AumxConfig) => {
+    this.watcher.on('change', (config: MuxBaseConfig) => {
       const stateManager = StateManager.getInstance();
       const currentPanes = stateManager.getPanes();
       const reconciledPanes = config.panes.map(stripPersistedRuntimeActivity);

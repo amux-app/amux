@@ -1,11 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC_SYNC } from '../shared/ipc-channels.js';
-import type { AumxBootSettings, AumxElectronAPI } from '../shared/ipc-types.js';
+import type { MuxBaseBootSettings, MuxBaseElectronAPI } from '../shared/ipc-types.js';
 import { isIpcEventChannel, isIpcInvokeChannel } from '../shared/ipc-validation.js';
 
-const bootSettings: AumxBootSettings = ipcRenderer.sendSync(IPC_SYNC.APP_BOOT_SETTINGS);
+const bootSettings: MuxBaseBootSettings = ipcRenderer.sendSync(IPC_SYNC.APP_BOOT_SETTINGS);
 
-const api: AumxElectronAPI = {
+const api: MuxBaseElectronAPI = {
   bootSettings,
   invoke: <T = unknown>(channel: string, ...args: unknown[]): Promise<T> => {
     if (!isIpcInvokeChannel(channel)) {
@@ -29,8 +29,8 @@ const api: AumxElectronAPI = {
   },
 };
 
-contextBridge.exposeInMainWorld('aumx', api);
+contextBridge.exposeInMainWorld('muxbase', api);
 
-if (process.env.NODE_ENV === 'test' && process.env.AUMX_E2E === '1') {
-  contextBridge.exposeInMainWorld('__AUMX_E2E', true);
+if (process.env.NODE_ENV === 'test' && process.env.MUXBASE_E2E === '1') {
+  contextBridge.exposeInMainWorld('__MUXBASE_E2E', true);
 }

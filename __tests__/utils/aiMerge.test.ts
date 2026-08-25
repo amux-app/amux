@@ -7,7 +7,7 @@ import { getComprehensiveDiff } from '../../src/utils/aiMerge';
 const tempDirs: string[] = [];
 
 function makeTempDir(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'aumx-ai-merge-'));
+  const dir = mkdtempSync(join(tmpdir(), 'muxbase-ai-merge-'));
   tempDirs.push(dir);
   return dir;
 }

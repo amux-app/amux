@@ -1,22 +1,22 @@
-import type { AumxPane } from '../types.js';
+import type { MuxBasePane } from '../types.js';
 import { randomUUID } from 'crypto';
 import { execFileAsync } from './execAsync.js';
 import { getPaneTitleCandidates } from './paneTitle.js';
 import { StateManager } from '../shared/StateManager.js';
 
 /**
- * Tmux pane option carrying the aumx pane id. Unlike a pane title, a pane
+ * Tmux pane option carrying the muxbase pane id. Unlike a pane title, a pane
  * option cannot be set from inside the pane through an escape sequence, so it
  * is the only forgery-proof anchor available for rebinding.
  */
-export const AUMX_PANE_ID_OPTION = '@aumx_pane_id';
+export const MUXBASE_PANE_ID_OPTION = '@muxbase_pane_id';
 /** Scoped to a tmux pane: survives app restart but not a pane recreation. */
-export const AUMX_PANE_INCARNATION_OPTION = '@aumx_incarnation';
+export const MUXBASE_PANE_INCARNATION_OPTION = '@muxbase_incarnation';
 
 export async function stampTmuxPaneIdOption(tmuxPaneId: string, paneId: string): Promise<void> {
   await execFileAsync(
     'tmux',
-    ['set', '-p', '-t', tmuxPaneId, AUMX_PANE_ID_OPTION, paneId],
+    ['set', '-p', '-t', tmuxPaneId, MUXBASE_PANE_ID_OPTION, paneId],
     { silent: true },
   );
 }
@@ -27,7 +27,7 @@ export async function stampTmuxPaneIncarnationOption(
 ): Promise<string> {
   await execFileAsync(
     'tmux',
-    ['set', '-p', '-t', tmuxPaneId, AUMX_PANE_INCARNATION_OPTION, incarnationId],
+    ['set', '-p', '-t', tmuxPaneId, MUXBASE_PANE_INCARNATION_OPTION, incarnationId],
     { silent: true },
   );
   return incarnationId;
@@ -37,7 +37,7 @@ export async function ensureTmuxPaneIncarnationOption(tmuxPaneId: string): Promi
   try {
     const current = (await execFileAsync(
       'tmux',
-      ['show-options', '-p', '-v', '-t', tmuxPaneId, AUMX_PANE_INCARNATION_OPTION],
+      ['show-options', '-p', '-v', '-t', tmuxPaneId, MUXBASE_PANE_INCARNATION_OPTION],
       { silent: true },
     )).trim();
     if (current) return current;
@@ -59,10 +59,10 @@ export async function ensureTmuxPaneIncarnationOption(tmuxPaneId: string): Promi
  * @returns The pane with potentially updated paneId
  */
 export function rebindPaneByTitle(
-  pane: AumxPane,
+  pane: MuxBasePane,
   titleToIdMap: Map<string, string>,
   allPaneIds: string[]
-): AumxPane {
+): MuxBasePane {
   // If pane ID exists in tmux, keep using it (even if title changed)
   if (allPaneIds.length > 0 && allPaneIds.includes(pane.paneId)) {
     return pane; // Pane still exists, no rebinding needed

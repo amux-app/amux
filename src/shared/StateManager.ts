@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import type { AumxPane, ProjectSettings, LogEntry } from '../types.js';
+import type { MuxBasePane, ProjectSettings, LogEntry } from '../types.js';
 import { LogService } from '../services/LogService.js';
 import { ToastService, type Toast } from '../services/ToastService.js';
 
@@ -10,8 +10,8 @@ export interface ConfigWatcherControl {
   pause(): void;
   resume(): void;
 }
-export interface AumxState {
-  panes: AumxPane[];
+export interface MuxBaseState {
+  panes: MuxBasePane[];
   projectName: string;
   sessionName: string;
   projectRoot: string;
@@ -27,8 +27,8 @@ export interface AumxState {
 
 export class StateManager extends EventEmitter {
   private static instance: StateManager;
-  private state: AumxState;
-  private updateCallbacks: Set<(state: AumxState) => void> = new Set();
+  private state: MuxBaseState;
+  private updateCallbacks: Set<(state: MuxBaseState) => void> = new Set();
   private configWatcher: ConfigWatcherControl | null = null;
   private debugMessageCallback: ((message: string) => void) | undefined;
   private logService: LogService;
@@ -94,11 +94,11 @@ export class StateManager extends EventEmitter {
     return StateManager.instance;
   }
 
-  getState(): AumxState {
+  getState(): MuxBaseState {
     return { ...this.state };
   }
 
-  updatePanes(panes: AumxPane[]): void {
+  updatePanes(panes: MuxBasePane[]): void {
     this.state.panes = [...panes];
     this.notifyListeners();
   }
@@ -126,15 +126,15 @@ export class StateManager extends EventEmitter {
     this.notifyListeners();
   }
 
-  getPaneById(id: string): AumxPane | undefined {
+  getPaneById(id: string): MuxBasePane | undefined {
     return this.state.panes.find(pane => pane.id === id);
   }
 
-  getPanes(): AumxPane[] {
+  getPanes(): MuxBasePane[] {
     return [...this.state.panes];
   }
 
-  subscribe(callback: (state: AumxState) => void): () => void {
+  subscribe(callback: (state: MuxBaseState) => void): () => void {
     this.updateCallbacks.add(callback);
     return () => {
       this.updateCallbacks.delete(callback);

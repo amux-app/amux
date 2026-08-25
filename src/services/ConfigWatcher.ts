@@ -2,16 +2,16 @@ import { watch, type FSWatcher } from 'chokidar';
 import { EventEmitter } from 'events';
 import { readFile } from 'fs/promises';
 import { dirname, resolve } from 'path';
-import type { AumxPane } from '../types.js';
-import { parseAumxConfig } from '../utils/persistedStateValidation.js';
+import type { MuxBasePane } from '../types.js';
+import { parseMuxBaseConfig } from '../utils/persistedStateValidation.js';
 import { LogService } from './LogService.js';
 
 export interface ConfigData {
-  panes: AumxPane[];
+  panes: MuxBasePane[];
 }
 
 /**
- * Watches the aumx.config.json file for changes and emits events
+ * Watches the muxbase.config.json file for changes and emits events
  * when the file is modified. Only emits when actual changes occur.
  */
 export class ConfigWatcher extends EventEmitter {
@@ -48,7 +48,7 @@ export class ConfigWatcher extends EventEmitter {
     // Read initial content
     try {
       const initialContent = await readFile(this.configPath, 'utf-8');
-      parseAumxConfig(JSON.parse(initialContent));
+      parseMuxBaseConfig(JSON.parse(initialContent));
       this.lastValidContent = initialContent;
     } catch {
       // The file might not exist yet or may be incomplete. Keep the empty
@@ -116,7 +116,7 @@ export class ConfigWatcher extends EventEmitter {
       let parsed: unknown;
       try {
         parsed = JSON.parse(newContent);
-        parseAumxConfig(parsed);
+        parseMuxBaseConfig(parsed);
       } catch (parseErr) {
         const msg = 'Failed to validate config file';
         LogService.getInstance().error(msg, 'ConfigWatcher', undefined, parseErr);

@@ -9,10 +9,10 @@ export function fakeUpdateEnvironment(
   version = '0.0.2',
 ): NodeJS.ProcessEnv {
   return {
-    AUMX_E2E: '1',
-    AUMX_E2E_UPDATE_CURRENT_VERSION: '0.0.1',
-    AUMX_E2E_UPDATE_SCENARIO: scenario,
-    AUMX_E2E_UPDATE_VERSION: version,
+    MUXBASE_E2E: '1',
+    MUXBASE_E2E_UPDATE_CURRENT_VERSION: '0.0.1',
+    MUXBASE_E2E_UPDATE_SCENARIO: scenario,
+    MUXBASE_E2E_UPDATE_VERSION: version,
     NODE_ENV: 'test',
   };
 }

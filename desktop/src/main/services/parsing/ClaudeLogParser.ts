@@ -1,7 +1,7 @@
 import { existsSync } from 'fs';
 import { basename, join } from 'path';
 import type { AgentLogParser } from './AgentLogParser.js';
-import { getPaneProjectRoot, readRegisteredSession, type AumxPane } from 'aumx/core';
+import { getPaneProjectRoot, readRegisteredSession, type MuxBasePane } from 'muxbase/core';
 import type { NormalizedSession } from '../../../shared/agent-session-types.js';
 import { CLAUDE_TITLE_TAIL_SCAN_BYTES } from './claude-scan-limits.js';
 import { claudeProjectsDir, resolveClaudeProjectDir } from './claude-session-dir.js';
@@ -42,11 +42,11 @@ export class ClaudeLogParser implements AgentLogParser {
   // One `<sessionId>.jsonl` per session.
   readonly boundFileIsExclusive = true;
 
-  getSessionDirectory(pane: AumxPane, projectRoot: string): string | null {
+  getSessionDirectory(pane: MuxBasePane, projectRoot: string): string | null {
     return resolveClaudeProjectDir(this.resolveClaudeProjectRoot(pane, projectRoot));
   }
 
-  async findSessionFile(pane: AumxPane, projectRoot: string, excludePaths?: Set<string>): Promise<string | null> {
+  async findSessionFile(pane: MuxBasePane, projectRoot: string, excludePaths?: Set<string>): Promise<string | null> {
     if (!existsSync(claudeProjectsDir())) return null;
 
     const registered = readRegisteredSession(pane.id);
@@ -106,7 +106,7 @@ export class ClaudeLogParser implements AgentLogParser {
     return null;
   }
 
-  private resolveClaudeProjectRoot(pane: AumxPane, discoveryRoot: string): string {
+  private resolveClaudeProjectRoot(pane: MuxBasePane, discoveryRoot: string): string {
     if (!pane.worktreePath) return discoveryRoot;
     return getPaneProjectRoot(pane, discoveryRoot);
   }
@@ -126,7 +126,7 @@ export class ClaudeLogParser implements AgentLogParser {
     return filePath;
   }
 
-  private async findSessionByPaneTitle(candidates: SessionFileStat[], pane: AumxPane): Promise<string | null> {
+  private async findSessionByPaneTitle(candidates: SessionFileStat[], pane: MuxBasePane): Promise<string | null> {
     const paneTitle = await this.readPaneTitle(pane.terminalTranscriptPath);
     if (!paneTitle) return null;
 

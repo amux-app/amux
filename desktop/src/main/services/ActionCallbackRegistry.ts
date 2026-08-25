@@ -1,4 +1,4 @@
-import type { ActionResult } from 'aumx/core';
+import type { ActionResult } from 'muxbase/core';
 import { randomUUID } from 'crypto';
 import type { SerializableActionResult } from '../../shared/ipc-types.js';
 import { formatError } from '../utils/formatError.js';

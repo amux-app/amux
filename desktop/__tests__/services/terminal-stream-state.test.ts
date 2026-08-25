@@ -8,7 +8,7 @@ vi.mock('child_process', () => ({
 
 import { capturePane, displayPaneFormat } from '../../src/main/services/terminal-stream-state';
 
-const HOSTILE_PANE_ID = "%1'; touch /tmp/aumx-pwn; #";
+const HOSTILE_PANE_ID = "%1'; touch /tmp/muxbase-pwn; #";
 
 type ExecFileCallback = (error: Error | null, stdout: string, stderr: string) => void;
 

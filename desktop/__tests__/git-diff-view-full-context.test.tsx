@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import React from 'react';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GitDiffView } from '../src/renderer/components/pane-detail/GitDiffView';
 
@@ -48,7 +48,7 @@ describe('GitDiffView full context', () => {
       '+line 60 changed',
       ' line 80',
     ].join('\n');
-    const pane: AumxPane = {
+    const pane: MuxBasePane = {
       id: 'pane-1',
       paneId: '%1',
       prompt: 'test',
@@ -105,7 +105,7 @@ describe('GitDiffView full context', () => {
       '-line 60',
       '+line 60 changed',
     ].join('\n');
-    const pane: AumxPane = {
+    const pane: MuxBasePane = {
       id: 'pane-1',
       paneId: '%1',
       prompt: 'test',

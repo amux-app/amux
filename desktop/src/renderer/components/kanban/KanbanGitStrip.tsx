@@ -1,9 +1,9 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { useWorktreeStatusStore } from '../../stores/worktree-status.store';
 import { GitPill } from '../shared/GitPill';
 
 interface KanbanGitStripProps {
-  pane: AumxPane;
+  pane: MuxBasePane;
 }
 
 export function KanbanGitStrip({ pane }: KanbanGitStripProps) {

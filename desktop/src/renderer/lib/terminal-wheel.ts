@@ -1,4 +1,4 @@
-import type { AgentName } from 'aumx/core';
+import type { AgentName } from 'muxbase/core';
 import {
   OPENCODE_LINE_DOWN_INPUT,
   OPENCODE_LINE_UP_INPUT,

@@ -4,7 +4,7 @@
  * on the ready transition. Runtime activity is delivered through its own
  * epoch-versioned snapshot/delta channel.
  */
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import React from 'react';
 import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -46,7 +46,7 @@ vi.mock('../src/renderer/components/app-boot/AppBootOverlay', () => ({ AppBootOv
 
 import App from '../src/renderer/App';
 
-function pane(overrides: Partial<AumxPane> = {}): AumxPane {
+function pane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'claude',
     agentStatus: 'working',
@@ -55,7 +55,7 @@ function pane(overrides: Partial<AumxPane> = {}): AumxPane {
     prompt: '',
     slug: 'pane-a',
     ...overrides,
-  } as AumxPane;
+  } as MuxBasePane;
 }
 
 function bootState(overrides: Partial<AppBootState> = {}): AppBootState {

@@ -9,12 +9,12 @@ import type {
   PaneSummaryRefreshResponse,
   PaneSummaryRemoveRequest,
 } from '../../shared/pane-summary-types.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { log } from '../services/Logger.js';
 import { secureHandle } from './ipc-security.js';
 
 /**
- * Pane IDs we generate look like `aumx-1781535332253` (slug + millis). Any
+ * Pane IDs we generate look like `muxbase-1781535332253` (slug + millis). Any
  * other shape is suspicious — refuse before forwarding to the service so a
  * compromised renderer can't smuggle path traversal through to the fs.
  */
@@ -37,7 +37,7 @@ function sanitizePaneIds(ids: string[]): string[] {
   });
 }
 
-export function registerPaneSummaryHandlers(bridge: AumxBridge): void {
+export function registerPaneSummaryHandlers(bridge: MuxBaseBridge): void {
   secureHandle(IPC.PANE_SUMMARY_LOAD_ALL, async (): Promise<PaneSummaryLoadAllResponse> => {
     const svc = bridge.getPaneSummaryService();
     if (!svc) return { summaries: [] };

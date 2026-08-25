@@ -352,7 +352,7 @@ describe('terminal-render', () => {
 
   it('compacts exact duplicate numbered assistant redraw lines for agent panes', () => {
     const content = [
-      '89. The token form is AUMX-OVERPRINT-A1 with prefix.',
+      '89. The token form is MUXBASE-OVERPRINT-A1 with prefix.',
       '90. The exact required string is preserved.',
       '91. Streaming continues line by line.',
       '92. Each line is its own atomic statement.',

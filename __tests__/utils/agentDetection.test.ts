@@ -29,7 +29,7 @@ async function writeExecutableScript(filePath: string, script: string): Promise<
 
 describe('agent detection', () => {
   it('recognizes a Pi package entrypoint from its resolved install path without launching the runtime', async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-detection-'));
+    const root = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-detection-'));
     temporaryRoots.push(root);
     const binDirectory = path.join(root, 'bin');
     const entrypoint = path.join(
@@ -46,7 +46,7 @@ describe('agent detection', () => {
   });
 
   it('continues past an unrelated pi executable and returns the verified binary', async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-detection-'));
+    const root = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-detection-'));
     temporaryRoots.push(root);
     const unrelatedDirectory = path.join(root, 'unrelated');
     const codingAgentDirectory = path.join(root, 'coding-agent');
@@ -63,7 +63,7 @@ describe('agent detection', () => {
   });
 
   it('verifies Pi candidates within one bounded probe window', async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-detection-'));
+    const root = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-detection-'));
     temporaryRoots.push(root);
     const slowDirectory = path.join(root, 'slow-collision');
     const codingAgentDirectory = path.join(root, 'coding-agent');

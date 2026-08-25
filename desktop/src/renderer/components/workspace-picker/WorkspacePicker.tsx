@@ -220,7 +220,7 @@ export function WorkspacePicker() {
                   fontFamily: "'Inter', sans-serif",
                 }}
               >
-                Amux
+                MuxBase
               </span>
               <p
                 className="text-[11px] font-normal tracking-[0.18em] uppercase"
@@ -369,7 +369,7 @@ export function WorkspacePicker() {
               >
                 <h2 className="text-sm font-semibold text-[var(--text)]">Project already exists</h2>
                 <p className="mt-2 text-xs text-[var(--text-secondary)] leading-relaxed">
-                  A project at this path is already known to Amux:
+                  A project at this path is already known to MuxBase:
                 </p>
                 <p className="mt-1.5 text-[11px] font-mono text-[var(--text-secondary)] truncate" title={conflictPath}>
                   {conflictPath}

@@ -10,7 +10,7 @@ import {
 } from '../../src/services/marketplace/MarketplaceTransaction.js';
 
 function createRoot(): string {
-  return mkdtempSync(path.join(tmpdir(), 'aumx-marketplace-transaction-'));
+  return mkdtempSync(path.join(tmpdir(), 'muxbase-marketplace-transaction-'));
 }
 
 function fileMutation(filePath: string, content: string, expectedDigest: string | null): MarketplaceMutation {
@@ -95,8 +95,8 @@ describe('MarketplaceTransaction', () => {
   it('recovers a backup rename that completed before its journal state was persisted', () => {
     const root = createRoot();
     const targetPath = path.join(root, 'target.txt');
-    const backupPath = path.join(root, '.target.txt.aumx-backup-interrupted-0');
-    const stagedPath = path.join(root, '.target.txt.aumx-stage-interrupted-0');
+    const backupPath = path.join(root, '.target.txt.muxbase-backup-interrupted-0');
+    const stagedPath = path.join(root, '.target.txt.muxbase-stage-interrupted-0');
     const journalDir = path.join(root, 'journal');
     const transactionsDir = path.join(journalDir, 'transactions');
     mkdirSync(transactionsDir, { recursive: true });
@@ -124,7 +124,7 @@ describe('MarketplaceTransaction', () => {
   it('keeps an already-restored destination when recovery resumes before rollback state persistence', () => {
     const root = createRoot();
     const targetPath = path.join(root, 'target.txt');
-    const backupPath = path.join(root, '.target.txt.aumx-backup-resumed-0');
+    const backupPath = path.join(root, '.target.txt.muxbase-backup-resumed-0');
     const journalDir = path.join(root, 'journal');
     const transactionsDir = path.join(journalDir, 'transactions');
     mkdirSync(transactionsDir, { recursive: true });
@@ -149,7 +149,7 @@ describe('MarketplaceTransaction', () => {
   it('removes a staged creation that completed before its journal state was persisted', () => {
     const root = createRoot();
     const targetPath = path.join(root, 'target.txt');
-    const stagedPath = path.join(root, '.target.txt.aumx-stage-interrupted-0');
+    const stagedPath = path.join(root, '.target.txt.muxbase-stage-interrupted-0');
     const journalDir = path.join(root, 'journal');
     const transactionsDir = path.join(journalDir, 'transactions');
     mkdirSync(transactionsDir, { recursive: true });
@@ -175,7 +175,7 @@ describe('MarketplaceTransaction', () => {
   it('preserves a changed staged creation when recovery cannot prove ownership', () => {
     const root = createRoot();
     const targetPath = path.join(root, 'target.txt');
-    const stagedPath = path.join(root, '.target.txt.aumx-stage-interrupted-0');
+    const stagedPath = path.join(root, '.target.txt.muxbase-stage-interrupted-0');
     const journalDir = path.join(root, 'journal');
     const transactionsDir = path.join(journalDir, 'transactions');
     mkdirSync(transactionsDir, { recursive: true });
@@ -209,8 +209,8 @@ describe('MarketplaceTransaction', () => {
     const transactionsDir = path.join(journalDir, 'transactions');
     const invalidJournalPath = path.join(transactionsDir, 'a-invalid.json');
     const committedJournalPath = path.join(transactionsDir, 'z-committed.json');
-    const stagedPath = path.join(root, '.target.txt.aumx-stage-committed-0');
-    const backupPath = path.join(root, '.target.txt.aumx-backup-committed-0');
+    const stagedPath = path.join(root, '.target.txt.muxbase-stage-committed-0');
+    const backupPath = path.join(root, '.target.txt.muxbase-backup-committed-0');
     mkdirSync(transactionsDir, { recursive: true });
     writeFileSync(invalidJournalPath, JSON.stringify({ version: 999, operations: [] }));
     writeFileSync(stagedPath, 'staged');

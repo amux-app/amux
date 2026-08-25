@@ -4,12 +4,12 @@ import type {
   WorktreeRemoveRequest,
   WorktreeReopenRequest,
 } from '../../shared/ipc-types.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { log } from '../services/Logger.js';
 import { formatError } from '../utils/formatError.js';
 import { secureHandle } from './ipc-security.js';
 
-export function registerWorktreeHandlers(bridge: AumxBridge): void {
+export function registerWorktreeHandlers(bridge: MuxBaseBridge): void {
   secureHandle(IPC.WORKTREE_ORPHAN_INSPECT, async (_event, request: WorktreeInspectRequest) => {
     log.debug('ipc:worktree', 'WORKTREE_ORPHAN_INSPECT invoked');
     try {

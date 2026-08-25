@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, wri
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const fakeHome = mkdtempSync(join(tmpdir(), 'aumx-registry-home-'));
+const fakeHome = mkdtempSync(join(tmpdir(), 'muxbase-registry-home-'));
 
 vi.mock('os', async (importOriginal) => {
   const actual = await importOriginal<typeof import('os')>();
@@ -29,7 +29,7 @@ describe('claudeSessionRegistry', () => {
     const scriptPath = command.match(/node '(.+)'/)?.[1] as string;
     expect(existsSync(scriptPath)).toBe(true);
     const script = readFileSync(scriptPath, 'utf8');
-    expect(script).toContain('AUMX_PANE_ID');
+    expect(script).toContain('MUXBASE_PANE_ID');
     expect(script).toContain('Failed to record Claude session');
     expect(script).toContain('Notification');
     expect(script).toContain('PreCompact');
@@ -40,19 +40,19 @@ describe('claudeSessionRegistry', () => {
 
   it('writes an executable shell wrapper for manual claude relaunches', () => {
     // Act
-    const wrapperDir = ensureClaudeSessionShellWrapper('/tmp/aumx-hook.settings.json');
+    const wrapperDir = ensureClaudeSessionShellWrapper('/tmp/muxbase-hook.settings.json');
 
     // Assert
     expect(wrapperDir).toBeTruthy();
     const wrapperPath = join(wrapperDir as string, 'claude');
-    expect(readFileSync(wrapperPath, 'utf8')).toContain("exec claude --settings '/tmp/aumx-hook.settings.json'");
+    expect(readFileSync(wrapperPath, 'utf8')).toContain("exec claude --settings '/tmp/muxbase-hook.settings.json'");
     expect(statSync(wrapperPath).mode & 0o111).toBeTruthy();
   });
 
   it('reads back a registered pane -> transcript mapping', () => {
     // Arrange
-    const paneId = 'aumx-123';
-    mkdirSync(join(fakeHome, '.aumx', 'claude-sessions'), { recursive: true });
+    const paneId = 'muxbase-123';
+    mkdirSync(join(fakeHome, '.muxbase', 'claude-sessions'), { recursive: true });
     writeFileSync(
       registryRecordPath(paneId),
       JSON.stringify({ paneId, sessionId: 'sess-1', transcriptPath: '/tmp/session.jsonl', updatedAt: Date.now() }),
@@ -67,6 +67,6 @@ describe('claudeSessionRegistry', () => {
   });
 
   it('returns null for an unknown pane', () => {
-    expect(readRegisteredSession('aumx-unknown')).toBeNull();
+    expect(readRegisteredSession('muxbase-unknown')).toBeNull();
   });
 });

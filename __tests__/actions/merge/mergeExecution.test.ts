@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { executeMerge } from '../../../src/actions/merge/mergeExecution.js';
-import type { AumxPane } from '../../../src/types.js';
+import type { MuxBasePane } from '../../../src/types.js';
 import type { ActionContext } from '../../../src/actions/types.js';
 
 // Mock child_process to prevent actual tmux commands
@@ -61,7 +61,7 @@ vi.mock('../../../src/actions/merge/conflictResolution.js', () => ({
 
 vi.mock('../../../src/utils/conflictMergePreparation.js', () => ({
   prepareConflictMerge: vi.fn(async () => ({
-    repoPath: '/test/main/.aumx/worktrees/test-branch',
+    repoPath: '/test/main/.muxbase/worktrees/test-branch',
     sourceCommit: 'source-commit',
     targetCommit: 'target-commit',
   })),
@@ -80,12 +80,12 @@ vi.mock('../../../src/utils/conflictMergeTransaction.js', () => ({
 }));
 
 describe('Merge Execution - Bug Fixes', () => {
-  const mockPane: AumxPane = {
+  const mockPane: MuxBasePane = {
     id: 'test-1',
     slug: 'test-branch',
     prompt: 'test prompt',
     paneId: '%1',
-    worktreePath: '/test/main/.aumx/worktrees/test-branch',
+    worktreePath: '/test/main/.muxbase/worktrees/test-branch',
   };
 
   const mockContext: ActionContext = {
@@ -107,7 +107,7 @@ describe('Merge Execution - Bug Fixes', () => {
       await executeMerge(mockPane, mockContext, 'main', '/test/main');
 
       // CRITICAL: Must call mergeMainIntoWorktree FIRST
-      expect(mergeMainIntoWorktree).toHaveBeenCalledWith('/test/main/.aumx/worktrees/test-branch', 'main');
+      expect(mergeMainIntoWorktree).toHaveBeenCalledWith('/test/main/.muxbase/worktrees/test-branch', 'main');
 
       // THEN call mergeWorktreeIntoMain
       expect(mergeWorktreeIntoMain).toHaveBeenCalledWith('/test/main', 'test-branch');
@@ -375,7 +375,7 @@ describe('Merge Execution - Bug Fixes', () => {
       await executeMerge(mockPane, mockContext, 'main', '/test/main');
 
       expect(triggerHook).toHaveBeenCalledWith('post_merge', '/test/main', mockPane, {
-        AUMX_TARGET_BRANCH: 'main',
+        MUXBASE_TARGET_BRANCH: 'main',
       });
     });
 

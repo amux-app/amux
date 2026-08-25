@@ -2,18 +2,18 @@ import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { homedir } from 'os';
 import { dirname, join } from 'path';
 import { LogService } from '../services/LogService.js';
-import type { AumxSettings, SettingsScope, SettingDefinition } from '../types.js';
+import type { MuxBaseSettings, SettingsScope, SettingDefinition } from '../types.js';
 import { atomicWriteJsonSync } from './atomicWrite.js';
 import { isValidBranchName } from './git.js';
 import {
   CLAUDE_FULLSCREEN_DEFAULT_RESET_KEY,
-  parseStoredAumxSettings,
-  type StoredAumxSettings,
+  parseMuxBaseStoredSettings,
+  type MuxBaseStoredSettings,
 } from './persistedStateValidation.js';
 import { isSettingKey, validateSettingValue, validateSettingsPatch } from './settingsSchema.js';
 import { getProjectMetadataPath } from './worktreePaths.js';
 
-const GLOBAL_SETTINGS_PATH = join(homedir(), '.aumx.global.json');
+const GLOBAL_SETTINGS_PATH = join(homedir(), '.muxbase', 'settings.json');
 const CLAUDE_FULLSCREEN_DEFAULT_RESET_VERSION = 1;
 
 type ActivePermissionMode = '' | 'auto';
@@ -28,15 +28,15 @@ function normalizePermissionMode(permissionMode: unknown): ActivePermissionMode 
   return '';
 }
 
-function getPublicSettings(settings: StoredAumxSettings): AumxSettings {
+function getPublicSettings(settings: MuxBaseStoredSettings): MuxBaseSettings {
   const publicSettings = { ...settings };
   delete publicSettings[CLAUDE_FULLSCREEN_DEFAULT_RESET_KEY];
   return publicSettings;
 }
 
-function migrateLegacyClaudeFullscreenDefault(settings: StoredAumxSettings): {
+function migrateLegacyClaudeFullscreenDefault(settings: MuxBaseStoredSettings): {
   migrated: boolean;
-  settings: StoredAumxSettings;
+  settings: MuxBaseStoredSettings;
 } {
   const resetVersion = settings[CLAUDE_FULLSCREEN_DEFAULT_RESET_KEY];
   if (typeof resetVersion === 'number' && resetVersion >= CLAUDE_FULLSCREEN_DEFAULT_RESET_VERSION) {
@@ -51,7 +51,7 @@ function migrateLegacyClaudeFullscreenDefault(settings: StoredAumxSettings): {
   migratedSettings[CLAUDE_FULLSCREEN_DEFAULT_RESET_KEY] = CLAUDE_FULLSCREEN_DEFAULT_RESET_VERSION;
   return { migrated: true, settings: migratedSettings };
 }
-const DEFAULT_SETTINGS: AumxSettings = {
+const DEFAULT_SETTINGS: MuxBaseSettings = {
   permissionMode: 'auto',
   initGitIfMissing: true,
   useWorktree: false,
@@ -233,14 +233,14 @@ export const SETTING_DEFINITIONS: SettingDefinition[] = [
   {
     key: 'hooks',
     label: 'Manage Hooks',
-    description: 'View and edit aumx lifecycle hooks',
+    description: 'View and edit muxbase lifecycle hooks',
     type: 'action',
   },
 ];
 
 export class SettingsManager {
   private static cache = new Map<string, { manager: SettingsManager; expiry: number }>();
-  private static lastKnownGoodByPath = new Map<string, StoredAumxSettings>();
+  private static lastKnownGoodByPath = new Map<string, MuxBaseStoredSettings>();
   private static CACHE_TTL = 5000;
 
   static getInstance(projectRoot?: string): SettingsManager {
@@ -264,9 +264,9 @@ export class SettingsManager {
 
   private globalPath: string;
   private projectPath: string;
-  private globalSettings: StoredAumxSettings = {};
+  private globalSettings: MuxBaseStoredSettings = {};
   private invalidSettingsScopes = new Set<SettingsScope>();
-  private projectSettings: StoredAumxSettings = {};
+  private projectSettings: MuxBaseStoredSettings = {};
 
   constructor(projectRoot?: string) {
     this.globalPath = GLOBAL_SETTINGS_PATH;
@@ -301,12 +301,12 @@ export class SettingsManager {
     }
   }
 
-  private loadStoredSettings(path: string, scope: SettingsScope): StoredAumxSettings {
+  private loadStoredSettings(path: string, scope: SettingsScope): MuxBaseStoredSettings {
     if (!existsSync(path)) return {};
 
     try {
       const parsed: unknown = JSON.parse(readFileSync(path, 'utf-8'));
-      const settings = parseStoredAumxSettings(parsed);
+      const settings = parseMuxBaseStoredSettings(parsed);
       SettingsManager.lastKnownGoodByPath.set(path, settings);
       this.invalidSettingsScopes.delete(scope);
       return settings;
@@ -322,7 +322,7 @@ export class SettingsManager {
   /**
    * Get merged settings (project settings override global)
    */
-  getSettings(): AumxSettings {
+  getSettings(): MuxBaseSettings {
     const settings = {
       ...DEFAULT_SETTINGS,
       ...getPublicSettings(this.globalSettings),
@@ -344,7 +344,7 @@ export class SettingsManager {
   /**
    * Get a specific setting value (with project override)
    */
-  getSetting<K extends keyof AumxSettings>(key: K): AumxSettings[K] {
+  getSetting<K extends keyof MuxBaseSettings>(key: K): MuxBaseSettings[K] {
     const merged = this.getSettings();
     return merged[key];
   }
@@ -352,23 +352,23 @@ export class SettingsManager {
   /**
    * Get global settings only
    */
-  getGlobalSettings(): AumxSettings {
+  getGlobalSettings(): MuxBaseSettings {
     return getPublicSettings(this.globalSettings);
   }
 
   /**
    * Get project settings only
    */
-  getProjectSettings(): AumxSettings {
+  getProjectSettings(): MuxBaseSettings {
     return getPublicSettings(this.projectSettings);
   }
 
   /**
    * Update a setting at the specified scope
    */
-  updateSetting<K extends keyof AumxSettings>(
+  updateSetting<K extends keyof MuxBaseSettings>(
     key: K,
-    value: AumxSettings[K],
+    value: MuxBaseSettings[K],
     scope: SettingsScope
   ): void {
     if (!isSettingKey(String(key)) || !validateSettingValue(String(key), value)) {
@@ -407,7 +407,7 @@ export class SettingsManager {
     }
   }
 
-  updateSettings(settings: Partial<AumxSettings>, scope: SettingsScope): void {
+  updateSettings(settings: Partial<MuxBaseSettings>, scope: SettingsScope): void {
     validateSettingsPatch(settings as Record<string, unknown>);
     if (typeof settings.permissionMode === 'string' && !isPermissionMode(settings.permissionMode)) {
       throw new Error(`Invalid permissionMode: "${settings.permissionMode}"`);
@@ -445,7 +445,7 @@ export class SettingsManager {
   /**
    * Remove a setting from the specified scope
    */
-  removeSetting(key: keyof AumxSettings, scope: SettingsScope): void {
+  removeSetting(key: keyof MuxBaseSettings, scope: SettingsScope): void {
     if (scope === 'global') {
       delete this.globalSettings[key];
       if (key === 'claudeFullscreenRendering') {
@@ -466,7 +466,7 @@ export class SettingsManager {
     try {
       const dir = dirname(this.globalPath);
       if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true });
+        mkdirSync(dir, { recursive: true, mode: 0o700 });
       }
       atomicWriteJsonSync(this.globalPath, this.globalSettings);
       SettingsManager.lastKnownGoodByPath.set(this.globalPath, { ...this.globalSettings });
@@ -481,7 +481,7 @@ export class SettingsManager {
     try {
       const dir = dirname(this.projectPath);
       if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true });
+        mkdirSync(dir, { recursive: true, mode: 0o700 });
       }
       atomicWriteJsonSync(this.projectPath, this.projectSettings);
       SettingsManager.lastKnownGoodByPath.set(this.projectPath, { ...this.projectSettings });
@@ -495,14 +495,14 @@ export class SettingsManager {
   /**
    * Check if a setting is overridden at the project level
    */
-  isProjectOverride(key: keyof AumxSettings): boolean {
+  isProjectOverride(key: keyof MuxBaseSettings): boolean {
     return key in this.projectSettings;
   }
 
   /**
    * Get the effective scope for a setting (where it's currently defined)
    */
-  getEffectiveScope(key: keyof AumxSettings): SettingsScope | null {
+  getEffectiveScope(key: keyof MuxBaseSettings): SettingsScope | null {
     if (key in this.projectSettings) return 'project';
     if (key in this.globalSettings) return 'global';
     return null;

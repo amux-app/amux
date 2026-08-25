@@ -17,7 +17,7 @@ import { closeElectronApp, getAppWindow, waitForAppReady, waitForRendererPaneHyd
 import { disableBackgroundThrottling, waitForStable } from './ui-baseline';
 
 interface SidebarStoreWindow {
-  __aumxStores?: {
+  __muxbaseStores?: {
     ui?: { getState: () => { sidebarCollapsed?: boolean; sidebarWidth?: number } };
   };
 }
@@ -49,7 +49,7 @@ async function measureSidebarWidth(page: Page): Promise<number> {
 
 async function readSidebarCollapsed(page: Page): Promise<boolean> {
   return page.evaluate(() => Boolean(
-    (window as unknown as SidebarStoreWindow).__aumxStores?.ui?.getState().sidebarCollapsed,
+    (window as unknown as SidebarStoreWindow).__muxbaseStores?.ui?.getState().sidebarCollapsed,
   ));
 }
 
@@ -67,7 +67,7 @@ async function readSidebarLiveWidthVar(page: Page): Promise<number> {
 
 async function readSidebarWidthFromStore(page: Page): Promise<number> {
   return waitForStable(() => page.evaluate(() => (
-    (window as unknown as SidebarStoreWindow).__aumxStores?.ui?.getState().sidebarWidth ?? NaN
+    (window as unknown as SidebarStoreWindow).__muxbaseStores?.ui?.getState().sidebarWidth ?? NaN
   )));
 }
 
@@ -110,7 +110,7 @@ async function dragBesideSeparatorBy(page: Page, deltaX: number): Promise<void> 
   await page.mouse.up();
 }
 
-describe.runIf(process.env.AUMX_E2E === '1')('Sidebar drag resize', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('Sidebar drag resize', () => {
   let app: ElectronApplication;
   let page: Page;
 
@@ -119,7 +119,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Sidebar drag resize', () => {
 
     app = await electron.launch({
       args: [MAIN_ENTRY],
-      env: { ...process.env, AUMX_DEV: 'true', NODE_ENV: 'test' },
+      env: { ...process.env, MUXBASE_DEV: 'true', NODE_ENV: 'test' },
     });
     page = await getAppWindow(app);
     await disableBackgroundThrottling(app);

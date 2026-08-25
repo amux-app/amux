@@ -73,7 +73,7 @@ describe('Claude fullscreen version preflight', () => {
     expect((error as Error).message).toContain('Use classic compatibility mode');
   });
 
-  it('rejects an installed Claude below the Amux floor', async () => {
+  it('rejects an installed Claude below the MuxBase floor', async () => {
     const preflight = createClaudeVersionPreflight({
       execVersion: vi.fn(async () => '2.1.219'),
       findCommand: vi.fn(async () => '/bin/claude'),

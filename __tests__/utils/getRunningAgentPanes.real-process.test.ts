@@ -10,7 +10,7 @@ import { getRunningAgentPanes } from '../../src/utils/paneAgentProcess.js';
 // minimum-bar real-process coverage; a full tmux-pane-kill e2e that exercises
 // AgentLivenessProbe end-to-end through a live tmux pane is a separate,
 // larger follow-up.
-const AGENT_MARKER = 'aumx-real-process-codex-marker';
+const AGENT_MARKER = 'muxbase-real-process-codex-marker';
 
 let child: ChildProcess | undefined;
 

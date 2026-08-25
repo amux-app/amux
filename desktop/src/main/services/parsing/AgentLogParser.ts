@@ -1,5 +1,5 @@
 import type { NormalizedSession, AgentType } from '../../../shared/agent-session-types.js';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { ClaudeLogParser } from './ClaudeLogParser.js';
 import { CodexLogParser } from './CodexLogParser.js';
 import { OpencodeLogParser } from './OpencodeLogParser.js';
@@ -16,18 +16,18 @@ export interface AgentLogParser {
    */
   readonly boundFileIsExclusive: boolean;
   findSessionFile(
-    pane: AumxPane,
+    pane: MuxBasePane,
     projectRoot: string,
     excludePaths?: Set<string>,
     mode?: SessionDiscoveryMode,
   ): Promise<string | null>;
   /** Returns the directory where session files for this pane are expected, whether or not it exists yet. */
-  getSessionDirectory(pane: AumxPane, projectRoot: string): string | null;
+  getSessionDirectory(pane: MuxBasePane, projectRoot: string): string | null;
   /**
    * Pre-binding only, for parsers with no watchable session directory: a directory
    * whose writes mean discovery is worth re-running. Null until it can be resolved.
    */
-  getDiscoveryWatchDirectory?(pane: AumxPane, projectRoot: string): string | null;
+  getDiscoveryWatchDirectory?(pane: MuxBasePane, projectRoot: string): string | null;
   /** Which filenames in that directory matter. Required alongside getDiscoveryWatchDirectory. */
   isDiscoveryFileName?(fileName: string): boolean;
   /**

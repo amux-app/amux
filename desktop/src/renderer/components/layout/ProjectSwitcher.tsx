@@ -19,7 +19,7 @@ interface MenuPosition {
 }
 
 const ALWAYS_AVAILABLE = () => true;
-const FALLBACK_NAME = 'Amux';
+const FALLBACK_NAME = 'MuxBase';
 const MENU_GAP = 4;
 const MENU_KEYFRAMES = '@keyframes project-switcher-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}';
 // The trigger is a shrink-wrapped muted line, so the menu sizes to its own

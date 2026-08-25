@@ -11,65 +11,52 @@ import {
 } from '../../src/utils/worktreePaths.js';
 
 describe('project metadata paths', () => {
-  it('uses .amux for a project that has no existing metadata directory', () => {
-    const projectRoot = mkdtempSync(path.join(tmpdir(), 'amux-new-project-'));
+  it('uses .muxbase for a project that has no existing metadata directory', () => {
+    const projectRoot = mkdtempSync(path.join(tmpdir(), 'muxbase-new-project-'));
 
-    expect(getProjectMetadataDir(projectRoot)).toBe(path.join(projectRoot, '.amux'));
+    expect(getProjectMetadataDir(projectRoot)).toBe(path.join(projectRoot, '.muxbase'));
     expect(getProjectConfigPath(projectRoot)).toBe(
-      path.join(projectRoot, '.amux', 'aumx.config.json'),
+      path.join(projectRoot, '.muxbase', 'muxbase.config.json'),
     );
     expect(getManagedWorktreePath(projectRoot, 'fix-auth')).toBe(
-      path.join(projectRoot, '.amux', 'worktrees', 'fix-auth'),
+      path.join(projectRoot, '.muxbase', 'worktrees', 'fix-auth'),
     );
-    expect(getProjectHooksDir(projectRoot)).toBe(path.join(projectRoot, '.amux-hooks'));
+    expect(getProjectHooksDir(projectRoot)).toBe(path.join(projectRoot, '.muxbase-hooks'));
   });
 
-  it('keeps using .aumx for an existing legacy project', () => {
-    const projectRoot = mkdtempSync(path.join(tmpdir(), 'amux-legacy-project-'));
-    mkdirSync(path.join(projectRoot, '.aumx'));
-    mkdirSync(path.join(projectRoot, '.aumx-hooks'));
+  it('uses .muxbase for an existing project', () => {
+    const projectRoot = mkdtempSync(path.join(tmpdir(), 'muxbase-existing-project-'));
+    mkdirSync(path.join(projectRoot, '.muxbase'));
+    mkdirSync(path.join(projectRoot, '.muxbase-hooks'));
 
-    expect(getProjectMetadataDir(projectRoot)).toBe(path.join(projectRoot, '.aumx'));
+    expect(getProjectMetadataDir(projectRoot)).toBe(path.join(projectRoot, '.muxbase'));
     expect(getProjectConfigPath(projectRoot)).toBe(
-      path.join(projectRoot, '.aumx', 'aumx.config.json'),
+      path.join(projectRoot, '.muxbase', 'muxbase.config.json'),
     );
-    expect(getProjectHooksDir(projectRoot)).toBe(path.join(projectRoot, '.aumx-hooks'));
+    expect(getProjectHooksDir(projectRoot)).toBe(path.join(projectRoot, '.muxbase-hooks'));
   });
 
-  it('prefers .amux when both current and legacy metadata directories exist', () => {
-    const projectRoot = mkdtempSync(path.join(tmpdir(), 'amux-current-project-'));
-    mkdirSync(path.join(projectRoot, '.aumx'));
-    mkdirSync(path.join(projectRoot, '.amux'));
+  it('ignores the old metadata and hook directories', () => {
+    const projectRoot = mkdtempSync(path.join(tmpdir(), 'muxbase-fresh-project-'));
+    const oldMetadataDir = path.join(projectRoot, ['.', 'a', 'mux'].join(''));
+    const oldHooksDir = path.join(projectRoot, ['.', 'a', 'mux-hooks'].join(''));
+    mkdirSync(oldMetadataDir);
+    mkdirSync(oldHooksDir);
+    writeFileSync(path.join(oldMetadataDir, 'muxbase.config.json'), '{"panes":[]}');
 
-    expect(getProjectMetadataDir(projectRoot)).toBe(path.join(projectRoot, '.amux'));
+    expect(getProjectMetadataDir(projectRoot)).toBe(path.join(projectRoot, '.muxbase'));
+    expect(getProjectConfigPath(projectRoot)).toBe(
+      path.join(projectRoot, '.muxbase', 'muxbase.config.json'),
+    );
+    expect(getProjectHooksDir(projectRoot)).toBe(path.join(projectRoot, '.muxbase-hooks'));
   });
 
-  it('keeps using a populated legacy config when an empty .amux directory exists', () => {
-    const projectRoot = mkdtempSync(path.join(tmpdir(), 'amux-partial-migration-'));
-    const legacyDir = path.join(projectRoot, '.aumx');
-    mkdirSync(legacyDir);
-    mkdirSync(path.join(projectRoot, '.amux'));
-    writeFileSync(path.join(legacyDir, 'aumx.config.json'), '{"panes":[]}');
-
-    expect(getProjectMetadataDir(projectRoot)).toBe(legacyDir);
-    expect(getProjectConfigPath(projectRoot)).toBe(path.join(legacyDir, 'aumx.config.json'));
-  });
-
-  it('prefers the current config after both metadata locations are populated', () => {
-    const projectRoot = mkdtempSync(path.join(tmpdir(), 'amux-complete-migration-'));
-    const currentDir = path.join(projectRoot, '.amux');
-    const legacyDir = path.join(projectRoot, '.aumx');
-    mkdirSync(currentDir);
-    mkdirSync(legacyDir);
-    writeFileSync(path.join(currentDir, 'aumx.config.json'), '{"panes":[]}');
-    writeFileSync(path.join(legacyDir, 'aumx.config.json'), '{"panes":[]}');
-
-    expect(getProjectMetadataDir(projectRoot)).toBe(currentDir);
-  });
-
-  it.each(['.amux', '.aumx'])('derives the project root from %s worktrees', (metadataDir) => {
-    const worktreePath = path.join('/repo', metadataDir, 'worktrees', 'fix-auth');
+  it('derives the project root only from .muxbase worktrees', () => {
+    const worktreePath = path.join('/repo', '.muxbase', 'worktrees', 'fix-auth');
 
     expect(deriveProjectRootFromManagedWorktreePath(worktreePath)).toBe('/repo');
+    expect(deriveProjectRootFromManagedWorktreePath(
+      path.join('/repo', ['.', 'a', 'mux'].join(''), 'worktrees', 'fix-auth'),
+    )).toBeUndefined();
   });
 });

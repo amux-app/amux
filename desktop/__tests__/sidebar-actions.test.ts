@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { createElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -219,7 +219,7 @@ describe('sidebar actions', () => {
   });
 });
 
-const AGENT_PANE: AumxPane = {
+const AGENT_PANE: MuxBasePane = {
   agent: 'claude',
   agentStatus: 'idle',
   branchName: 'feature/loading-truth',

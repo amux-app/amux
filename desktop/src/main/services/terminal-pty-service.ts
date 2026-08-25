@@ -1,4 +1,4 @@
-import { execAsync, shQuote } from 'aumx/core';
+import { execAsync, shQuote } from 'muxbase/core';
 import { spawnSync } from 'child_process';
 import * as pty from 'node-pty';
 import type { TerminalDataSource } from '../../shared/ipc-types.js';
@@ -63,7 +63,7 @@ const defaultSpawner: TerminalPtySpawner = {
 
 const TMUX_SETUP_TIMEOUT_MS = 5000;
 const TMUX_CLIENT_FEATURES = 'RGB,hyperlinks,usstyle,overline,strikethrough,sync,clipboard';
-const VIEW_BOOTSTRAP_WINDOW_NAME = '__aumx_view_bootstrap__';
+const VIEW_BOOTSTRAP_WINDOW_NAME = '__muxbase_view_bootstrap__';
 const VIEW_BOOTSTRAP_COMMAND = 'sleep 86400';
 const SCREEN_READER_MARKER = /\[(?:Screen Reader Mode: on via (?:flag|env|settings)|Accessible screen reader mode: on)\]/i;
 const SCREEN_READER_SCAN_LIMIT = 256;
@@ -197,12 +197,12 @@ export class TerminalPtyService {
     await this.removeExistingViewSession(viewTarget, viewSessionName, options.paneId, setupOptions);
 
     try {
-      // The @aumx_view_session marker is chained into new-session so the
+      // The @muxbase_view_session marker is chained into new-session so the
       // session is created already tagged: startup cleanup only kills tagged
       // sessions, and a crash between two separate commands would otherwise
       // leave an untagged orphan it refuses to touch.
       await this.exec(
-        `tmux new-session -d -s ${shQuote(viewSessionName)} -n ${shQuote(VIEW_BOOTSTRAP_WINDOW_NAME)} ${shQuote(VIEW_BOOTSTRAP_COMMAND)} ';' set -t ${viewOptionTarget} @aumx_view_session 1`,
+        `tmux new-session -d -s ${shQuote(viewSessionName)} -n ${shQuote(VIEW_BOOTSTRAP_WINDOW_NAME)} ${shQuote(VIEW_BOOTSTRAP_COMMAND)} ';' set -t ${viewOptionTarget} @muxbase_view_session 1`,
         setupOptions,
       );
       await this.exec(`tmux set-option -t ${viewOptionTarget} status off`, setupOptions);

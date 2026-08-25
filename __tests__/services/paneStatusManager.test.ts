@@ -10,12 +10,12 @@ import type {
   PaneStatusAnalyzer,
 } from '../../src/services/PaneStatusAnalyzer.js';
 import { PaneStatusManager } from '../../src/services/PaneStatusManager.js';
-import { NO_INITIAL_PROMPT, type AumxPane } from '../../src/types.js';
+import { NO_INITIAL_PROMPT, type MuxBasePane } from '../../src/types.js';
 
 const IDLE_FRAME = ['⏺ Done.', '│ > ', '  Opus 4.6 · 32% context left'].join('\n');
 const WORKING_FRAME = '· Germinating… (esc to interrupt · 42s)';
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'claude',
     id: 'agent-pane',

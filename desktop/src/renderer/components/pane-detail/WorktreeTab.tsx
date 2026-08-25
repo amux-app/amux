@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Copy, FolderOpen, Replace } from 'lucide-react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { GitDiffResponse } from '../../../shared/ipc-types';
 import { IPC } from '../../../shared/ipc-channels';
 import { invoke } from '../../api/ipc';
@@ -11,7 +11,7 @@ import { GitPill } from '../shared/GitPill';
 import { AttachWorktreePicker } from '../worktree/AttachWorktreePicker';
 
 export interface WorktreeTabProps {
-  pane: AumxPane;
+  pane: MuxBasePane;
 }
 
 export function WorktreeTab({ pane }: WorktreeTabProps) {

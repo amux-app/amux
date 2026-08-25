@@ -35,7 +35,7 @@ export const useEditorPrefsStore = create<EditorPrefsState>()(
       setLastEditorId: (id) => set({ lastEditorId: id }),
     }),
     {
-      name: 'aumx-editor-prefs',
+      name: 'muxbase-editor-prefs',
       partialize: (state) => ({ lastEditorId: state.lastEditorId }),
       storage: createJSONStorage(() => getStorage()),
       version: 1,

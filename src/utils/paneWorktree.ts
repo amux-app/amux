@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import type { AumxPane } from '../types.js';
+import type { MuxBasePane } from '../types.js';
 import { LogService } from '../services/LogService.js';
 import { execFileAsync } from './execAsync.js';
 import { isValidBranchName } from './git.js';
@@ -23,7 +23,7 @@ import { getManagedWorktreePath } from './worktreePaths.js';
  * pane into the new worktree can do so after the fact.
  */
 export async function createWorktreeForPane(
-  pane: AumxPane,
+  pane: MuxBasePane,
   projectRoot: string,
 ): Promise<{ worktreePath: string; branchName: string } | null> {
   const log = LogService.getInstance();

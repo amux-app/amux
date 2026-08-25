@@ -98,7 +98,7 @@ describe('fileEditorSupport', () => {
     expect(getFileEditorBaseExtensions(() => {}).length).toBeGreaterThan(0);
   });
 
-  it('keeps Amux completion sources scoped to file types that need them', () => {
+  it('keeps MuxBase completion sources scoped to file types that need them', () => {
     expect(getFileEditorCompletionSources('index.ts')).toHaveLength(0);
     expect(getFileEditorCompletionSources('styles.css')).toHaveLength(0);
     expect(getFileEditorCompletionSources('component.test.ts')).toHaveLength(1);

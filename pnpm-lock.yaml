@@ -91,7 +91,7 @@ importers:
       '@typescript/typescript-darwin-x64':
         specifier: 7.0.2
         version: 7.0.2
-      aumx:
+      muxbase:
         specifier: workspace:*
         version: link:..
       chokidar:

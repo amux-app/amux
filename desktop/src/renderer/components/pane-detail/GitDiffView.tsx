@@ -1,5 +1,5 @@
 import { DiffView, DiffModeEnum } from '@git-diff-view/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { Files, FolderGit2, GitBranch, Minus, Plus, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
@@ -43,7 +43,7 @@ import {
 } from './GitDiffViewParts';
 
 interface GitDiffViewProps {
-  pane: AumxPane;
+  pane: MuxBasePane;
 }
 
 interface FullPatchCacheEntry {

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const setupSidebarLayout = vi.hoisted(() => vi.fn(() => '%2'));
 const splitPane = vi.hoisted(() => vi.fn(() => '%3'));
 const ensureMinimumWindowSize = vi.hoisted(() => vi.fn());
-const updateAumxControlFields = vi.hoisted(() => vi.fn());
+const updateMuxBaseControlFields = vi.hoisted(() => vi.fn());
 
 vi.mock('../../src/utils/tmux.js', () => ({
   ensureMinimumWindowSize,
@@ -14,8 +14,8 @@ vi.mock('../../src/utils/tmux.js', () => ({
   splitPane,
 }));
 
-vi.mock('../../src/utils/aumxConfigMutation.js', () => ({
-  updateAumxControlFields,
+vi.mock('../../src/utils/muxbaseConfigMutation.js', () => ({
+  updateMuxBaseControlFields,
 }));
 
 import {
@@ -31,8 +31,8 @@ const logger = {
 const fixtureRoots: string[] = [];
 
 function writeConfig(controlPaneId: string): string {
-  const root = mkdtempSync(join(tmpdir(), 'aumx-pane-creation-tmux-'));
-  const configPath = join(root, 'aumx.config.json');
+  const root = mkdtempSync(join(tmpdir(), 'muxbase-pane-creation-tmux-'));
+  const configPath = join(root, 'muxbase.config.json');
   fixtureRoots.push(root);
   writeFileSync(configPath, JSON.stringify({ controlPaneId }));
   return configPath;
@@ -40,7 +40,7 @@ function writeConfig(controlPaneId: string): string {
 
 function makeTmux() {
   return {
-    getPaneSessionName: vi.fn(async () => 'aumx-project'),
+    getPaneSessionName: vi.fn(async () => 'muxbase-project'),
     newWindowPane: vi.fn(async () => '%window'),
     paneExists: vi.fn(async () => true),
   };
@@ -72,7 +72,7 @@ describe('pane creation tmux allocation', () => {
     });
 
     expect(controlPaneId).toBe('%1');
-    expect(updateAumxControlFields).toHaveBeenCalledWith(
+    expect(updateMuxBaseControlFields).toHaveBeenCalledWith(
       configPath,
       { controlPaneId: '%1', controlPaneSize: 40 },
     );
@@ -92,7 +92,7 @@ describe('pane creation tmux allocation', () => {
 
     expect(controlPaneId).toBe('%configured');
     expect(tmux.paneExists).not.toHaveBeenCalled();
-    expect(updateAumxControlFields).not.toHaveBeenCalled();
+    expect(updateMuxBaseControlFields).not.toHaveBeenCalled();
   });
 
   it('falls back to a new window when a sidebar split has no space', async () => {
@@ -102,7 +102,7 @@ describe('pane creation tmux allocation', () => {
     });
 
     const result = await allocateTmuxPane({
-      configPath: '/project/.amux/aumx.config.json',
+      configPath: '/project/.muxbase/muxbase.config.json',
       controlPaneId: '%1',
       existingPaneIds: [],
       isFirstContentPane: true,
@@ -120,7 +120,7 @@ describe('pane creation tmux allocation', () => {
     });
     expect(tmux.newWindowPane).toHaveBeenCalledWith({
       cwd: '/project',
-      sessionName: 'aumx-project',
+      sessionName: 'muxbase-project',
     });
   });
 
@@ -133,7 +133,7 @@ describe('pane creation tmux allocation', () => {
       .mockReturnValueOnce('%recovered');
 
     const result = await allocateTmuxPane({
-      configPath: '/project/.amux/aumx.config.json',
+      configPath: '/project/.muxbase/muxbase.config.json',
       controlPaneId: '%stale',
       existingPaneIds: [],
       isFirstContentPane: true,
@@ -153,8 +153,8 @@ describe('pane creation tmux allocation', () => {
       ['%stale', '/project'],
       ['%1', '/project'],
     ]);
-    expect(updateAumxControlFields).toHaveBeenCalledWith(
-      '/project/.amux/aumx.config.json',
+    expect(updateMuxBaseControlFields).toHaveBeenCalledWith(
+      '/project/.muxbase/muxbase.config.json',
       { controlPaneId: '%1' },
     );
   });
@@ -163,7 +163,7 @@ describe('pane creation tmux allocation', () => {
     const tmux = makeTmux();
 
     const result = await allocateTmuxPane({
-      configPath: '/project/.amux/aumx.config.json',
+      configPath: '/project/.muxbase/muxbase.config.json',
       controlPaneId: '%1',
       existingPaneIds: ['%2', '%7'],
       isFirstContentPane: false,

@@ -7,7 +7,7 @@
 
 import type { ActionResult, ActionContext } from '../types.js';
 import { getAgentLabel, type AgentName } from '../../agents/agent-contract.js';
-import type { AumxPane } from '../../types.js';
+import type { MuxBasePane } from '../../types.js';
 import { LogService } from '../../services/LogService.js';
 import { getPaneBranchName } from '../../utils/git.js';
 import { getAvailableAgents } from '../../utils/agentDetection.js';
@@ -19,7 +19,7 @@ import { launchManagedConflictResolutionPane } from './conflictPaneLifecycle.js'
  * Create a new pane for AI-assisted conflict resolution
  */
 export async function createConflictResolutionPaneForMerge(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   targetBranch: string,
   targetRepoPath: string
@@ -73,7 +73,7 @@ export async function createConflictResolutionPaneForMerge(
  * Actually create and launch the conflict resolution pane
  */
 async function createAndLaunchConflictPane(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   targetBranch: string,
   targetRepoPath: string,
@@ -115,7 +115,7 @@ async function createAndLaunchConflictPane(
             'conflictResolution',
           );
 
-          const panesWithoutConflictPane = currentPanes.filter((p: AumxPane) => p.id !== resolvedConflictPane.id);
+          const panesWithoutConflictPane = currentPanes.filter((p: MuxBasePane) => p.id !== resolvedConflictPane.id);
           log.debug(
             `[conflictResolution] Removing conflict pane ${resolvedConflictPane.id}, remaining: ${panesWithoutConflictPane.map(p => p.id).join(', ')}`,
             'conflictResolution',

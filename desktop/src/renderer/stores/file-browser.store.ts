@@ -133,7 +133,7 @@ export { fileKey, folderColorKey, isPathInActiveMove } from './file-browser-rema
 export type { ActiveFileMove, FileMoveRemap } from './file-browser-remap';
 
 const FILE_BROWSER_LOG_SCOPE = 'file-browser:store';
-const FOLDER_COLORS_KEY = 'aumx-folder-colors';
+const FOLDER_COLORS_KEY = 'muxbase-folder-colors';
 const PENDING_FILE_SAVE_TIMEOUT_MS = 5_000;
 
 const latestOpenFileExtras = new Map<string, OpenFileExtras>();

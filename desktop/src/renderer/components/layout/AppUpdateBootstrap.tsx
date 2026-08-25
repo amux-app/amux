@@ -17,7 +17,7 @@ export function AppUpdateBootstrap() {
       return;
     }
     announcedVersions.current.add(snapshot.availableVersion);
-    addToast(`Amux ${snapshot.availableVersion} is ready to install.`, 'info', {
+    addToast(`MuxBase ${snapshot.availableVersion} is ready to install.`, 'info', {
       title: 'Update ready',
     });
   }, [addToast, snapshot]);

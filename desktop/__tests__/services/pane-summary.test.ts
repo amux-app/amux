@@ -3,17 +3,17 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { PaneSummaryService } from '../../src/main/services/PaneSummaryService';
 import { PaneSummaryPersistence } from '../../src/main/services/paneSummaryPersistence';
 
 const execAsyncMock = vi.hoisted(() => vi.fn());
 const generateRecapMock = vi.hoisted(() => vi.fn());
 
-vi.mock('aumx/core', () => ({
+vi.mock('muxbase/core', () => ({
   execAsync: execAsyncMock,
   getProjectMetadataPath: (projectRoot: string, ...segments: string[]) => (
-    [projectRoot, '.amux', ...segments].join('/')
+    [projectRoot, '.muxbase', ...segments].join('/')
   ),
 }));
 vi.mock('../../src/main/services/recapGenerator.js', () => ({ generateRecap: generateRecapMock }));
@@ -21,7 +21,7 @@ vi.mock('../../src/main/services/Logger.js', () => ({
   log: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
-function makePane(): AumxPane {
+function makePane(): MuxBasePane {
   return {
     agent: 'claude',
     agentStatus: 'idle',
@@ -45,7 +45,7 @@ function makeBridge(pane = makePane(), sinceWallMs = 456) {
 }
 
 async function makeRoot(): Promise<string> {
-  return mkdtemp(join(tmpdir(), 'aumx-pane-summary-'));
+  return mkdtemp(join(tmpdir(), 'muxbase-pane-summary-'));
 }
 
 describe('PaneSummaryService', () => {
@@ -112,7 +112,7 @@ describe('PaneSummaryService', () => {
     const root = await makeRoot();
     try {
       const persistence = new PaneSummaryPersistence(root);
-      const directory = join(root, '.amux', 'pane-summaries');
+      const directory = join(root, '.muxbase', 'pane-summaries');
       await mkdir(directory, { recursive: true });
       await writeFile(join(directory, 'broken.json'), '{not-json');
       await persistence.save({

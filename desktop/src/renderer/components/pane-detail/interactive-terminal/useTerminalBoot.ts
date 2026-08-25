@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import {
   appendTerminalTail,
@@ -13,7 +13,7 @@ const OUTPUT_TAIL_MAX = 6_000;
 
 interface UseTerminalBootOptions {
   activityIdle: boolean;
-  agent: AumxPane['agent'];
+  agent: MuxBasePane['agent'];
   initialBooting: boolean;
   lockInput: () => void;
   sessionWaiting: boolean;

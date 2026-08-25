@@ -4,7 +4,7 @@ const { execAsyncMock } = vi.hoisted(() => ({
   execAsyncMock: vi.fn(),
 }));
 
-vi.mock('aumx/core', () => ({
+vi.mock('muxbase/core', () => ({
   execAsync: execAsyncMock,
 }));
 

@@ -1,9 +1,9 @@
 import {
   getStatusDetector,
   resetStatusDetector,
-  type AumxPane,
+  type MuxBasePane,
   type StatusUpdateEvent,
-} from 'aumx/core';
+} from 'muxbase/core';
 import { log } from './Logger.js';
 
 export class PaneMonitor {
@@ -13,7 +13,7 @@ export class PaneMonitor {
     private readonly onStatusDetected?: (event: StatusUpdateEvent) => void,
   ) {}
 
-  async start(panes: AumxPane[]): Promise<void> {
+  async start(panes: MuxBasePane[]): Promise<void> {
     log.info('pane-monitor', 'Starting pane monitoring', { paneCount: panes.length, ids: panes.map((p) => p.id) });
 
     const detector = getStatusDetector();

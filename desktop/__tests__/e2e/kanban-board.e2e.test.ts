@@ -26,7 +26,7 @@ const MAIN_ENTRY = resolve(ROOT, 'out', 'main', 'index.js');
 const SCREENSHOTS_DIR = resolve(ROOT, 'out');
 const REPORT_PATH = resolve(SCREENSHOTS_DIR, 'e2e-kanban-board-report.html');
 
-const ENABLE_SCREENSHOTS = process.env.AUMX_E2E_SCREENSHOTS === '1';
+const ENABLE_SCREENSHOTS = process.env.MUXBASE_E2E_SCREENSHOTS === '1';
 const RUN_TOKEN = `e2e-kanban-${Date.now().toString(36)}`;
 
 // Column IDs as defined in useKanbanColumns.ts
@@ -36,10 +36,10 @@ const COLUMN_IDS = ['backlog', 'in-progress', 'needs-attention', 'review', 'done
 const BACKLOG_TASKS = [
   {
     title: 'Create config file',
-    prompt: `${RUN_TOKEN} Config task: create a file called config.json with this exact content: {"name":"aumx-test","version":"1.0.0"}. Do not install any dependencies. Do not create any other files.`,
+    prompt: `${RUN_TOKEN} Config task: create a file called config.json with this exact content: {"name":"muxbase-test","version":"1.0.0"}. Do not install any dependencies. Do not create any other files.`,
     complexity: 'M' as const,
     expectedFile: 'config.json',
-    contentPatterns: [/aumx-test/i, /1\.0\.0/],
+    contentPatterns: [/muxbase-test/i, /1\.0\.0/],
   },
   {
     title: 'Create utility module',
@@ -182,27 +182,27 @@ async function hideOverlay(page: Page): Promise<void> {
 async function initializePaneStatusTracker(page: Page): Promise<void> {
   await page.evaluate(() => {
     const w = window as any;
-    if (w.__aumxPaneStatusTrackerInitialized) {
-      w.__aumxPaneStatusById = {};
-      w.__aumxPaneStatusHistoryById = {};
+    if (w.__muxbasePaneStatusTrackerInitialized) {
+      w.__muxbasePaneStatusById = {};
+      w.__muxbasePaneStatusHistoryById = {};
       return;
     }
-    w.__aumxPaneStatusById = {};
-    w.__aumxPaneStatusHistoryById = {};
-    w.__aumxPaneStatusTrackerUnsub = w.aumx.on(
+    w.__muxbasePaneStatusById = {};
+    w.__muxbasePaneStatusHistoryById = {};
+    w.__muxbasePaneStatusTrackerUnsub = w.muxbase.on(
       'event:pane-status-changed',
       (payload: { paneId?: string; status?: string }) => {
         const paneId = payload?.paneId;
         const status = payload?.status;
         if (!paneId || !status) return;
-        w.__aumxPaneStatusById[paneId] = status;
-        if (!Array.isArray(w.__aumxPaneStatusHistoryById[paneId])) {
-          w.__aumxPaneStatusHistoryById[paneId] = [];
+        w.__muxbasePaneStatusById[paneId] = status;
+        if (!Array.isArray(w.__muxbasePaneStatusHistoryById[paneId])) {
+          w.__muxbasePaneStatusHistoryById[paneId] = [];
         }
-        w.__aumxPaneStatusHistoryById[paneId].push({ status, ts: Date.now() });
+        w.__muxbasePaneStatusHistoryById[paneId].push({ status, ts: Date.now() });
       },
     );
-    w.__aumxPaneStatusTrackerInitialized = true;
+    w.__muxbasePaneStatusTrackerInitialized = true;
   });
 }
 
@@ -220,10 +220,10 @@ async function navigateToKanbanView(page: Page): Promise<void> {
 async function enableKanbanBoard(page: Page): Promise<void> {
   await page.evaluate(() => {
     const api = (window as Window & {
-      aumx: {
+      muxbase: {
         invoke: (channel: string, ...args: unknown[]) => Promise<unknown>;
       };
-    }).aumx;
+    }).muxbase;
     return api.invoke('electron-settings:update', {
       key: 'enableKanbanBoard',
       value: true,
@@ -233,14 +233,14 @@ async function enableKanbanBoard(page: Page): Promise<void> {
 
 async function getKanbanData(page: Page, projectRoot: string): Promise<KanbanGetResponse> {
   return page.evaluate(
-    (root) => (window as any).aumx.invoke('kanban:get', { projectRoot: root }),
+    (root) => (window as any).muxbase.invoke('kanban:get', { projectRoot: root }),
     projectRoot,
   );
 }
 
 async function clearDoneIPC(page: Page, projectRoot: string): Promise<DoneClearResponse> {
   return page.evaluate(
-    (root) => (window as any).aumx.invoke('kanban:done-clear', { projectRoot: root }),
+    (root) => (window as any).muxbase.invoke('kanban:done-clear', { projectRoot: root }),
     projectRoot,
   );
 }
@@ -258,7 +258,7 @@ async function getColumnCounts(page: Page): Promise<Record<string, number>> {
 
 async function checkDirtyState(page: Page, worktreePath: string): Promise<boolean> {
   const result = await page.evaluate(
-    (path) => (window as any).aumx.invoke('git:status', { worktreePath: path }),
+    (path) => (window as any).muxbase.invoke('git:status', { worktreePath: path }),
     worktreePath,
   );
   return result?.hasChanges === true;
@@ -358,7 +358,7 @@ function generateReport(): string {
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>aumx Kanban Board E2E Report</title>
+<title>muxbase Kanban Board E2E Report</title>
 <style>
   :root {
     --bg: #0d1117; --surface: #161b22; --surface2: #1c2128;
@@ -442,7 +442,7 @@ function generateReport(): string {
     </tbody></table>
   </section>
 
-  <div class="report-footer">Generated by <strong>aumx</strong> Kanban Board E2E Test Suite</div>
+  <div class="report-footer">Generated by <strong>muxbase</strong> Kanban Board E2E Test Suite</div>
 </div>
 </body>
 </html>`;
@@ -463,11 +463,11 @@ function writeReport(): void {
 // Test Suite
 // ---------------------------------------------------------------------------
 
-if (process.env.AUMX_E2E !== '1') {
-  console.warn('Kanban Board E2E skipped — set AUMX_E2E=1 to run');
+if (process.env.MUXBASE_E2E !== '1') {
+  console.warn('Kanban Board E2E skipped — set MUXBASE_E2E=1 to run');
 }
 
-describe.runIf(process.env.AUMX_E2E === '1')('Kanban Board E2E', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('Kanban Board E2E', () => {
   let app: ElectronApplication;
   let page: Page;
   let projectRoot: string;
@@ -488,20 +488,20 @@ describe.runIf(process.env.AUMX_E2E === '1')('Kanban Board E2E', () => {
       // Kill any leftover E2E tmux sessions from previous runs
       try {
         const sessions = execSync('tmux list-sessions -F "#{session_name}" 2>/dev/null', { encoding: 'utf-8' });
-        for (const name of sessions.split('\n').filter((s) => s.includes('aumx-kanban-e2e'))) {
+        for (const name of sessions.split('\n').filter((s) => s.includes('muxbase-kanban-e2e'))) {
           execSync(`tmux kill-session -t "${name}" 2>/dev/null`, { stdio: 'ignore' });
           console.log(`Cleaned up stale E2E session: ${name}`);
         }
       } catch { /* no tmux server or no sessions — fine */ }
 
       // Isolated temp workspace — prevents any mutation of real user kanban/backlog data
-      e2eRoot = realpathSync(mkdtempSync(resolve(tmpdir(), 'aumx-kanban-e2e-')));
+      e2eRoot = realpathSync(mkdtempSync(resolve(tmpdir(), 'muxbase-kanban-e2e-')));
       execSync('git init', { cwd: e2eRoot, stdio: 'ignore' });
-      execSync('git config user.email "e2e@aumx.test"', { cwd: e2eRoot, stdio: 'ignore' });
-      execSync('git config user.name "aumx-e2e"', { cwd: e2eRoot, stdio: 'ignore' });
-      // .gitignore must exist before aumx starts — aumx writes .amux/aumx.config.json on
+      execSync('git config user.email "e2e@muxbase.test"', { cwd: e2eRoot, stdio: 'ignore' });
+      execSync('git config user.name "muxbase-e2e"', { cwd: e2eRoot, stdio: 'ignore' });
+      // .gitignore must exist before muxbase starts — muxbase writes .muxbase/muxbase.config.json on
       // init, which would otherwise show as untracked and trigger main_dirty during merge.
-      writeFileSync(resolve(e2eRoot, '.gitignore'), '.amux/\n.aumx/\n');
+      writeFileSync(resolve(e2eRoot, '.gitignore'), '.muxbase/\n');
       execSync('git add .gitignore', { cwd: e2eRoot, stdio: 'ignore' });
       execSync('git commit -m "chore: e2e workspace init"', { cwd: e2eRoot, stdio: 'ignore' });
       projectRoot = e2eRoot;
@@ -517,17 +517,17 @@ describe.runIf(process.env.AUMX_E2E === '1')('Kanban Board E2E', () => {
         env: {
           ...inheritedEnv,
           NODE_ENV: 'test',
-          AUMX_DEV: 'true',
+          MUXBASE_DEV: 'true',
         },
       });
 
       page = await getAppWindow(app);
 
-      // Expose __aumxStores for E2E store coercion.
+      // Expose __muxbaseStores for E2E store coercion.
       // Production builds don't expose stores because import.meta.env.DEV is false.
-      // Vite replaces process.env at build time, so we use window.__AUMX_E2E instead.
+      // Vite replaces process.env at build time, so we use window.__MUXBASE_E2E instead.
       await app.context().addInitScript(() => {
-        (window as any).__AUMX_E2E = true;
+        (window as any).__MUXBASE_E2E = true;
       });
       await page.reload();
 
@@ -561,7 +561,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Kanban Board E2E', () => {
       if (sessionInfo.projectRoot !== e2eRoot) {
         throw new Error(
           `Unsafe E2E root. Expected ${e2eRoot}, got ${sessionInfo.projectRoot}. ` +
-            `Stop other aumx tmux sessions before running this test.`,
+            `Stop other muxbase tmux sessions before running this test.`,
         );
       }
       projectRoot = e2eRoot;
@@ -574,7 +574,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Kanban Board E2E', () => {
       const leftoverKanban = await getKanbanData(page, projectRoot);
       if (leftoverKanban.backlog.length > 0) {
         await page.evaluate(
-          ({ root, ids }) => (window as any).aumx.invoke('kanban:backlog-remove', { projectRoot: root, itemIds: ids }),
+          ({ root, ids }) => (window as any).muxbase.invoke('kanban:backlog-remove', { projectRoot: root, itemIds: ids }),
           { root: projectRoot, ids: leftoverKanban.backlog.map((b: any) => b.id) },
         );
       }
@@ -1245,16 +1245,16 @@ describe.runIf(process.env.AUMX_E2E === '1')('Kanban Board E2E', () => {
         await page.evaluate(async (paneId) => {
           const AUTO_CONFIRM = new Set(['Merge Worktree', 'Multi-Repository Merge', 'Multi-Merge Complete']);
           const AUTO_CHOICE = new Set(['Close Pane', 'Worktree Has Uncommitted Changes', 'Main Branch Has Uncommitted Changes']);
-          let current: any = await (window as any).aumx.invoke('pane:merge', { paneId });
+          let current: any = await (window as any).muxbase.invoke('pane:merge', { paneId });
           for (let i = 0; i < 10; i++) {
             if (current.type === 'confirm' && current.callbackId && AUTO_CONFIRM.has(current.title)) {
-              current = await (window as any).aumx.invoke('action:callback', { callbackId: current.callbackId });
+              current = await (window as any).muxbase.invoke('action:callback', { callbackId: current.callbackId });
               continue;
             }
             if (current.type === 'choice' && current.callbackId && AUTO_CHOICE.has(current.title)) {
               const choiceId = current.options?.find((o: any) => o.default)?.id ?? current.options?.[0]?.id;
               if (!choiceId) break;
-              current = await (window as any).aumx.invoke('action:callback', { callbackId: current.callbackId, value: choiceId });
+              current = await (window as any).muxbase.invoke('action:callback', { callbackId: current.callbackId, value: choiceId });
               continue;
             }
             break;

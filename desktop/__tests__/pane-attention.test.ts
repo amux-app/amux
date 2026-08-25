@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import {
   PANE_ATTENTION_PHRASES,
   getEffectivePaneStatus,
@@ -11,7 +11,7 @@ import { makeActivity } from './helpers/pane-activity-fixtures';
 
 const PANE_ID = 'p1';
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     id: PANE_ID,
     slug: 'test-pane',
@@ -107,7 +107,7 @@ describe('getPaneAttention', () => {
   describe('waiting reason precedence', () => {
     const cases: Array<{
       name: string;
-      pane: Partial<AumxPane>;
+      pane: Partial<MuxBasePane>;
       session: PaneAttentionSession;
       reason: PaneAttentionReason;
     }> = [

@@ -8,7 +8,7 @@ vi.mock('child_process', () => ({
 }));
 
 const mockExecFileSync = vi.mocked(execFileSync);
-const HOSTILE_PANE_ID = "%1' -x 1 -y 1 ; touch /tmp/aumx-window-injected ; tmux display-message -t '%1";
+const HOSTILE_PANE_ID = "%1' -x 1 -y 1 ; touch /tmp/muxbase-window-injected ; tmux display-message -t '%1";
 
 describe('ensureMinimumWindowSize (unit)', () => {
   beforeEach(() => {

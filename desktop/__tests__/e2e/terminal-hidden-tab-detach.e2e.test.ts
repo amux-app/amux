@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { execFileSync, spawnSync } from 'child_process';
 import { existsSync, mkdtempSync, realpathSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
@@ -24,9 +24,9 @@ interface TerminalStoreState {
 }
 
 interface PaneStoreState {
-  panes: AumxPane[];
+  panes: MuxBasePane[];
   selectPane: (paneId: string | null) => void;
-  setPanes: (panes: AumxPane[]) => void;
+  setPanes: (panes: MuxBasePane[]) => void;
 }
 
 interface UiStoreState {
@@ -35,17 +35,17 @@ interface UiStoreState {
 }
 
 interface E2EWindow {
-  __AUMX_E2E?: boolean;
-  __aumxStores?: {
+  __MUXBASE_E2E?: boolean;
+  __muxbaseStores?: {
     pane?: { getState: () => PaneStoreState };
     terminal?: { getState: () => TerminalStoreState };
     ui?: { getState: () => UiStoreState };
   };
-  __aumxTerminalDebug?: {
+  __muxbaseTerminalDebug?: {
     getViewportInfo: (paneId: string) => { cols: number; length: number; rows: number } | null;
     getVisibleLines: (paneId: string, count: number) => string[];
   };
-  aumx: { invoke: (channel: string, ...args: unknown[]) => Promise<unknown> };
+  muxbase: { invoke: (channel: string, ...args: unknown[]) => Promise<unknown> };
 }
 
 function killTmuxSession(sessionName: string): void {
@@ -57,7 +57,7 @@ async function invoke<T>(page: Page, channel: string, request?: unknown): Promis
   return page.evaluate(
     async ({ ipcArgs, ipcChannel }) => {
       const e2eWindow = window as unknown as E2EWindow;
-      return e2eWindow.aumx.invoke(ipcChannel, ...ipcArgs);
+      return e2eWindow.muxbase.invoke(ipcChannel, ...ipcArgs);
     },
     { ipcArgs: args, ipcChannel: channel },
   ) as Promise<T>;
@@ -65,7 +65,7 @@ async function invoke<T>(page: Page, channel: string, request?: unknown): Promis
 
 async function isPaneAttached(page: Page, paneId: string): Promise<boolean> {
   return page.evaluate((id) => {
-    const stores = (window as unknown as E2EWindow).__aumxStores;
+    const stores = (window as unknown as E2EWindow).__muxbaseStores;
     return stores?.terminal?.getState().attachedPaneIds.has(id) ?? false;
   }, paneId);
 }
@@ -81,9 +81,9 @@ async function waitForAttachState(page: Page, paneId: string, attached: boolean)
   );
 }
 
-async function showFleetPane(page: Page, panes: AumxPane[], paneId: string): Promise<void> {
+async function showFleetPane(page: Page, panes: MuxBasePane[], paneId: string): Promise<void> {
   await page.evaluate(({ nextPanes, selectedId }) => {
-    const stores = (window as unknown as E2EWindow).__aumxStores;
+    const stores = (window as unknown as E2EWindow).__muxbaseStores;
     stores?.pane?.getState().setPanes(nextPanes);
     stores?.ui?.getState().setActiveView('dashboard');
     stores?.ui?.getState().setViewMode('fleet');
@@ -103,29 +103,29 @@ async function clickPaneTab(page: Page, paneId: string, label: string): Promise<
     .click();
 }
 
-describe.runIf(process.env.AUMX_E2E === '1')('Hidden pane tab terminal detach E2E', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('Hidden pane tab terminal detach E2E', () => {
   let app: ElectronApplication;
   let page: Page;
   let projectRoot: string;
   let sessionName: string;
-  let pane: AumxPane;
+  let pane: MuxBasePane;
 
   beforeAll(async () => {
     expect(existsSync(MAIN_ENTRY), `Build output missing: ${MAIN_ENTRY}`).toBe(true);
-    projectRoot = realpathSync(mkdtempSync(join(tmpdir(), 'aumx-hidden-tab-e2e-')));
+    projectRoot = realpathSync(mkdtempSync(join(tmpdir(), 'muxbase-hidden-tab-e2e-')));
     execFileSync('git', ['init'], { cwd: projectRoot, stdio: 'ignore' });
-    sessionName = `aumx-${basename(projectRoot)}`;
+    sessionName = `muxbase-${basename(projectRoot)}`;
     killTmuxSession(sessionName);
 
     app = await electron.launch({
       args: [MAIN_ENTRY],
       cwd: projectRoot,
-      env: { ...process.env, AUMX_DEV: 'true', AUMX_E2E: '1', NODE_ENV: 'test' },
+      env: { ...process.env, MUXBASE_DEV: 'true', MUXBASE_E2E: '1', NODE_ENV: 'test' },
     });
 
     page = await getAppWindow(app);
     await app.context().addInitScript(() => {
-      (window as unknown as E2EWindow).__AUMX_E2E = true;
+      (window as unknown as E2EWindow).__MUXBASE_E2E = true;
     });
     await page.reload();
     await page.setViewportSize({ height: 980, width: 1440 });
@@ -160,7 +160,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Hidden pane tab terminal detach E2
 
     // Assert: the stream is released, not merely hidden.
     const detachedViewport = await page.evaluate(
-      (id) => (window as unknown as E2EWindow).__aumxTerminalDebug?.getViewportInfo(id) ?? null,
+      (id) => (window as unknown as E2EWindow).__muxbaseTerminalDebug?.getViewportInfo(id) ?? null,
       pane.id,
     );
     expect(detachedViewport).toBeNull();
@@ -175,7 +175,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Hidden pane tab terminal detach E2
       .waitFor({ state: 'visible', timeout: TERMINAL_TIMEOUT_MS });
     const reattachedViewport = await pollUntil(
       async () => page.evaluate(
-        (id) => (window as unknown as E2EWindow).__aumxTerminalDebug?.getViewportInfo(id) ?? null,
+        (id) => (window as unknown as E2EWindow).__muxbaseTerminalDebug?.getViewportInfo(id) ?? null,
         pane.id,
       ),
       { interval: 100, label: `terminal-viewport(${pane.id})`, timeout: TERMINAL_TIMEOUT_MS },

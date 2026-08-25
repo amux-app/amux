@@ -27,7 +27,7 @@ const STEP_TIMEOUT_MS = 60_000;
 const SETTLE_MS = 250;
 
 const WAITING_FLEET_SIZE = 4;
-const PROJECT = { projectName: 'aumx', projectRoot: resolve(ROOT, '..') };
+const PROJECT = { projectName: 'muxbase', projectRoot: resolve(ROOT, '..') };
 
 const ATTENTION_STAT_TEST_ID = 'resource-attention-stat';
 const ATTENTION_STAT = `[data-testid="${ATTENTION_STAT_TEST_ID}"]`;
@@ -55,7 +55,7 @@ async function seedFleet(page: Page, panes: BaselinePaneFixture[]): Promise<void
 
 async function selectedPaneId(page: Page): Promise<string | null> {
   return page.evaluate(() => {
-    const state = (window as unknown as BaselineStoreWindow).__aumxStores?.pane?.getState() as
+    const state = (window as unknown as BaselineStoreWindow).__muxbaseStores?.pane?.getState() as
       | { selectedPaneId?: string | null }
       | undefined;
     return state?.selectedPaneId ?? null;
@@ -78,7 +78,7 @@ async function closePeek(page: Page): Promise<void> {
   await page.waitForSelector(PEEK, { state: 'detached', timeout: 10_000 });
 }
 
-describe.runIf(process.env.AUMX_E2E === '1')('Attention peek queue', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('Attention peek queue', () => {
   let app: ElectronApplication;
   let page: Page;
 
@@ -87,7 +87,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Attention peek queue', () => {
 
     app = await electron.launch({
       args: [MAIN_ENTRY],
-      env: { ...process.env, AUMX_DEV: 'true', NODE_ENV: 'test' },
+      env: { ...process.env, MUXBASE_DEV: 'true', NODE_ENV: 'test' },
     });
     page = await getAppWindow(app);
     await disableBackgroundThrottling(app);

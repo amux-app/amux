@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCommandPalette } from '../../src/renderer/hooks/useCommandPalette';
 import { useCommandPaletteStore, usePaneActivityStore, usePaneStore } from '../../src/renderer/stores';
@@ -15,7 +15,7 @@ vi.mock('../../src/renderer/api/system.api', () => ({
   searchProjectText: vi.fn(),
 }));
 
-function pane(overrides: Partial<AumxPane> = {}): AumxPane {
+function pane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     id: 'p1',
     paneId: '%1',

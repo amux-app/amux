@@ -1,7 +1,7 @@
 import { existsSync } from 'fs';
 import { open } from 'fs/promises';
 import { resolve } from 'path';
-import { resolvePiSessionDirectoryForProject, resolvePiSessionDirectorySync, type AumxPane } from 'aumx/core';
+import { resolvePiSessionDirectoryForProject, resolvePiSessionDirectorySync, type MuxBasePane } from 'muxbase/core';
 import type { NormalizedSession } from '../../../shared/agent-session-types.js';
 import type { AgentLogParser } from './AgentLogParser.js';
 import { createIncrementalJsonlParser, type IncrementalParseState } from './incrementalSessionParse.js';
@@ -27,12 +27,12 @@ export class PiLogParser implements AgentLogParser {
   readonly agent = 'pi' as const;
   readonly boundFileIsExclusive = true;
 
-  getSessionDirectory(_pane: AumxPane, projectRoot: string): string | null {
+  getSessionDirectory(_pane: MuxBasePane, projectRoot: string): string | null {
     return resolvePiSessionDirectorySync(projectRoot).path;
   }
 
   async findSessionFile(
-    pane: AumxPane,
+    pane: MuxBasePane,
     projectRoot: string,
     excludePaths?: Set<string>,
   ): Promise<string | null> {

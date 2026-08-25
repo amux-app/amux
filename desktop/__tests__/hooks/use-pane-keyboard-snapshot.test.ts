@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { usePaneKeyboardSnapshot, usePaneStore } from '../../src/renderer/stores/pane.store';
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
-    id: 'aumx-1',
+    id: 'muxbase-1',
     slug: 'test-pane',
     prompt: 'do something',
     paneId: '%1',

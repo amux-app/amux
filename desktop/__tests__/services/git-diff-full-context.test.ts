@@ -9,7 +9,7 @@ describe('git diff full file context', () => {
   let repo: string;
 
   beforeEach(() => {
-    repo = mkdtempSync(join(tmpdir(), 'aumx-git-diff-context-'));
+    repo = mkdtempSync(join(tmpdir(), 'muxbase-git-diff-context-'));
     git(['init']);
     git(['config', 'user.email', 'test@example.com']);
     git(['config', 'user.name', 'Test User']);

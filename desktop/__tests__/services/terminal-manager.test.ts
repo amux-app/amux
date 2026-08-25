@@ -19,7 +19,7 @@ const { paneGeometryMock, paneStateMock } = vi.hoisted(() => ({
   paneStateMock: vi.fn(),
 }));
 
-vi.mock('aumx/core', () => ({
+vi.mock('muxbase/core', () => ({
   execAsync: vi.fn().mockResolvedValue('0'),
   execFileAsync: vi.fn().mockResolvedValue('NORMAL'),
   getStatusDetector: () => ({ notePaneActivity }),
@@ -117,7 +117,7 @@ vi.mock('fs', () => ({
   existsSync: vi.fn(() => false),
 }));
 
-import { execAsync, execFileAsync, shQuote } from 'aumx/core';
+import { execAsync, execFileAsync, shQuote } from 'muxbase/core';
 import { existsSync } from 'fs';
 import { IPC_EVENT } from '../../src/shared/ipc-channels';
 import { log } from '../../src/main/services/Logger.js';
@@ -229,7 +229,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200 });
 
     // Act
-    const dims = await manager.attach('p1', 'aumx-test', '%1');
+    const dims = await manager.attach('p1', 'muxbase-test', '%1');
     await flushMicrotasks();
 
     // Assert
@@ -250,7 +250,7 @@ describe('TerminalManager', () => {
     paneGeometryMock.mockRejectedValue(new Error("can't find pane: %404"));
 
     // Act
-    const attach = manager.attach('p1', 'aumx-test', '%404');
+    const attach = manager.attach('p1', 'muxbase-test', '%404');
 
     // Assert
     await expect(attach).rejects.toThrow('Terminal pane no longer exists');
@@ -261,13 +261,13 @@ describe('TerminalManager', () => {
 
   it('reads capture-mode pane state shell-free and still parses every tmux format', async () => {
     // Arrange — a pane id that a shell would mangle proves nothing re-quotes it.
-    const hostilePaneId = "%1'; touch /tmp/aumx-pwn; #";
+    const hostilePaneId = "%1'; touch /tmp/muxbase-pwn; #";
     const { window } = makeFakeWindow();
     const manager = new TerminalManager(window, { pollIntervalMs: 200 });
     mockTmuxState('7', '0', '4:9:1');
 
     // Act
-    await manager.attach('p1', 'aumx-test', hostilePaneId);
+    await manager.attach('p1', 'muxbase-test', hostilePaneId);
     await flushMicrotasks();
 
     // Assert — every format query is argv-based, with the raw pane id.
@@ -302,7 +302,7 @@ describe('TerminalManager', () => {
     ));
 
     // Act
-    const dimensions = await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi', undefined, true);
+    const dimensions = await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi', undefined, true);
     await flushMicrotasks();
 
     // Assert
@@ -355,7 +355,7 @@ describe('TerminalManager', () => {
     });
 
     // Act
-    await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi', undefined, true);
+    await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi', undefined, true);
     await flushMicrotasks();
 
     // Assert
@@ -394,8 +394,8 @@ describe('TerminalManager', () => {
     vi.mocked(execAsync).mockResolvedValue('0');
 
     // Act
-    const firstAttach = manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi', undefined, true, 101);
-    const secondAttach = manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi', undefined, true, 202);
+    const firstAttach = manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi', undefined, true, 101);
+    const secondAttach = manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi', undefined, true, 202);
     firstDimensions.resolve('80x24:@1:80x24:1');
     const [first, second] = await Promise.all([firstAttach, secondAttach]);
 
@@ -421,13 +421,13 @@ describe('TerminalManager', () => {
       .mockImplementationOnce(() => firstDimensions.promise)
       .mockResolvedValue('80x24:@1:80x24:1');
 
-    const canceledAttach = manager.attach('p1', 'aumx-test', '%1', undefined, undefined, false, 101);
+    const canceledAttach = manager.attach('p1', 'muxbase-test', '%1', undefined, undefined, false, 101);
     manager.unlockStdin('p1');
     manager.detach('p1');
     firstDimensions.resolve('80x24:@1:80x24:1');
     await canceledAttach;
 
-    await manager.attach('p1', 'aumx-test', '%1', undefined, undefined, false, 202);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, undefined, false, 202);
     vi.mocked(writeTerminalInput).mockClear();
     await manager.write('p1', 'must-remain-locked');
     expect(writeTerminalInput).not.toHaveBeenCalled();
@@ -449,9 +449,9 @@ describe('TerminalManager', () => {
       .mockImplementationOnce(() => replacementDimensions.promise)
       .mockResolvedValue('80x24:@1:80x24:1');
 
-    const staleAttach = manager.attach('p1', 'aumx-test', '%old', undefined, undefined, false, 101);
+    const staleAttach = manager.attach('p1', 'muxbase-test', '%old', undefined, undefined, false, 101);
     manager.detach('p1');
-    const replacementAttach = manager.attach('p1', 'aumx-test', '%new', undefined, undefined, false, 202);
+    const replacementAttach = manager.attach('p1', 'muxbase-test', '%new', undefined, undefined, false, 202);
 
     // The canceled operation finishes first while the replacement is still
     // pending. Its generation must remain stale even though its map entry was
@@ -490,7 +490,7 @@ describe('TerminalManager', () => {
 
     const firstAttach = manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 120, rows: 36 },
@@ -504,7 +504,7 @@ describe('TerminalManager', () => {
 
     const replacementAttach = manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 90, rows: 28 },
@@ -550,7 +550,7 @@ describe('TerminalManager', () => {
     vi.mocked(capturePane).mockResolvedValue('stale-capture-frame');
 
     // Act
-    const dimensions = await manager.attach('p1', 'aumx-test', '%1', undefined, undefined, false, 303);
+    const dimensions = await manager.attach('p1', 'muxbase-test', '%1', undefined, undefined, false, 303);
     await flushMicrotasks();
     vi.mocked(writeTerminalInput).mockClear();
     await manager.write('p1', 'late-write');
@@ -581,7 +581,7 @@ describe('TerminalManager', () => {
     vi.mocked(capturePane).mockResolvedValue('current-frame');
 
     // Act
-    const dimensions = await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi', undefined, true);
+    const dimensions = await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi', undefined, true);
     await flushMicrotasks();
 
     // Assert
@@ -613,7 +613,7 @@ describe('TerminalManager', () => {
     ));
 
     // Act
-    const dimensions = await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi');
+    const dimensions = await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi');
     await flushMicrotasks();
 
     // Assert
@@ -651,7 +651,7 @@ describe('TerminalManager', () => {
     ));
 
     // Act
-    const dimensions = await manager.attach('p1', 'aumx-test', '%1', undefined, undefined, true);
+    const dimensions = await manager.attach('p1', 'muxbase-test', '%1', undefined, undefined, true);
     await flushMicrotasks();
 
     // Assert
@@ -694,7 +694,7 @@ describe('TerminalManager', () => {
       transportMode: 'control',
     });
     mockTmuxState();
-    await manager.attach('p1', 'aumx-test', '%1', undefined, undefined, true, 101);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, undefined, true, 101);
     if (!controlSubscriber) throw new Error('control subscriber was not registered');
     const subscriber = controlSubscriber as {
       onOutput: (data: string) => void;
@@ -744,7 +744,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
 
     // Act
-    const dimensions = await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi', {
+    const dimensions = await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi', {
       cols: 100,
       rows: 30,
     }, true, 901);
@@ -763,7 +763,7 @@ describe('TerminalManager', () => {
       onExit: expect.any(Function),
       paneId: 'p1',
       rows: 30,
-      sessionName: 'aumx-test',
+      sessionName: 'muxbase-test',
       streamId: 901,
       tmuxPaneId: '%1',
       windowId: '@7',
@@ -809,7 +809,7 @@ describe('TerminalManager', () => {
       'last viewport',
     ].join('\n'));
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
 
     const expanded = await manager.expandSelection(
       'p1',
@@ -836,7 +836,7 @@ describe('TerminalManager', () => {
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     vi.mocked(capturePaneText).mockResolvedValue('physical\nsoft-wrapped\nrows');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
 
     const expanded = await manager.expandSelection(
       'p1',
@@ -860,7 +860,7 @@ describe('TerminalManager', () => {
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     mockTmuxState('0', '1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     vi.mocked(capturePaneText).mockClear();
 
     const expanded = await manager.expandSelection(
@@ -891,7 +891,7 @@ describe('TerminalManager', () => {
       .mockResolvedValueOnce('100x30:@7:100x30:1')
       .mockResolvedValue('100x30:@7:120x40:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
 
     // Act
     await manager.resize('p1', 100, 30);
@@ -926,7 +926,7 @@ describe('TerminalManager', () => {
       .mockResolvedValueOnce('100x30:@7:100x30:2')
       .mockResolvedValue('100x30:@7:220x60:2');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
 
     // Act
     await manager.resize('p1', 100, 30);
@@ -963,7 +963,7 @@ describe('TerminalManager', () => {
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
 
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
 
     expect(ptyServiceSpies.attach.mock.calls[0]?.[0]).not.toHaveProperty('allowClipboard');
 
@@ -979,7 +979,7 @@ describe('TerminalManager', () => {
     });
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
 
-    await manager.attach('p1', 'aumx-test', '%1', undefined, {
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, {
       cols: 80,
       rows: 24,
     }, true, 902);
@@ -1014,7 +1014,7 @@ describe('TerminalManager', () => {
 
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -1058,7 +1058,7 @@ describe('TerminalManager', () => {
 
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -1090,7 +1090,7 @@ describe('TerminalManager', () => {
 
       await manager.attach(
         'p1',
-        'aumx-test',
+        'muxbase-test',
         '%1',
         '/tmp/pane.ansi',
         { cols: 100, rows: 30 },
@@ -1120,7 +1120,7 @@ describe('TerminalManager', () => {
 
     const attaching = manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -1154,7 +1154,7 @@ describe('TerminalManager', () => {
 
     const attaching = manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -1188,7 +1188,7 @@ describe('TerminalManager', () => {
 
     const staleAttach = manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -1202,7 +1202,7 @@ describe('TerminalManager', () => {
 
     const replacement = await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -1236,7 +1236,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
 
     // Act
-    const dimensions = await manager.attach('p1', 'aumx-test', '%1', undefined, {
+    const dimensions = await manager.attach('p1', 'muxbase-test', '%1', undefined, {
       cols: 104,
       rows: 30,
     }, true, 901);
@@ -1255,13 +1255,13 @@ describe('TerminalManager', () => {
 
   it('shell-quotes the tmux pane id at every authoritative resize boundary', async () => {
     const { window } = makeFakeWindow();
-    const maliciousPaneId = "%1'; touch /tmp/aumx-injected; #";
+    const maliciousPaneId = "%1'; touch /tmp/muxbase-injected; #";
     mockVerifiedPaneResize('80x24:@7:80x24:1', '100x24:@7:100x24:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'classic' });
 
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       maliciousPaneId,
       undefined,
       { cols: 80, rows: 24 },
@@ -1298,7 +1298,7 @@ describe('TerminalManager', () => {
 
     const dimensions = await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 120, rows: 30 },
@@ -1332,7 +1332,7 @@ describe('TerminalManager', () => {
 
     await expect(manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 100, rows: 30 },
@@ -1360,7 +1360,7 @@ describe('TerminalManager', () => {
 
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 100, rows: 30 },
@@ -1395,7 +1395,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 100, rows: 30 },
@@ -1429,7 +1429,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 100, rows: 30 },
@@ -1456,7 +1456,7 @@ describe('TerminalManager', () => {
 
     const dimensions = await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 120, rows: 30 },
@@ -1486,7 +1486,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'classic' });
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 100, rows: 30 },
@@ -1508,7 +1508,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'classic' });
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 80, rows: 24 },
@@ -1533,7 +1533,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'classic' });
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 100, rows: 30 },
@@ -1550,7 +1550,7 @@ describe('TerminalManager', () => {
 
     const rehydrated = await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 100, rows: 30 },
@@ -1591,7 +1591,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    const dimensions = await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    const dimensions = await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     expect(dimensions).toEqual(expect.objectContaining({ cols: 100, rows: 30, streamId: 901, windowId: '@7' }));
     expect(ptyServiceSpies.attach).toHaveBeenCalledTimes(1);
     manager.unlockStdin('p1');
@@ -1637,7 +1637,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     vi.mocked(execFileAsync).mockResolvedValue(stdout);
 
@@ -1663,7 +1663,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     vi.mocked(execAsync).mockClear();
     paneStateMock.mockClear();
 
@@ -1695,7 +1695,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     handle.write.mockClear();
     vi.mocked(execAsync).mockClear().mockImplementation(async (command: string) => {
@@ -1729,7 +1729,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
 
     await expect(manager.submitCommand('p1', '%1', 'must-not-run')).rejects.toThrow(/input is locked/i);
     expect(handle.write).not.toHaveBeenCalled();
@@ -1744,7 +1744,7 @@ describe('TerminalManager', () => {
   it('authoritatively cancels copy-mode before a managed classic command and reports unmanaged panes', async () => {
     const { window } = makeFakeWindow();
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'classic' });
-    await manager.attach('p1', 'aumx-test', '%1');
+    await manager.attach('p1', 'muxbase-test', '%1');
     manager.unlockStdin('p1');
     vi.mocked(execAsync).mockClear();
     vi.mocked(submitTerminalCommand).mockClear();
@@ -1763,7 +1763,7 @@ describe('TerminalManager', () => {
     const { window } = makeFakeWindow();
     const submissionGate = createDeferred<void>();
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'classic' });
-    await manager.attach('p1', 'aumx-test', '%1');
+    await manager.attach('p1', 'muxbase-test', '%1');
     manager.unlockStdin('p1');
     vi.mocked(execAsync).mockClear().mockResolvedValue('0');
     vi.mocked(writeTerminalInput).mockClear();
@@ -1801,7 +1801,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     handle.write.mockClear();
     vi.mocked(execAsync).mockClear();
@@ -1825,7 +1825,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     handle.write.mockClear();
     vi.mocked(execFileAsync).mockImplementation(async (cmd: string, args: readonly string[]) => {
@@ -1857,7 +1857,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     vi.mocked(submitTerminalCommand).mockRejectedValueOnce(new Error('tmux target disappeared'));
 
@@ -1878,7 +1878,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     await manager.scroll('p1', 'up', 5);
     vi.mocked(execAsync).mockClear().mockResolvedValue('0');
@@ -1922,7 +1922,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
 
     const guardedScroll = createDeferred<string>();
@@ -1975,7 +1975,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(oldHandle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
 
     const oldResizeVerification = createDeferred<string>();
     paneGeometryMock.mockReset()
@@ -1988,7 +1988,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(replacementHandle);
     const replacementAttach = manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 120, rows: 36 },
@@ -2011,7 +2011,7 @@ describe('TerminalManager', () => {
   it('lets a replacement classic attach become the final geometry owner after a stale resize', async () => {
     const { window } = makeFakeWindow();
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'classic' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, undefined, false, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, undefined, false, 901);
 
     const staleAlternateCheck = createDeferred<string>();
     let alternateCheckBlocked = true;
@@ -2030,7 +2030,7 @@ describe('TerminalManager', () => {
     mockVerifiedPaneResize('80x24:@1:80x24:1', '90x28:@1:90x28:1');
     const replacementAttach = manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 90, rows: 28 },
@@ -2070,7 +2070,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(oldHandle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     vi.mocked(execAsync).mockClear();
 
@@ -2098,7 +2098,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(replacementHandle);
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 100, rows: 30 },
@@ -2129,7 +2129,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     let alternateOn = false;
     vi.mocked(execFileAsync).mockImplementation(async (cmd: string, args: readonly string[]) => {
@@ -2195,7 +2195,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
 
     vi.mocked(execAsync).mockImplementation(async (command: string) => {
@@ -2261,7 +2261,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
 
     vi.mocked(execFileAsync).mockImplementation(async (cmd: string, args: readonly string[]) => {
@@ -2303,7 +2303,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     await manager.scroll('p1', 'up', 3);
 
@@ -2347,7 +2347,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     await manager.scroll('p1', 'up', 3);
     handle.write.mockClear();
@@ -2389,7 +2389,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     await manager.scroll('p1', 'up', 3);
 
@@ -2424,7 +2424,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     await manager.scroll('p1', 'up', 3);
 
@@ -2456,7 +2456,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     await manager.scroll('p1', 'up', 3);
 
@@ -2506,7 +2506,7 @@ describe('TerminalManager', () => {
       .mockResolvedValueOnce(secondHandle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     await flushMicrotasks();
 
@@ -2540,7 +2540,7 @@ describe('TerminalManager', () => {
     await vi.waitFor(() => expect(events).toContain('scroll-started'));
     const reattachPromise = manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 100, rows: 30 },
@@ -2572,7 +2572,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
 
     // Act
@@ -2607,7 +2607,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     await manager.scroll('p1', 'up', 3);
     vi.mocked(execAsync).mockClear();
@@ -2642,7 +2642,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     await manager.scroll('p1', 'up', 3);
     vi.mocked(execFileAsync).mockImplementation(async (cmd: string, args: readonly string[]) => {
@@ -2670,7 +2670,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     vi.mocked(execFileAsync).mockClear();
 
@@ -2700,7 +2700,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     vi.mocked(execFileAsync).mockImplementation(async (cmd: string, args: readonly string[]) => {
       if (cmd === 'tmux' && (args as string[]).includes('if-shell')) return 'GARBAGE';
@@ -2729,7 +2729,7 @@ describe('TerminalManager', () => {
     ptyServiceSpies.attach.mockResolvedValue(handle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     await manager.scroll('p1', 'up', 3);
     vi.mocked(execFileAsync).mockClear();
@@ -2779,7 +2779,7 @@ describe('TerminalManager', () => {
       .mockResolvedValueOnce('100x30:@7:100x30:1')
       .mockResolvedValue('144x37:@7:144x37:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, false, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, false, 901);
     send.mockClear();
     vi.mocked(capturePane).mockClear().mockResolvedValue('pty-rehydrate-frame');
     vi.mocked(formatScrollbackInsert).mockClear();
@@ -2787,7 +2787,7 @@ describe('TerminalManager', () => {
 
     // Act: the remount requests a different container size; the pane follows
     // it 1:1 like a regular terminal and the client reattaches at that grid.
-    const dimensions = await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 144, rows: 37 }, false, 902);
+    const dimensions = await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 144, rows: 37 }, false, 902);
     await flushMicrotasks();
 
     // Assert
@@ -2829,7 +2829,7 @@ describe('TerminalManager', () => {
       .mockResolvedValueOnce(replacementHandle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
 
     const reattachDimensions = createDeferred<string>();
     paneGeometryMock.mockReset()
@@ -2837,7 +2837,7 @@ describe('TerminalManager', () => {
       .mockResolvedValue('120x36:@7:120x36:1');
     const reattaching = manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       undefined,
@@ -2883,7 +2883,7 @@ describe('TerminalManager', () => {
 
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 100, rows: 30 },
@@ -2893,7 +2893,7 @@ describe('TerminalManager', () => {
     );
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 80, rows: 30 },
@@ -2927,7 +2927,7 @@ describe('TerminalManager', () => {
       .mockResolvedValueOnce(replacementHandle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     manager.unlockStdin('p1');
     const attachOptions = ptyServiceSpies.attach.mock.calls[0]?.[0];
 
@@ -2964,7 +2964,7 @@ describe('TerminalManager', () => {
       .mockResolvedValueOnce(secondHandle);
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     const attachOptions = ptyServiceSpies.attach.mock.calls[0]?.[0];
 
     // Act
@@ -3021,11 +3021,11 @@ describe('TerminalManager', () => {
         .mockResolvedValueOnce(redundantRecovery);
       paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
       manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-      await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+      await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
       const firstAttachOptions = ptyServiceSpies.attach.mock.calls[0]?.[0];
 
       firstAttachOptions.onExit('p1', { exitCode: 1 });
-      await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 902);
+      await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 902);
       expect(ptyServiceSpies.attach).toHaveBeenCalledTimes(2);
 
       await vi.advanceTimersByTimeAsync(300);
@@ -3061,7 +3061,7 @@ describe('TerminalManager', () => {
       .mockResolvedValueOnce('80x30:@7:80x30:1')
       .mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901, 100);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901, 100);
     const attachOptions = ptyServiceSpies.attach.mock.calls[0]?.[0];
 
     // Act
@@ -3100,7 +3100,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 100, rows: 30 },
@@ -3156,7 +3156,7 @@ describe('TerminalManager', () => {
         .mockResolvedValueOnce(thirdHandle);
       paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
       manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-      await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+      await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
       const firstAttachOptions = ptyServiceSpies.attach.mock.calls[0]?.[0];
 
       // Act: first exit recovers.
@@ -3213,7 +3213,7 @@ describe('TerminalManager', () => {
       .mockResolvedValueOnce('100x30:@7:100x30:1')
       .mockResolvedValue('120x36:@7:120x36:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     const attachOptions = ptyServiceSpies.attach.mock.calls[0]?.[0];
 
     // Act: the resize lands mid-recovery and updates tmux; the recovery
@@ -3252,7 +3252,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
 
     // Act
-    const dimensions = await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi', undefined, true, 902);
+    const dimensions = await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi', undefined, true, 902);
     await flushMicrotasks();
 
     // Assert
@@ -3273,7 +3273,7 @@ describe('TerminalManager', () => {
       expect.objectContaining({
         error: 'native pty unavailable',
         paneId: 'p1',
-        sessionName: 'aumx-test',
+        sessionName: 'muxbase-test',
         tmuxPaneId: '%1',
       }),
     );
@@ -3298,7 +3298,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%old',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -3308,7 +3308,7 @@ describe('TerminalManager', () => {
 
     const staleRehydrate = manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%old',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -3350,7 +3350,7 @@ describe('TerminalManager', () => {
 
     const dimensions = await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 140, rows: 30 },
@@ -3381,7 +3381,7 @@ describe('TerminalManager', () => {
     vi.mocked(capturePane).mockResolvedValue('current-frame');
 
     // Act
-    const dimensions = await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi');
+    const dimensions = await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi');
     await flushMicrotasks();
 
     // Assert
@@ -3409,7 +3409,7 @@ describe('TerminalManager', () => {
     vi.mocked(capturePane).mockResolvedValue('alternate-frame');
 
     // Act
-    await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi');
+    await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi');
     await flushMicrotasks();
 
     // Assert
@@ -3441,7 +3441,7 @@ describe('TerminalManager', () => {
     vi.mocked(capturePane).mockResolvedValue('current-frame');
 
     // Act
-    const dimensions = await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi', {
+    const dimensions = await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi', {
       cols: 80,
       rows: 24,
     });
@@ -3472,7 +3472,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200 });
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(capturePane).mockResolvedValue('first-frame');
-    const first = await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi', undefined, true, 101);
+    const first = await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi', undefined, true, 101);
     await flushMicrotasks();
     send.mockClear();
     vi.mocked(capturePane).mockClear();
@@ -3489,7 +3489,7 @@ describe('TerminalManager', () => {
 
     // Act
     paneGeometryMock.mockResolvedValue('40x10:@9:40x10:1'); // would-be new dims
-    const second = await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi', undefined, true, 202);
+    const second = await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi', undefined, true, 202);
     await flushMicrotasks();
 
     // Assert
@@ -3532,7 +3532,7 @@ describe('TerminalManager', () => {
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 100, rows: 30 },
@@ -3553,7 +3553,7 @@ describe('TerminalManager', () => {
     let settled = false;
     const attaching = manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       { cols: 100, rows: 30 },
@@ -3590,7 +3590,7 @@ describe('TerminalManager', () => {
     const { window } = makeFakeWindow();
     const capture = createDeferred<string>();
     const manager = new TerminalManager(window, { pollIntervalMs: 5_000, transportMode: 'classic' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, undefined, false, 101);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, undefined, false, 101);
     await flushMicrotasks();
 
     vi.mocked(capturePane).mockReset().mockImplementationOnce(() => capture.promise);
@@ -3599,7 +3599,7 @@ describe('TerminalManager', () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
     const attaching = manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       undefined,
@@ -3626,7 +3626,7 @@ describe('TerminalManager', () => {
 
     await expect(manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -3638,7 +3638,7 @@ describe('TerminalManager', () => {
     expect(transcriptStreamSpies.dispose).toHaveBeenCalledTimes(1);
     const second = await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -3662,7 +3662,7 @@ describe('TerminalManager', () => {
     const { window } = makeFakeWindow();
     const manager = new TerminalManager(window, { pollIntervalMs: 200 });
     vi.mocked(existsSync).mockReturnValue(true);
-    await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi', undefined, true, 101);
+    await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi', undefined, true, 101);
     await flushMicrotasks();
     vi.mocked(execAsync).mockClear();
     transcriptStreamSpies.replayExistingData.mockClear();
@@ -3671,7 +3671,7 @@ describe('TerminalManager', () => {
     mockVerifiedPaneResize('80x24:@1:80x24:1', '120x36:@1:120x36:1');
 
     // Act
-    const second = await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi', {
+    const second = await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi', {
       cols: 120,
       rows: 36,
     }, true, 202);
@@ -3704,7 +3704,7 @@ describe('TerminalManager', () => {
     vi.mocked(execAsync).mockClear();
 
     // Act
-    const attached = await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi', {
+    const attached = await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi', {
       cols: 80,
       rows: 24,
     }, true, 101);
@@ -3742,7 +3742,7 @@ describe('TerminalManager', () => {
     vi.mocked(execAsync).mockClear();
 
     // Act
-    const attached = await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi', {
+    const attached = await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi', {
       cols: 120,
       rows: 36,
     }, true, 101);
@@ -3778,7 +3778,7 @@ describe('TerminalManager', () => {
       .mockResolvedValue('132x42:@1:132x42:1');
 
     // Act
-    await manager.attach('p1', 'aumx-test', '%1', undefined, {
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, {
       cols: 118,
       rows: 34,
     });
@@ -3822,7 +3822,7 @@ describe('TerminalManager', () => {
     });
 
     // Act
-    await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi', undefined, true, 101);
+    await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi', undefined, true, 101);
     await flushMicrotasks();
 
     // Assert
@@ -3846,7 +3846,7 @@ describe('TerminalManager', () => {
     vi.mocked(execAsync).mockClear();
 
     // Act
-    const attached = await manager.attach('p1', 'aumx-test', '%1', undefined, {
+    const attached = await manager.attach('p1', 'muxbase-test', '%1', undefined, {
       cols: 80,
       rows: 24,
     }, true, 101);
@@ -3877,7 +3877,7 @@ describe('TerminalManager', () => {
     ));
 
     // Act
-    await manager.attach('p1', 'aumx-test', '%1', '/tmp/missing.ansi', undefined, true);
+    await manager.attach('p1', 'muxbase-test', '%1', '/tmp/missing.ansi', undefined, true);
     await flushMicrotasks();
 
     // Assert
@@ -3895,7 +3895,7 @@ describe('TerminalManager', () => {
     // Arrange
     const { window } = makeFakeWindow();
     const manager = new TerminalManager(window, { pollIntervalMs: 200 });
-    await manager.attach('p1', 'aumx-test', '%1');
+    await manager.attach('p1', 'muxbase-test', '%1');
     await flushMicrotasks();
 
     const captureCallsBeforeDetach = vi.mocked(capturePane).mock.calls.length;
@@ -3916,7 +3916,7 @@ describe('TerminalManager', () => {
     // Arrange
     const { window } = makeFakeWindow();
     const manager = new TerminalManager(window, { pollIntervalMs: 200 });
-    await manager.attach('p1', 'aumx-test', '%1');
+    await manager.attach('p1', 'muxbase-test', '%1');
     vi.mocked(execAsync).mockClear();
     vi.mocked(execAsync).mockResolvedValue('0');
     mockVerifiedPaneResize('80x24:@1:80x24:1', '100x30:@1:100x30:1');
@@ -3947,7 +3947,7 @@ describe('TerminalManager', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(execAsync).mockResolvedValue('0');
     vi.mocked(capturePane).mockResolvedValue('initial-frame');
-    await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi');
+    await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi');
     await flushMicrotasks();
     send.mockClear();
     vi.mocked(capturePane).mockClear();
@@ -3984,7 +3984,7 @@ describe('TerminalManager', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(execAsync).mockResolvedValue('0');
     vi.mocked(capturePane).mockResolvedValue('initial-frame');
-    await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi');
+    await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi');
     await flushMicrotasks();
     vi.mocked(execAsync).mockClear();
     transcriptStreamSpies.discardBufferedDataAndSeekToEnd.mockClear();
@@ -4012,7 +4012,7 @@ describe('TerminalManager', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(execAsync).mockResolvedValue('0');
     vi.mocked(capturePane).mockResolvedValue('initial-frame');
-    await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi');
+    await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi');
     await flushMicrotasks();
     vi.useFakeTimers();
     send.mockClear();
@@ -4049,7 +4049,7 @@ describe('TerminalManager', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(execAsync).mockResolvedValue('0');
     vi.mocked(capturePane).mockResolvedValue('initial-frame');
-    await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi', undefined, true);
+    await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi', undefined, true);
     await flushMicrotasks();
     send.mockClear();
     vi.mocked(execAsync).mockClear();
@@ -4087,7 +4087,7 @@ describe('TerminalManager', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(execAsync).mockResolvedValue('0');
     vi.mocked(capturePane).mockResolvedValue('initial-frame');
-    await manager.attach('p1', 'aumx-test', '%1', '/tmp/pane.ansi');
+    await manager.attach('p1', 'muxbase-test', '%1', '/tmp/pane.ansi');
     await flushMicrotasks();
     vi.mocked(execAsync).mockClear();
     transcriptStreamSpies.discardBufferedDataAndSeekToEnd.mockClear();
@@ -4114,7 +4114,7 @@ describe('TerminalManager', () => {
     // Arrange
     const { window } = makeFakeWindow();
     const manager = new TerminalManager(window, { pollIntervalMs: 200 });
-    await manager.attach('p1', 'aumx-test', '%1');
+    await manager.attach('p1', 'muxbase-test', '%1');
     // Newly attached streams start with stdin locked — unlock first.
     manager.unlockStdin('p1');
 
@@ -4131,7 +4131,7 @@ describe('TerminalManager', () => {
     // Arrange
     const { window } = makeFakeWindow();
     const manager = new TerminalManager(window, { pollIntervalMs: 200 });
-    await manager.attach('p1', 'aumx-test', '%1');
+    await manager.attach('p1', 'muxbase-test', '%1');
     // Do NOT unlockStdin — stream stays in locked state from attach.
 
     // Act
@@ -4146,7 +4146,7 @@ describe('TerminalManager', () => {
   it('does not let an old capture failure detach a rehydrated stream generation', async () => {
     const { window } = makeFakeWindow();
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'classic' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, undefined, false, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, undefined, false, 901);
     await flushMicrotasks();
     manager.unlockStdin('p1');
 
@@ -4159,7 +4159,7 @@ describe('TerminalManager', () => {
 
     const rehydrated = manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       undefined,
       undefined,
@@ -4179,7 +4179,7 @@ describe('TerminalManager', () => {
   it('does not let an old capture failure detach a replacement stream object', async () => {
     const { window } = makeFakeWindow();
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'classic' });
-    await manager.attach('p1', 'aumx-test', '%old', undefined, undefined, false, 901);
+    await manager.attach('p1', 'muxbase-test', '%old', undefined, undefined, false, 901);
     await flushMicrotasks();
     manager.unlockStdin('p1');
 
@@ -4193,7 +4193,7 @@ describe('TerminalManager', () => {
     manager.detach('p1');
     const replacement = await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%new',
       undefined,
       undefined,
@@ -4215,7 +4215,7 @@ describe('TerminalManager', () => {
   it('pauses capture polling while hidden and restores from a reset snapshot', async () => {
     const { window, send } = makeFakeWindow();
     const manager = new TerminalManager(window, { pollIntervalMs: 50, transportMode: 'classic' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, undefined, false, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, undefined, false, 901);
     await flushMicrotasks();
     vi.mocked(capturePane).mockClear();
     send.mockClear();
@@ -4241,7 +4241,7 @@ describe('TerminalManager', () => {
   it('finishes restoring when show arrives during an earlier restore', async () => {
     const { window, send } = makeFakeWindow();
     const manager = new TerminalManager(window, { pollIntervalMs: 50, transportMode: 'classic' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, undefined, false, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, undefined, false, 901);
     await flushMicrotasks();
     const firstRestore = createDeferred<string>();
     vi.mocked(capturePane).mockReset()
@@ -4286,7 +4286,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -4323,7 +4323,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -4361,7 +4361,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -4376,7 +4376,7 @@ describe('TerminalManager', () => {
     firstAttach.onScreenReaderDetected('p1');
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -4420,7 +4420,7 @@ describe('TerminalManager', () => {
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
     await manager.attach(
-      'p1', 'aumx-test', '%1', '/tmp/pane.ansi',
+      'p1', 'muxbase-test', '%1', '/tmp/pane.ansi',
       { cols: 100, rows: 30 }, true, 901, undefined, true,
     );
     const firstAttach = ptyServiceSpies.attach.mock.calls[0]?.[0];
@@ -4428,7 +4428,7 @@ describe('TerminalManager', () => {
 
     manager.detach('p1');
     await manager.attach(
-      'p1', 'aumx-test', '%1', '/tmp/pane.ansi',
+      'p1', 'muxbase-test', '%1', '/tmp/pane.ansi',
       { cols: 100, rows: 30 }, true, 902, undefined, true,
     );
 
@@ -4460,7 +4460,7 @@ describe('TerminalManager', () => {
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
     await manager.attach(
-      'p1', 'aumx-test', '%1', '/tmp/pane.ansi',
+      'p1', 'muxbase-test', '%1', '/tmp/pane.ansi',
       { cols: 100, rows: 30 }, true, 901, undefined, true,
     );
     const firstAttach = ptyServiceSpies.attach.mock.calls[0]?.[0];
@@ -4468,7 +4468,7 @@ describe('TerminalManager', () => {
 
     manager.removePane('p1');
     await manager.attach(
-      'p1', 'aumx-test', '%1', '/tmp/pane.ansi',
+      'p1', 'muxbase-test', '%1', '/tmp/pane.ansi',
       { cols: 100, rows: 30 }, true, 902, undefined, true,
     );
 
@@ -4491,7 +4491,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -4535,7 +4535,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -4588,7 +4588,7 @@ describe('TerminalManager', () => {
     manager.suspendRendererDelivery();
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -4611,7 +4611,7 @@ describe('TerminalManager', () => {
     manager.suspendRendererDelivery();
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       undefined,
@@ -4630,7 +4630,7 @@ describe('TerminalManager', () => {
   it('serializes classic resume restore with a concurrent resize', async () => {
     const { window } = makeFakeWindow();
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'classic' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, undefined, false, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, undefined, false, 901);
     await flushMicrotasks();
     const restoreCapture = createDeferred<string>();
     vi.mocked(capturePane).mockReset()
@@ -4666,7 +4666,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
     await manager.attach(
       'p1',
-      'aumx-test',
+      'muxbase-test',
       '%1',
       '/tmp/pane.ansi',
       { cols: 100, rows: 30 },
@@ -4689,7 +4689,7 @@ describe('TerminalManager', () => {
     // Arrange
     const { window } = makeFakeWindow();
     const manager = new TerminalManager(window, { pollIntervalMs: 200 });
-    await manager.attach('p1', 'aumx-test', '%1');
+    await manager.attach('p1', 'muxbase-test', '%1');
 
     // Simulate tmux refusing further captures
     vi.mocked(capturePane).mockRejectedValue(new Error("can't find pane: %1"));
@@ -4731,7 +4731,7 @@ describe('TerminalManager', () => {
       transportMode: 'control',
     });
     mockTmuxState();
-    await manager.attach('p1', 'aumx-test', '%1', undefined, undefined, true, 201);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, undefined, true, 201);
     if (!controlSubscriber) throw new Error('control subscriber not registered');
     send.mockClear();
 
@@ -4767,7 +4767,7 @@ describe('TerminalManager', () => {
       .mockRejectedValue(new Error('pty reattach unavailable'));
     paneGeometryMock.mockResolvedValue('100x30:@7:100x30:1');
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
-    await manager.attach('p1', 'aumx-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, { cols: 100, rows: 30 }, true, 901);
     const attachOptions = ptyServiceSpies.attach.mock.calls[0]?.[0];
     send.mockClear();
 
@@ -4798,7 +4798,7 @@ describe('TerminalManager', () => {
     const manager = new TerminalManager(window, { pollIntervalMs: 200, transportMode: 'pty' });
 
     // Act
-    await manager.attach('p1', 'aumx-test', '%1', undefined, undefined, true, 902);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, undefined, true, 902);
     await flushMicrotasks();
 
     // Assert: no stream mode changed event on initial attach
@@ -4835,7 +4835,7 @@ describe('TerminalManager', () => {
       transportMode: 'control',
     });
     mockTmuxState();
-    await manager.attach('p1', 'aumx-test', '%1', undefined, undefined, true, 301);
+    await manager.attach('p1', 'muxbase-test', '%1', undefined, undefined, true, 301);
     if (!controlSubscriber) throw new Error('control subscriber not registered');
 
     // Detach before the runtime fallback fires

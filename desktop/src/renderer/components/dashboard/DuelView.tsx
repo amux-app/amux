@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { PaneActivityState } from '../../../shared/pane-activity';
 import { ArrowLeft, Trophy } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -20,7 +20,7 @@ const ROLE_CHIP_CLASS: Record<'a' | 'b', string> = {
   b: 'bg-teal-500/15 text-teal-400 ring-1 ring-teal-500/40',
 };
 
-function paneLabelOf(pane: AumxPane): string {
+function paneLabelOf(pane: MuxBasePane): string {
   return pane.title || pane.slug || pane.id;
 }
 
@@ -39,7 +39,7 @@ function RoleChip({ role, size = 'sm' }: { role: 'a' | 'b'; size?: 'sm' | 'md' }
   );
 }
 
-function SideIdentity({ pane, status, justFinished }: { pane: AumxPane; status: PaneActivityState; justFinished: boolean }) {
+function SideIdentity({ pane, status, justFinished }: { pane: MuxBasePane; status: PaneActivityState; justFinished: boolean }) {
   const role = pane.duel?.role ?? 'a';
   const detail = [pane.model, pane.effort].filter(Boolean).join(' · ');
 
@@ -56,7 +56,7 @@ function SideIdentity({ pane, status, justFinished }: { pane: AumxPane; status: 
   );
 }
 
-function WinnerButton({ pane, onDeclare }: { pane: AumxPane; onDeclare: (pane: AumxPane) => void }) {
+function WinnerButton({ pane, onDeclare }: { pane: MuxBasePane; onDeclare: (pane: MuxBasePane) => void }) {
   return (
     <HoverTooltip label={`Declare ${paneLabelOf(pane)} the winner`} className="flex shrink-0 items-center">
       <button
@@ -73,9 +73,9 @@ function WinnerButton({ pane, onDeclare }: { pane: AumxPane; onDeclare: (pane: A
 
 interface DuelHeaderProps {
   onBack: () => void;
-  onDeclare: (pane: AumxPane) => void;
-  paneA: AumxPane;
-  paneB: AumxPane;
+  onDeclare: (pane: MuxBasePane) => void;
+  paneA: MuxBasePane;
+  paneB: MuxBasePane;
   prompt: string;
   statusA: PaneActivityState;
   statusB: PaneActivityState;
@@ -130,7 +130,7 @@ export function DuelView() {
   const panes = usePaneStore((s) => s.panes);
   const justFinishedIds = usePaneActivityStore((s) => s.justFinishedPaneIds);
   const { declareDuelWinner } = usePaneActions();
-  const [pendingWinner, setPendingWinner] = useState<AumxPane | null>(null);
+  const [pendingWinner, setPendingWinner] = useState<MuxBasePane | null>(null);
 
   const duelPair = useMemo(() => resolveDuelPair(panes, duelGroupId), [duelGroupId, panes]);
   const statusA = usePaneEffectiveStatus(duelPair?.[0]);
@@ -177,7 +177,7 @@ export function DuelView() {
           <Panel defaultSize={50} minSize={25}>
             <InteractiveTerminal pane={paneA} />
           </Panel>
-          <Separator className="aumx-resize-handle" data-testid="duel-terminal-separator" />
+          <Separator className="muxbase-resize-handle" data-testid="duel-terminal-separator" />
           <Panel defaultSize={50} minSize={25}>
             <InteractiveTerminal pane={paneB} />
           </Panel>

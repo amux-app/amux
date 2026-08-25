@@ -1,4 +1,4 @@
-import type { AumxPane, PreservedWorktree } from 'aumx/core';
+import type { MuxBasePane, PreservedWorktree } from 'muxbase/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const core = vi.hoisted(() => ({
@@ -9,8 +9,8 @@ const core = vi.hoisted(() => ({
   triggerHook: vi.fn(),
 }));
 
-vi.mock('aumx/core', async () => {
-  const actual = await vi.importActual<typeof import('aumx/core')>('aumx/core');
+vi.mock('muxbase/core', async () => {
+  const actual = await vi.importActual<typeof import('muxbase/core')>('muxbase/core');
   return {
     ...actual,
     createWorktreeForPane: core.createWorktreeForPane,
@@ -23,7 +23,7 @@ vi.mock('aumx/core', async () => {
 
 import { WorktreeWorkflow } from '../../src/main/services/bridge/WorktreeWorkflow.js';
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     id: 'pane',
     paneId: '%1',
@@ -45,7 +45,7 @@ function makeWorktree(overrides: Partial<PreservedWorktree> = {}): PreservedWork
   };
 }
 
-function makeHarness(initialPanes: AumxPane[] = [makePane()], active = true) {
+function makeHarness(initialPanes: MuxBasePane[] = [makePane()], active = true) {
   let panes = initialPanes;
   const dependencies = {
     ensureValidControlPaneId: vi.fn(async () => undefined),
@@ -53,13 +53,13 @@ function makeHarness(initialPanes: AumxPane[] = [makePane()], active = true) {
     getPanes: vi.fn(() => panes),
     getProjectName: vi.fn(() => 'project'),
     getProjectRoot: vi.fn(() => '/project'),
-    getSessionName: vi.fn(() => 'aumx-project'),
+    getSessionName: vi.fn(() => 'muxbase-project'),
     hasActiveProjectContext: vi.fn(() => active),
     killPane: vi.fn(async () => undefined),
     newWindowPane: vi.fn(async () => '%9'),
-    replacePanesBestEffort: vi.fn((next: AumxPane[]) => { panes = next; }),
+    replacePanesBestEffort: vi.fn((next: MuxBasePane[]) => { panes = next; }),
     resumePaneWatcher: vi.fn(),
-    saveReopenedPane: vi.fn((pane: AumxPane) => { panes = [...panes, pane]; }),
+    saveReopenedPane: vi.fn((pane: MuxBasePane) => { panes = [...panes, pane]; }),
     sendProgress: vi.fn(),
     sendShellCommand: vi.fn(async () => undefined),
     sendTmuxKeys: vi.fn(async () => undefined),

@@ -56,7 +56,7 @@ describe('TmuxControlModeClient', () => {
     const firstPaneOutput = vi.fn();
     const secondPaneOutput = vi.fn();
 
-    await client.ensureStarted('aumx-test');
+    await client.ensureStarted('muxbase-test');
     client.subscribePane('%1', { onOutput: firstPaneOutput, onUnavailable: vi.fn() });
     client.subscribePane('%2', { onOutput: secondPaneOutput, onUnavailable: vi.fn() });
 
@@ -72,7 +72,7 @@ describe('TmuxControlModeClient', () => {
     const client = new TmuxControlModeClient(() => process);
     const onUnavailable = vi.fn();
 
-    await client.ensureStarted('aumx-test');
+    await client.ensureStarted('muxbase-test');
     client.subscribePane('%1', { onOutput: vi.fn(), onUnavailable });
 
     process.emitExit();
@@ -84,7 +84,7 @@ describe('TmuxControlModeClient', () => {
     const process = new FakeControlProcess();
     const client = new TmuxControlModeClient(() => process);
 
-    await client.ensureStarted('aumx-test');
+    await client.ensureStarted('muxbase-test');
 
     expect(client.sendCommand('refresh-client -C 120x40')).toBe(true);
     expect(process.stdin.read()?.toString('utf8')).toBe('refresh-client -C 120x40\n');

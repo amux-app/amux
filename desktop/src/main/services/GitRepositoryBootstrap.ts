@@ -1,4 +1,4 @@
-import { execAsync } from 'aumx/core';
+import { execAsync } from 'muxbase/core';
 
 interface EnsureGitRepositoryOptions {
   initIfMissing: boolean;

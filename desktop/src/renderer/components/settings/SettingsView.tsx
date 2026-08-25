@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import type { SettingDefinition, SettingsScope } from 'aumx/core';
+import type { SettingDefinition, SettingsScope } from 'muxbase/core';
 import { cn } from '../../lib/cn';
 import { useElectronSettingsStore, useSettingsStore, useUiStore } from '../../stores';
 import type { SettingsCategory } from '../../stores/ui.store';
@@ -26,7 +26,7 @@ const CATEGORIES: { id: SettingsCategory; label: string }[] = [
   { id: 'about', label: 'About' },
 ];
 
-const AUMX_GROUPS: Record<string, string[]> = {
+const MUXBASE_GROUPS: Record<string, string[]> = {
   agent: [
     'permissionMode', 'defaultAgent',
     'claudeModel', 'claudeEffort', 'claudeFullscreenRendering',
@@ -82,7 +82,7 @@ function orderSectionEntries(buckets: Map<string, SettingDefinition[]>, preferre
   return [...knownInOrder, ...unknown];
 }
 
-function AumxCoreCategory({ groupKey, title, sectionOrder }: { groupKey: string; title: string; sectionOrder?: readonly string[] }) {
+function MuxBaseCoreCategory({ groupKey, title, sectionOrder }: { groupKey: string; title: string; sectionOrder?: readonly string[] }) {
   const [scope, setScope] = useState<SettingsScope>('global');
   const definitions = useSettingsStore((s) => s.definitions);
   const loadSettingDefinitions = useSettingsStore((s) => s.loadSettingDefinitions);
@@ -98,7 +98,7 @@ function AumxCoreCategory({ groupKey, title, sectionOrder }: { groupKey: string;
   }, [loadSettingDefinitions]);
 
   const orderedSections = useMemo(() => {
-    const keys = AUMX_GROUPS[groupKey] ?? [];
+    const keys = MUXBASE_GROUPS[groupKey] ?? [];
     const groupDefs = definitions.filter((d) => keys.includes(d.key));
     const buckets = bucketBySection(groupDefs);
     return orderSectionEntries(buckets, sectionOrder ?? [DEFAULT_SECTION]);
@@ -220,8 +220,8 @@ export function SettingsView() {
               <>
                 {category === 'appearance' && <AppearanceSettings />}
                 {category === 'terminal' && <TerminalSettings />}
-                {category === 'agent' && <AumxCoreCategory groupKey="agent" title="Agent" sectionOrder={AGENT_SECTION_ORDER} />}
-                {category === 'worktree' && <AumxCoreCategory groupKey="worktree" title="Worktree" />}
+                {category === 'agent' && <MuxBaseCoreCategory groupKey="agent" title="Agent" sectionOrder={AGENT_SECTION_ORDER} />}
+                {category === 'worktree' && <MuxBaseCoreCategory groupKey="worktree" title="Worktree" />}
                 {category === 'marketplace' && <MarketplaceSettings />}
                 {category === 'window' && <WindowSettings />}
                 {category === 'shortcuts' && <KeyboardShortcutsSettings />}

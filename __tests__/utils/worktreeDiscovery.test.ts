@@ -23,17 +23,17 @@ afterEach(() => {
 
 describe('detectAllWorktrees', () => {
   it('discovers nested worktrees deepest first without losing repository metadata', async () => {
-    const repositoryPath = mkdtempSync(join(tmpdir(), 'aumx-worktree-discovery-'));
+    const repositoryPath = mkdtempSync(join(tmpdir(), 'muxbase-worktree-discovery-'));
     temporaryDirectories.push(repositoryPath);
 
     runGit(repositoryPath, ['init', '--initial-branch=main']);
-    runGit(repositoryPath, ['config', 'user.email', 'tests@aumx.local']);
-    runGit(repositoryPath, ['config', 'user.name', 'Aumx Tests']);
+    runGit(repositoryPath, ['config', 'user.email', 'tests@muxbase.local']);
+    runGit(repositoryPath, ['config', 'user.name', 'MuxBase Tests']);
     writeFileSync(join(repositoryPath, 'README.md'), 'fixture\n');
     runGit(repositoryPath, ['add', 'README.md']);
     runGit(repositoryPath, ['commit', '-m', 'initial']);
 
-    const rootWorktreePath = join(repositoryPath, '.aumx', 'worktrees', 'root-feature');
+    const rootWorktreePath = join(repositoryPath, '.muxbase', 'worktrees', 'root-feature');
     runGit(repositoryPath, ['worktree', 'add', '-b', 'root-feature', rootWorktreePath]);
 
     const nestedWorktreePath = join(rootWorktreePath, 'packages', 'nested-feature');

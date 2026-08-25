@@ -10,14 +10,14 @@ describe('git worktree add command boundaries', () => {
       branchName: 'feature/safe-worktree',
       createBranch: true,
       startPoint: '-leading-dash-ref',
-      worktreePath: "/repo with spaces/owner's project/.aumx/worktrees/safe-worktree",
+      worktreePath: "/repo with spaces/owner's project/.muxbase/worktrees/safe-worktree",
     })).toEqual([
       'worktree',
       'add',
       '-b',
       'feature/safe-worktree',
       '--',
-      "/repo with spaces/owner's project/.aumx/worktrees/safe-worktree",
+      "/repo with spaces/owner's project/.muxbase/worktrees/safe-worktree",
       '-leading-dash-ref',
     ]);
   });
@@ -26,12 +26,12 @@ describe('git worktree add command boundaries', () => {
     expect(buildGitWorktreeAddArgs({
       branchName: 'feature/existing',
       createBranch: false,
-      worktreePath: '/repo/.aumx/worktrees/-dash-like-path',
+      worktreePath: '/repo/.muxbase/worktrees/-dash-like-path',
     })).toEqual([
       'worktree',
       'add',
       '--',
-      '/repo/.aumx/worktrees/-dash-like-path',
+      '/repo/.muxbase/worktrees/-dash-like-path',
       'feature/existing',
     ]);
   });
@@ -42,11 +42,11 @@ describe('git worktree add command boundaries', () => {
       createBranch: true,
       projectRoot: "/repo with spaces/owner's project",
       startPoint: '-leading-dash-ref',
-      worktreePath: "/repo with spaces/owner's project/.aumx/worktrees/work item",
+      worktreePath: "/repo with spaces/owner's project/.muxbase/worktrees/work item",
     });
 
     expect(command).toBe(
-      "cd '/repo with spaces/owner'\\''s project' && git worktree add -b 'feature/owner'\\''s-work' -- '/repo with spaces/owner'\\''s project/.aumx/worktrees/work item' '-leading-dash-ref' && cd '/repo with spaces/owner'\\''s project/.aumx/worktrees/work item'",
+      "cd '/repo with spaces/owner'\\''s project' && git worktree add -b 'feature/owner'\\''s-work' -- '/repo with spaces/owner'\\''s project/.muxbase/worktrees/work item' '-leading-dash-ref' && cd '/repo with spaces/owner'\\''s project/.muxbase/worktrees/work item'",
     );
   });
 });

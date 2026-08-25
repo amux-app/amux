@@ -8,7 +8,7 @@ const SCRIPT_SOURCE = readFileSync(resolve('scripts/check-release-tag.mjs'), 'ut
 const fixtureRoots: string[] = [];
 
 function createReleaseFixture(manifestVersion: string): string {
-  const root = mkdtempSync(join(tmpdir(), 'amux-release-tag-'));
+  const root = mkdtempSync(join(tmpdir(), 'muxbase-release-tag-'));
   fixtureRoots.push(root);
   mkdirSync(join(root, 'desktop'));
   mkdirSync(join(root, 'scripts'));

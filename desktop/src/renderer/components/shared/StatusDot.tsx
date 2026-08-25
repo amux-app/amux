@@ -1,4 +1,4 @@
-import type { AgentStatus } from 'aumx/core';
+import type { AgentStatus } from 'muxbase/core';
 import type { PaneActivityState } from '../../../shared/pane-activity';
 import { Check } from 'lucide-react';
 import type { CSSProperties } from 'react';

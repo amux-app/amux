@@ -1,10 +1,10 @@
-import type { AumxConfig, AumxPane, AumxSettings } from '../types.js';
+import type { MuxBaseConfig, MuxBasePane, MuxBaseSettings } from '../types.js';
 import { isAgentName } from '../agents/agent-contract.js';
 import { CLAUDE_FULLSCREEN_DEFAULT_RESET_KEY, isSettingKey, validateSettingValue } from './settingsSchema.js';
 
 export { CLAUDE_FULLSCREEN_DEFAULT_RESET_KEY } from './settingsSchema.js';
 
-export type StoredAumxSettings = AumxSettings & {
+export type MuxBaseStoredSettings = MuxBaseSettings & {
   [CLAUDE_FULLSCREEN_DEFAULT_RESET_KEY]?: number;
 };
 
@@ -118,7 +118,7 @@ function validateConflictMerge(value: unknown, index: number): void {
   validateOptionalString(value, 'mainRepoPath', path);
 }
 
-function validatePane(value: unknown, index: number): asserts value is AumxPane {
+function validatePane(value: unknown, index: number): asserts value is MuxBasePane {
   if (!isRecord(value)) throw new Error(`Invalid config.panes[${index}]: expected an object`);
   const path = `config.panes[${index}]`;
   for (const key of ['id', 'paneId', 'slug']) requirePaneString(value, index, key);
@@ -191,7 +191,7 @@ function validatePane(value: unknown, index: number): asserts value is AumxPane 
   if (value.duel !== undefined) validateDuel(value.duel, index);
 }
 
-export function parseStoredAumxSettings(value: unknown): StoredAumxSettings {
+export function parseMuxBaseStoredSettings(value: unknown): MuxBaseStoredSettings {
   if (!isRecord(value)) throw new Error('Invalid settings: expected a JSON object');
 
   for (const [key, settingValue] of Object.entries(value)) {
@@ -203,10 +203,10 @@ export function parseStoredAumxSettings(value: unknown): StoredAumxSettings {
     if (!validateSettingValue(key, settingValue)) throw new Error(`Invalid settings.${key}: unexpected value`);
   }
 
-  return { ...value } as StoredAumxSettings;
+  return { ...value } as MuxBaseStoredSettings;
 }
 
-export function parseAumxConfig(value: unknown): AumxConfig {
+export function parseMuxBaseConfig(value: unknown): MuxBaseConfig {
   if (!isRecord(value)) throw new Error('Invalid config: expected a JSON object');
   if (!Array.isArray(value.panes)) throw new Error('Invalid config.panes: expected an array');
   value.panes.forEach(validatePane);
@@ -225,7 +225,7 @@ export function parseAumxConfig(value: unknown): AumxConfig {
     panes: value.panes,
     projectName: optionalString(value, 'projectName') ?? '',
     projectRoot: optionalString(value, 'projectRoot') ?? '',
-    settings: value.settings === undefined ? {} : parseStoredAumxSettings(value.settings),
+    settings: value.settings === undefined ? {} : parseMuxBaseStoredSettings(value.settings),
     ...(controlPaneId === undefined ? {} : { controlPaneId }),
     ...(controlPaneSize === undefined ? {} : { controlPaneSize }),
     ...(welcomePaneId === undefined ? {} : { welcomePaneId }),

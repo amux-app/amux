@@ -23,8 +23,8 @@ export function buildPackageArgs(buildNumber, buildVersion) {
     'never',
     `-c.mac.identity=${LOCAL_MAC_SIGN_IDENTITY}`,
     `-c.buildNumber=${buildNumber}`,
-    `-c.extraMetadata.aumxBuild.number=${buildNumber}`,
-    `-c.extraMetadata.aumxBuild.version=${buildVersion}`,
+    `-c.extraMetadata.muxbaseBuild.number=${buildNumber}`,
+    `-c.extraMetadata.muxbaseBuild.version=${buildVersion}`,
   ];
 }
 
@@ -107,7 +107,7 @@ export async function waitForAppLaunch(
     if (attempt + 1 < attempts) await wait();
   }
 
-  throw new Error('Amux exited during startup. The installed app was not left running.');
+  throw new Error('MuxBase exited during startup. The installed app was not left running.');
 }
 
 function collectFileRecords(directory, prefix = '') {

@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'fs';
 import type { ElectronApplication, Page } from 'playwright';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { isHeadlessE2E } from '../../src/main/e2e-window-mode';
 import { IPC } from '../../src/shared/ipc-channels';
 import type {
@@ -36,8 +36,8 @@ interface ElectronTestRuntime {
 async function getElectronTestRuntime(app: ElectronApplication): Promise<ElectronTestRuntime> {
   const runtime = await app.evaluate(() => ({
     environment: {
-      AUMX_E2E: process.env.AUMX_E2E,
-      AUMX_E2E_HEADED: process.env.AUMX_E2E_HEADED,
+      MUXBASE_E2E: process.env.MUXBASE_E2E,
+      MUXBASE_E2E_HEADED: process.env.MUXBASE_E2E_HEADED,
       NODE_ENV: process.env.NODE_ENV,
     },
     platform: process.platform,
@@ -199,8 +199,8 @@ export async function waitForAppReady(page: Page, timeoutMs = 30_000): Promise<v
   while (Date.now() < deadline) {
     lastState = await page.evaluate(
       (channel) => (window as unknown as {
-        aumx: { invoke: <T>(ipcChannel: string) => Promise<T> };
-      }).aumx.invoke<AppBootState>(channel),
+        muxbase: { invoke: <T>(ipcChannel: string) => Promise<T> };
+      }).muxbase.invoke<AppBootState>(channel),
       IPC.APP_BOOT_STATE_GET,
     );
     if (lastState.phase === 'ready') return;
@@ -225,10 +225,10 @@ export async function waitForRendererPaneHydration(
   await pollUntil(
     () => page.evaluate(() => {
       const store = (window as unknown as {
-        __aumxStores?: {
+        __muxbaseStores?: {
           pane?: { getState: () => { loaded?: boolean } };
         };
-      }).__aumxStores?.pane;
+      }).__muxbaseStores?.pane;
       return store?.getState().loaded === true ? true : null;
     }),
     { interval: 50, label: 'renderer-pane-hydration', timeout: timeoutMs },
@@ -258,27 +258,27 @@ export async function pollUntil<T>(
   );
 }
 
-export async function getPanes(page: Page): Promise<AumxPane[]> {
-  return page.evaluate(() => (window as any).aumx.invoke('pane:list'));
+export async function getPanes(page: Page): Promise<MuxBasePane[]> {
+  return page.evaluate(() => (window as any).muxbase.invoke('pane:list'));
 }
 
 export async function getGitDiff(page: Page, worktreePath: string): Promise<GitDiffResponse> {
   return page.evaluate(
-    (path) => (window as any).aumx.invoke('git:diff', { worktreePath: path }),
+    (path) => (window as any).muxbase.invoke('git:diff', { worktreePath: path }),
     worktreePath,
   );
 }
 
 export async function getSystemCheck(page: Page): Promise<SystemCheckResult> {
-  return page.evaluate(() => (window as any).aumx.invoke('system:check'));
+  return page.evaluate(() => (window as any).muxbase.invoke('system:check'));
 }
 
 export async function getSessionInfo(page: Page): Promise<SessionInfoResult> {
-  return page.evaluate(() => (window as any).aumx.invoke('session:info'));
+  return page.evaluate(() => (window as any).muxbase.invoke('session:info'));
 }
 
 export function killMultiPaneTestSessionBestEffort(sessionName: string): boolean {
-  if (!sessionName.startsWith('aumx-aumx-multi-pane-e2e-')) return false;
+  if (!sessionName.startsWith('muxbase-muxbase-multi-pane-e2e-')) return false;
 
   try {
     execFileSync('tmux', ['kill-session', '-t', sessionName], { stdio: 'ignore' });
@@ -295,7 +295,7 @@ export async function closePaneBestEffort(
   let worktreeCleanupRequested = false;
   try {
     const result: any = await page.evaluate(
-      (id) => (window as any).aumx.invoke('pane:close', { paneId: id }),
+      (id) => (window as any).muxbase.invoke('pane:close', { paneId: id }),
       pane.id,
     );
     if (result?.callbackId) {
@@ -310,20 +310,20 @@ export async function closePaneBestEffort(
           cleanupChoice === 'kill_clean_branch' || cleanupChoice === 'kill_and_clean';
         await page.evaluate(
           ({ cbId, value }) =>
-            (window as any).aumx.invoke('action:callback', { callbackId: cbId, value }),
+            (window as any).muxbase.invoke('action:callback', { callbackId: cbId, value }),
           { cbId: result.callbackId, value: cleanupChoice },
         );
       } else if (result.type === 'confirm') {
         await page.evaluate(
           (cbId) =>
-            (window as any).aumx.invoke('action:callback', { callbackId: cbId, value: 'confirm' }),
+            (window as any).muxbase.invoke('action:callback', { callbackId: cbId, value: 'confirm' }),
           result.callbackId,
         );
       }
     }
   } catch {
     await page.evaluate(
-      (id) => (window as any).aumx.invoke('pane:send-keys', { paneId: id, command: 'exit' }),
+      (id) => (window as any).muxbase.invoke('pane:send-keys', { paneId: id, command: 'exit' }),
       pane.id,
     ).catch(() => {});
   }
@@ -345,7 +345,7 @@ export async function sendFollowUpToPane(
   text: string,
 ): Promise<void> {
   const result: { error?: string } | undefined = await page.evaluate(
-    ({ id, cmd }) => (window as any).aumx.invoke('pane:send-keys', { paneId: id, command: cmd }),
+    ({ id, cmd }) => (window as any).muxbase.invoke('pane:send-keys', { paneId: id, command: cmd }),
     { id: paneId, cmd: text },
   );
   if (result?.error) {
@@ -387,7 +387,7 @@ export async function getNormalizedSession(
   paneId: string,
 ): Promise<NormalizedSession | null> {
   const result: { session?: NormalizedSession; error?: string } | undefined = await page.evaluate(
-    (id) => (window as any).aumx.invoke('agent-session:get', { paneId: id }),
+    (id) => (window as any).muxbase.invoke('agent-session:get', { paneId: id }),
     paneId,
   );
   if (!result || result.error) return null;

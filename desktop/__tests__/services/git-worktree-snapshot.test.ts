@@ -77,7 +77,7 @@ describe('worktree snapshot cache', () => {
     collectorGate.started = undefined;
     gitCalls.length = 0;
     scratchDirs = [];
-    repo = mkdtempSync(join(tmpdir(), 'aumx-snapshot-'));
+    repo = mkdtempSync(join(tmpdir(), 'muxbase-snapshot-'));
     run(repo, ['init', '-q', '-b', 'main']);
     run(repo, ['config', 'user.email', 't@t.com']);
     run(repo, ['config', 'user.name', 't']);
@@ -306,7 +306,7 @@ describe('worktree snapshot cache', () => {
 
   it('collects untracked additions in an empty repository with no commits', async () => {
     // Arrange
-    const empty = mkdtempSync(join(tmpdir(), 'aumx-snapshot-empty-'));
+    const empty = mkdtempSync(join(tmpdir(), 'muxbase-snapshot-empty-'));
     run(empty, ['init', '-q', '-b', 'main']);
     writeFileSync(join(empty, 'new.txt'), 'one\ntwo\n');
 
@@ -323,7 +323,7 @@ describe('worktree snapshot cache', () => {
 
   it('returns null for a path outside any repository', async () => {
     // Arrange
-    const plain = mkdtempSync(join(tmpdir(), 'aumx-snapshot-plain-'));
+    const plain = mkdtempSync(join(tmpdir(), 'muxbase-snapshot-plain-'));
 
     // Act
     const snapshot = await getWorktreeSnapshot(plain, false);
@@ -499,7 +499,7 @@ describe('worktree snapshot cache', () => {
   }
 
   function makeCountedRepo(lines: number): { lines: number; path: string } {
-    const path = mkdtempSync(join(tmpdir(), 'aumx-snapshot-bound-'));
+    const path = mkdtempSync(join(tmpdir(), 'muxbase-snapshot-bound-'));
     scratchDirs.push(path);
     run(path, ['init', '-q', '-b', 'main']);
     writeFileSync(join(path, 'counted.txt'), 'line\n'.repeat(lines));
@@ -507,7 +507,7 @@ describe('worktree snapshot cache', () => {
   }
 
   function makeSubmoduleRepo(): string {
-    const path = mkdtempSync(join(tmpdir(), 'aumx-snapshot-sub-'));
+    const path = mkdtempSync(join(tmpdir(), 'muxbase-snapshot-sub-'));
     scratchDirs.push(path);
     run(path, ['init', '-q', '-b', 'main']);
     run(path, ['config', 'user.email', 't@t.com']);

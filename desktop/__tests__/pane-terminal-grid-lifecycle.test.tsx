@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import React, { useEffect, useRef, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PaneTerminalGrid } from '../src/renderer/components/dashboard/PaneTerminalGrid';
@@ -18,7 +18,7 @@ const paneLifecycle = vi.hoisted(() => ({
 }));
 
 vi.mock('../src/renderer/components/dashboard/PaneCell', () => ({
-  PaneCell: ({ pane }: { pane: AumxPane }) => {
+  PaneCell: ({ pane }: { pane: MuxBasePane }) => {
     const [localView, setLocalView] = useState('terminal');
     const streamIdRef = useRef(0);
     if (streamIdRef.current === 0) {
@@ -66,7 +66,7 @@ function rect(width: number): DOMRect {
   } as DOMRect;
 }
 
-function makePane(index: number): AumxPane {
+function makePane(index: number): MuxBasePane {
   return {
     agentStatus: 'idle',
     id: `pane-${index}`,
@@ -78,7 +78,7 @@ function makePane(index: number): AumxPane {
   };
 }
 
-function makeDuelPane(index: number, groupId: string, role: 'a' | 'b', siblingPaneId: string): AumxPane {
+function makeDuelPane(index: number, groupId: string, role: 'a' | 'b', siblingPaneId: string): MuxBasePane {
   return {
     ...makePane(index),
     agent: 'claude',
@@ -87,7 +87,7 @@ function makeDuelPane(index: number, groupId: string, role: 'a' | 'b', siblingPa
   };
 }
 
-function setPanes(panes: AumxPane[]): void {
+function setPanes(panes: MuxBasePane[]): void {
   usePaneStore.setState({
     isCreating: false,
     justFinishedPaneIds: new Set<string>(),

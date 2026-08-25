@@ -13,7 +13,7 @@ const SPRING_OPEN_MS = 600;
 const DRAG_IMAGE_OFFSET_PX = 12;
 
 /** Written for other drop targets to recognise; the tree itself reads the payload from a ref. */
-const FILE_PATHS_MIME = 'application/x-aumx-file-paths';
+const FILE_PATHS_MIME = 'application/x-muxbase-file-paths';
 
 export interface DragHandlers {
   draggable?: boolean;

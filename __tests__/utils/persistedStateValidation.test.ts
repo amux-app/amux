@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  parseAumxConfig,
-  parseStoredAumxSettings,
+  parseMuxBaseConfig,
+  parseMuxBaseStoredSettings,
 } from '../../src/utils/persistedStateValidation.js';
 
 const VALID_PANE = {
@@ -13,7 +13,7 @@ const VALID_PANE = {
 
 describe('persisted state validation', () => {
   it('accepts a valid legacy config and supplies safe missing defaults', () => {
-    expect(parseAumxConfig({ panes: [VALID_PANE] })).toMatchObject({
+    expect(parseMuxBaseConfig({ panes: [VALID_PANE] })).toMatchObject({
       lastUpdated: '',
       panes: [VALID_PANE],
       projectName: '',
@@ -23,21 +23,21 @@ describe('persisted state validation', () => {
   });
 
   it('rejects config panes without the identity fields used by orchestration', () => {
-    expect(() => parseAumxConfig({ panes: [{ id: 'pane-1' }] }))
+    expect(() => parseMuxBaseConfig({ panes: [{ id: 'pane-1' }] }))
       .toThrow('paneId');
   });
 
   it('rejects malformed nested config settings', () => {
-    expect(() => parseAumxConfig({ panes: [], settings: { useWorktree: 'yes' } }))
+    expect(() => parseMuxBaseConfig({ panes: [], settings: { useWorktree: 'yes' } }))
       .toThrow('useWorktree');
   });
 
   it('rejects malformed optional pane metadata used by runtime services', () => {
-    expect(() => parseAumxConfig({
+    expect(() => parseMuxBaseConfig({
       panes: [{ ...VALID_PANE, worktreePath: 42 }],
     })).toThrow('worktreePath');
 
-    expect(() => parseAumxConfig({
+    expect(() => parseMuxBaseConfig({
       panes: [{
         ...VALID_PANE,
         review: {
@@ -50,7 +50,7 @@ describe('persisted state validation', () => {
       }],
     })).toThrow('review.changedFiles');
 
-    expect(() => parseAumxConfig({
+    expect(() => parseMuxBaseConfig({
       panes: [{ ...VALID_PANE, startedWithoutInitialPrompt: 'yes' }],
     })).toThrow('startedWithoutInitialPrompt');
   });
@@ -68,22 +68,22 @@ describe('persisted state validation', () => {
       transactionId: 'transaction-1',
     };
 
-    expect(parseAumxConfig({ panes: [{ ...VALID_PANE, conflictMerge }] }))
+    expect(parseMuxBaseConfig({ panes: [{ ...VALID_PANE, conflictMerge }] }))
       .toMatchObject({ panes: [{ conflictMerge }] });
-    expect(() => parseAumxConfig({
+    expect(() => parseMuxBaseConfig({
       panes: [{ ...VALID_PANE, conflictMerge: { ...conflictMerge, targetCommit: '' } }],
     })).toThrow('conflictMerge.targetCommit');
   });
 
   it('rejects invalid persisted control pane geometry', () => {
-    expect(() => parseAumxConfig({ controlPaneSize: 0, panes: [] }))
+    expect(() => parseMuxBaseConfig({ controlPaneSize: 0, panes: [] }))
       .toThrow('controlPaneSize');
   });
 
   it('accepts known settings, preserves unknown values, and rejects malformed known values', () => {
-    expect(parseStoredAumxSettings({ defaultAgent: '' })).toEqual({ defaultAgent: '' });
+    expect(parseMuxBaseStoredSettings({ defaultAgent: '' })).toEqual({ defaultAgent: '' });
 
-    expect(parseStoredAumxSettings({
+    expect(parseMuxBaseStoredSettings({
       defaultAgent: 'codex',
       permissionMode: 'auto',
       useWorktree: true,
@@ -93,9 +93,9 @@ describe('persisted state validation', () => {
       useWorktree: true,
     });
 
-    expect(() => parseStoredAumxSettings({ defaultAgent: 'unknown-agent' }))
+    expect(() => parseMuxBaseStoredSettings({ defaultAgent: 'unknown-agent' }))
       .toThrow('defaultAgent');
-    expect(parseStoredAumxSettings({
+    expect(parseMuxBaseStoredSettings({
       futureSetting: { enabled: true },
       useWorktree: true,
     })).toEqual({
@@ -105,7 +105,7 @@ describe('persisted state validation', () => {
   });
 
   it('preserves unknown config metadata when applying validated defaults', () => {
-    expect(parseAumxConfig({
+    expect(parseMuxBaseConfig({
       futureTopLevel: { version: 2 },
       panes: [VALID_PANE],
     })).toMatchObject({

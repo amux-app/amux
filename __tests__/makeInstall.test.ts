@@ -48,7 +48,7 @@ describe('make install contract', () => {
     const installTarget = readMakeTargetBody('install');
 
     // Assert
-    expect(makefile).toMatch(/^install:.*## Install Amux\.app from source/m);
+    expect(makefile).toMatch(/^install:.*## Install MuxBase\.app from source/m);
     expect(makefile).not.toMatch(/^install-app:/m);
     expect(makefile).not.toContain(' install-app ');
     expect(installTarget).toContain('node scripts/install-local-app.mjs');
@@ -73,7 +73,7 @@ describe('make install contract', () => {
     const installer = readFileSync(INSTALL_SCRIPT_PATH, 'utf8');
     const installIndex = installer.indexOf("['install', '--frozen-lockfile']");
     const checkIndex = installer.indexOf("['exec', 'node', 'scripts/check-managed-toolchain.mjs']");
-    const buildIndex = installer.indexOf("['-w', '--filter', 'aumx', 'build']");
+    const buildIndex = installer.indexOf("['-w', '--filter', 'muxbase', 'build']");
 
     expect(existsSync(TOOLCHAIN_CHECK_PATH)).toBe(true);
     expect(installIndex).toBeGreaterThan(-1);
@@ -135,17 +135,17 @@ describe('make install contract', () => {
     });
   });
 
-  it('keeps an explicit AUMX_INSTALL_DIR even when the system Applications folder is not writable', () => {
+  it('keeps an explicit MUXBASE_INSTALL_DIR even when the system Applications folder is not writable', () => {
     // Act
     const plan = resolveInstallDir({
       canWriteSystemApplications: false,
-      envInstallDir: ' /tmp/Amux ',
+      envInstallDir: ' /tmp/MuxBase ',
       homeDir: '/Users/alice',
     });
 
     // Assert
     expect(plan).toEqual({
-      installDir: '/tmp/Amux',
+      installDir: '/tmp/MuxBase',
       source: 'environment',
     });
   });
@@ -153,8 +153,8 @@ describe('make install contract', () => {
   it('rejects an ASAR whose payload changed after its integrity header was written', async () => {
     // Arrange: build a real archive, then reproduce the cross-file corruption
     // seen when another build mutates packaging inputs while electron-builder reads.
-    const sourceDir = makeScratchDir('aumx-asar-source-');
-    const archivePath = join(makeScratchDir('aumx-asar-output-'), 'app.asar');
+    const sourceDir = makeScratchDir('muxbase-asar-source-');
+    const archivePath = join(makeScratchDir('muxbase-asar-output-'), 'app.asar');
     writeMinimalPackagedApp(sourceDir);
     await createPackage(sourceDir, archivePath);
     const header = getRawHeader(archivePath);
@@ -184,8 +184,8 @@ describe('make install contract', () => {
 
   it('accepts an ASAR when every payload matches its integrity header', async () => {
     // Arrange
-    const sourceDir = makeScratchDir('aumx-asar-source-');
-    const archivePath = join(makeScratchDir('aumx-asar-output-'), 'app.asar');
+    const sourceDir = makeScratchDir('muxbase-asar-source-');
+    const archivePath = join(makeScratchDir('muxbase-asar-output-'), 'app.asar');
     writeMinimalPackagedApp(sourceDir);
     await createPackage(sourceDir, archivePath);
 
@@ -218,7 +218,7 @@ describe('make install contract', () => {
         async () => {},
         3,
       ),
-    ).rejects.toThrow('Amux exited during startup');
+    ).rejects.toThrow('MuxBase exited during startup');
   });
 });
 

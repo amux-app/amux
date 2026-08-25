@@ -369,7 +369,7 @@ export class MarketplaceIntegrityInstaller {
     options: MarketplaceTransactionalOptions,
   ): MarketplaceTransactionalResult {
     const homeDir = options.homeDir ?? os.homedir();
-    const planningRoot = mkdtempSync(path.join(os.tmpdir(), 'aumx-marketplace-plan-'));
+    const planningRoot = mkdtempSync(path.join(os.tmpdir(), 'muxbase-marketplace-plan-'));
     const planningHome = path.join(planningRoot, 'home');
     const native = new NativeInstaller();
     const candidates = new Map<string, Candidate>();
@@ -635,7 +635,7 @@ export class MarketplaceIntegrityInstaller {
       throw new MarketplaceIntegrityError('ARTIFACT_MODIFIED', 'Legacy marketplace installation has no ownership manifest and will be preserved');
     }
     const homeDir = options.homeDir ?? os.homedir();
-    const planningRoot = mkdtempSync(path.join(os.tmpdir(), 'aumx-marketplace-uninstall-'));
+    const planningRoot = mkdtempSync(path.join(os.tmpdir(), 'muxbase-marketplace-uninstall-'));
     const planningHome = path.join(planningRoot, 'home');
     const native = new NativeInstaller();
     try {

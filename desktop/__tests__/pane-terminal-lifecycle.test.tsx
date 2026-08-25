@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import React, { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PaneCell } from '../src/renderer/components/dashboard/PaneCell';
@@ -26,7 +26,7 @@ vi.mock('../src/renderer/components/pane-detail/InteractiveTerminal', () => ({
     pane,
     terminalVisible,
   }: {
-    pane: AumxPane;
+    pane: MuxBasePane;
     terminalVisible?: boolean;
   }) => {
     useEffect(() => {
@@ -43,11 +43,11 @@ vi.mock('../src/renderer/components/pane-detail/InteractiveTerminal', () => ({
 }));
 
 vi.mock('../src/renderer/components/pane-detail/LazyGitDiffView', () => ({
-  LazyGitDiffView: ({ pane }: { pane: AumxPane }) => <div data-testid="git-diff-view">{pane.id}</div>,
+  LazyGitDiffView: ({ pane }: { pane: MuxBasePane }) => <div data-testid="git-diff-view">{pane.id}</div>,
 }));
 
 vi.mock('../src/renderer/components/pane-detail/WorktreeTab', () => ({
-  WorktreeTab: ({ pane }: { pane: AumxPane }) => <div data-testid="worktree-tab-content">{pane.id}</div>,
+  WorktreeTab: ({ pane }: { pane: MuxBasePane }) => <div data-testid="worktree-tab-content">{pane.id}</div>,
 }));
 
 vi.mock('../src/renderer/components/agent-devtools/AgentActivityPanel', () => ({
@@ -83,7 +83,7 @@ vi.mock('../src/renderer/hooks/usePaneActions', () => ({
   }),
 }));
 
-function makePane(): AumxPane {
+function makePane(): MuxBasePane {
   return {
     agent: 'opencode',
     agentStatus: 'working',
@@ -93,11 +93,11 @@ function makePane(): AumxPane {
     prompt: 'test prompt',
     slug: 'task-one',
     type: 'worktree',
-    worktreePath: '/repo/.aumx/worktrees/task-one',
+    worktreePath: '/repo/.muxbase/worktrees/task-one',
   };
 }
 
-function makeShellPane(): AumxPane {
+function makeShellPane(): MuxBasePane {
   return {
     agentStatus: 'idle',
     id: 'pane-1',
@@ -115,7 +115,7 @@ function seedActivity(paneId: string, state: PaneActivityState): void {
   });
 }
 
-function resetStores(pane: AumxPane): void {
+function resetStores(pane: MuxBasePane): void {
   useAgentSessionStore.setState({ sessions: {} });
   seedActivity(pane.id, pane.type === 'shell' ? 'idle' : 'working');
   usePaneStore.setState({
@@ -128,15 +128,15 @@ function resetStores(pane: AumxPane): void {
   });
   useProjectStore.setState({
     activeProject: {
-      configPath: '/repo/.aumx/aumx.config.json',
+      configPath: '/repo/.muxbase/muxbase.config.json',
       name: 'repo',
       paneCount: 1,
       root: '/repo',
-      sessionName: 'aumx-repo',
+      sessionName: 'muxbase-repo',
     },
     projectSwitching: false,
     projects: [],
-    sessionName: 'aumx-repo',
+    sessionName: 'muxbase-repo',
     sessionProjectName: 'repo',
     sessionProjectRoot: '/repo',
   });

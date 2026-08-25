@@ -4,9 +4,9 @@ const execAsyncMock = vi.hoisted(() => vi.fn());
 const existsSyncMock = vi.hoisted(() => vi.fn());
 const statSyncMock = vi.hoisted(() => vi.fn());
 
-vi.mock('aumx/core', () => ({
+vi.mock('muxbase/core', () => ({
   execAsync: execAsyncMock,
-  getProjectConfigPath: (projectRoot: string) => `${projectRoot}/.amux/aumx.config.json`,
+  getProjectConfigPath: (projectRoot: string) => `${projectRoot}/.muxbase/muxbase.config.json`,
   shQuote: (value: string) => `'${value.replace(/'/g, "'\\''")}'`,
 }));
 
@@ -21,22 +21,22 @@ import { discoverCurrentProject, discoverProjects } from '../../src/main/service
 describe('ProjectDiscovery', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    delete process.env.AUMX_E2E;
-    existsSyncMock.mockImplementation((path: string) => !path.endsWith('/.aumx/aumx.config.json'));
+    delete process.env.MUXBASE_E2E;
+    existsSyncMock.mockImplementation((path: string) => !path.endsWith('/.muxbase/muxbase.config.json'));
     statSyncMock.mockReturnValue({ isDirectory: () => true });
     execAsyncMock.mockImplementation(async (command: string) => {
       if (command.includes('list-sessions')) {
         return [
-          'aumx-demo--view-pane-1',
-          'aumx-demo',
-          'aumx-demo--view-pane-2',
+          'muxbase-demo--view-pane-1',
+          'muxbase-demo',
+          'muxbase-demo--view-pane-2',
         ].join('\n');
       }
-      if (command.includes('@aumx_project_root')) {
-        return '@aumx_project_root /repo/demo';
+      if (command.includes('@muxbase_project_root')) {
+        return '@muxbase_project_root /repo/demo';
       }
-      if (command.includes('@aumx_project_name')) {
-        return '@aumx_project_name Demo';
+      if (command.includes('@muxbase_project_name')) {
+        return '@muxbase_project_name Demo';
       }
       if (command.includes('pane_current_path')) {
         return '/repo/demo';
@@ -50,14 +50,14 @@ describe('ProjectDiscovery', () => {
 
     expect(projects).toEqual([
       expect.objectContaining({
-        configPath: '/repo/demo/.amux/aumx.config.json',
+        configPath: '/repo/demo/.muxbase/muxbase.config.json',
         root: '/repo/demo',
-        sessionName: 'aumx-demo',
+        sessionName: 'muxbase-demo',
       }),
     ]);
     const resolvedSessions = execAsyncMock.mock.calls
       .map((call) => call[0] as string)
-      .filter((command) => command.includes('@aumx_project_root') || command.includes('pane_current_path'));
+      .filter((command) => command.includes('@muxbase_project_root') || command.includes('pane_current_path'));
     expect(resolvedSessions.some((command) => command.includes('--view-'))).toBe(false);
   });
 
@@ -67,7 +67,7 @@ describe('ProjectDiscovery', () => {
     expect(currentProject).toEqual({
       projectName: 'demo',
       projectRoot: '/repo/demo',
-      sessionName: 'aumx-demo',
+      sessionName: 'muxbase-demo',
     });
   });
 
@@ -75,15 +75,15 @@ describe('ProjectDiscovery', () => {
     execAsyncMock.mockImplementation(async (command: string) => {
       if (command.includes('list-sessions')) {
         return [
-          'aumx-stale',
-          'aumx-live',
+          'muxbase-stale',
+          'muxbase-live',
         ].join('\n');
       }
-      if (command.includes("tmux show -t 'aumx-stale' @aumx_project_root")) {
-        return '@aumx_project_root /tmp/deleted-aumx-project\n';
+      if (command.includes("tmux show -t 'muxbase-stale' @muxbase_project_root")) {
+        return '@muxbase_project_root /tmp/deleted-muxbase-project\n';
       }
-      if (command.includes("tmux show -t 'aumx-live' @aumx_project_root")) {
-        return '@aumx_project_root /repo/live\n';
+      if (command.includes("tmux show -t 'muxbase-live' @muxbase_project_root")) {
+        return '@muxbase_project_root /repo/live\n';
       }
       return '';
     });
@@ -97,44 +97,44 @@ describe('ProjectDiscovery', () => {
     expect(projects).toEqual([
       expect.objectContaining({
         root: '/repo/live',
-        sessionName: 'aumx-live',
+        sessionName: 'muxbase-live',
       }),
     ]);
     expect(currentProject).toEqual({
       projectName: 'live',
       projectRoot: '/repo/live',
-      sessionName: 'aumx-live',
+      sessionName: 'muxbase-live',
     });
   });
 
   it('prefers the launch working tree when multiple valid project sessions exist', async () => {
-    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/repo/aumx');
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/repo/muxbase');
     try {
       execAsyncMock.mockImplementation(async (command: string) => {
         if (command.includes('list-sessions')) {
           return [
-            'aumx-desktop',
-            'aumx-aumx',
+            'muxbase-desktop',
+            'muxbase-muxbase',
           ].join('\n');
         }
-        if (command.includes("tmux show -t 'aumx-desktop' @aumx_project_root")) {
-          return '@aumx_project_root /repo/aumx/desktop\n';
+        if (command.includes("tmux show -t 'muxbase-desktop' @muxbase_project_root")) {
+          return '@muxbase_project_root /repo/muxbase/desktop\n';
         }
-        if (command.includes("tmux show -t 'aumx-aumx' @aumx_project_root")) {
-          return '@aumx_project_root /repo/aumx\n';
+        if (command.includes("tmux show -t 'muxbase-muxbase' @muxbase_project_root")) {
+          return '@muxbase_project_root /repo/muxbase\n';
         }
         return '';
       });
       existsSyncMock.mockImplementation((path: string) => (
-        path === '/repo/aumx' || path === '/repo/aumx/desktop'
+        path === '/repo/muxbase' || path === '/repo/muxbase/desktop'
       ));
 
       const currentProject = await discoverCurrentProject();
 
       expect(currentProject).toEqual({
-        projectName: 'aumx',
-        projectRoot: '/repo/aumx',
-        sessionName: 'aumx-aumx',
+        projectName: 'muxbase',
+        projectRoot: '/repo/muxbase',
+        sessionName: 'muxbase-muxbase',
       });
     } finally {
       cwdSpy.mockRestore();
@@ -145,9 +145,9 @@ describe('ProjectDiscovery', () => {
     const pendingResolvers = new Map<string, (value: string) => void>();
     execAsyncMock.mockImplementation((command: string) => {
       if (command.includes('list-sessions')) {
-        return Promise.resolve(['aumx-one', 'aumx-two'].join('\n'));
+        return Promise.resolve(['muxbase-one', 'muxbase-two'].join('\n'));
       }
-      if (command.includes('@aumx_project_root')) {
+      if (command.includes('@muxbase_project_root')) {
         return new Promise<string>((resolve) => {
           pendingResolvers.set(command, resolve);
         });
@@ -158,15 +158,15 @@ describe('ProjectDiscovery', () => {
     const discovery = discoverCurrentProject();
     await vi.waitFor(() => {
       const metadataCalls = execAsyncMock.mock.calls.filter(
-        ([command]) => String(command).includes('@aumx_project_root'),
+        ([command]) => String(command).includes('@muxbase_project_root'),
       );
       expect(metadataCalls).toHaveLength(2);
     });
 
     for (const [command, resolve] of pendingResolvers) {
-      resolve(command.includes('aumx-one')
-        ? '@aumx_project_root /repo/one'
-        : '@aumx_project_root /repo/two');
+      resolve(command.includes('muxbase-one')
+        ? '@muxbase_project_root /repo/one'
+        : '@muxbase_project_root /repo/two');
     }
 
     await expect(discovery).resolves.toEqual(expect.objectContaining({

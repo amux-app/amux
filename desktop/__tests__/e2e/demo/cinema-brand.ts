@@ -47,7 +47,7 @@ export async function hideTitleCard(page: Page): Promise<void> {
 }
 
 export async function showOutroCard(page: Page, opts: { pills: string[]; github: string }): Promise<void> {
-  const wordmark = brandWordmarkHtml('Amux', 100);
+  const wordmark = brandWordmarkHtml('MuxBase', 100);
   const pillsHtml = opts.pills
     .map((t) => `<span style="padding:7px 16px;border-radius:999px;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.65);font-size:13px;font-weight:500;">${t}</span>`)
     .join('');

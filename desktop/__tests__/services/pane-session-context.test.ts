@@ -14,7 +14,7 @@ import {
 } from 'node:fs';
 import type { FSWatcher, PathLike, WatchListener } from 'node:fs';
 import { tmpdir } from 'node:os';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { createParser, type AgentLogParser } from '../../src/main/services/parsing/AgentLogParser';
 import type { AgentType, NormalizedSession } from '../../src/shared/agent-session-types';
 import { createEmptySession } from '../../src/shared/agent-session-types';
@@ -70,9 +70,9 @@ function createTempDir(prefix: string): string {
   return dir;
 }
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
-    id: 'aumx-1',
+    id: 'muxbase-1',
     paneId: '%1',
     prompt: 'test prompt',
     slug: 'test-pane',
@@ -235,7 +235,7 @@ describe('PaneSessionContext', () => {
   it('keeps polling after a discovery failure and binds on the retry', async () => {
     // Arrange: the first discovery pass throws the way a truncated OpenCode query does.
     vi.useFakeTimers();
-    const sessionDir = createTempDir('aumx-pane-session-');
+    const sessionDir = createTempDir('muxbase-pane-session-');
     const file = join(sessionDir, 'recovered-session.jsonl');
     writeFileSync(file, 'conversation\n');
     const parser = makeSharedTreeParser('opencode', false, () => file);
@@ -267,7 +267,7 @@ describe('PaneSessionContext', () => {
     // Arrange: past the fast window the poll drops to 30s, so only the still-armed
     // directory watcher can bind a session the user starts late.
     vi.useFakeTimers();
-    const sessionDir = createTempDir('aumx-pane-session-');
+    const sessionDir = createTempDir('muxbase-pane-session-');
     const parser = makeParser(sessionDir);
     const context = new PaneSessionContext(makePane(), parser, sessionDir, () => {});
 
@@ -292,7 +292,7 @@ describe('PaneSessionContext', () => {
   it('binds from a discovery-directory event when the parser has no session directory', async () => {
     // Arrange: OpenCode's shape — one shared database, no watchable session dir.
     vi.useFakeTimers();
-    const databaseDir = createTempDir('aumx-pane-session-db-');
+    const databaseDir = createTempDir('muxbase-pane-session-db-');
     const databasePath = join(databaseDir, 'opencode.db');
     writeFileSync(databasePath, 'db\n');
     let sessionExists = false;
@@ -325,7 +325,7 @@ describe('PaneSessionContext', () => {
 
   it('reparses a bound OpenCode session when SQLite writes only to the WAL sidecar', async () => {
     vi.useFakeTimers();
-    const databaseDir = createTempDir('aumx-pane-session-wal-');
+    const databaseDir = createTempDir('muxbase-pane-session-wal-');
     const databasePath = join(databaseDir, 'opencode.db');
     const walPath = `${databasePath}-wal`;
     writeFileSync(databasePath, 'main database\n');
@@ -366,7 +366,7 @@ describe('PaneSessionContext', () => {
 
   it('rebinds to a newer Claude session file created after the pane was already tracked', async () => {
     // Arrange
-    const sessionDir = createTempDir('aumx-pane-session-');
+    const sessionDir = createTempDir('muxbase-pane-session-');
     const oldFile = join(sessionDir, 'old-session.jsonl');
     const oldTime = Date.now() - 10_000;
     writeFileSync(oldFile, 'old conversation\n');
@@ -402,7 +402,7 @@ describe('PaneSessionContext', () => {
 
   it('runs no discovery pass while the bound session file is still the newest one', async () => {
     // Arrange
-    const sessionDir = createTempDir('aumx-pane-session-live-');
+    const sessionDir = createTempDir('muxbase-pane-session-live-');
     const boundFile = join(sessionDir, 'bound-session.jsonl');
     writeFileSync(boundFile, 'bound conversation\n');
 
@@ -438,8 +438,8 @@ describe('PaneSessionContext', () => {
     // Arrange: the bound file stays the newest in the original directory, so only a
     // re-resolved discovery root can reveal the session in the pane's new project.
     vi.useFakeTimers({ toFake: ['Date'] });
-    const originalRoot = createTempDir('aumx-pane-session-root-a-');
-    const movedRoot = createTempDir('aumx-pane-session-root-b-');
+    const originalRoot = createTempDir('muxbase-pane-session-root-a-');
+    const movedRoot = createTempDir('muxbase-pane-session-root-b-');
     const boundFile = join(originalRoot, 'bound-session.jsonl');
     writeFileSync(boundFile, 'bound conversation\n');
 
@@ -480,8 +480,8 @@ describe('PaneSessionContext', () => {
     // the bound file opens the rebind gate for good, which leaves the debounce window
     // as the only thing that can keep the discovery count down.
     vi.useFakeTimers();
-    const watchedDir = createTempDir('aumx-pane-session-burst-watched-');
-    const sessionDir = createTempDir('aumx-pane-session-burst-');
+    const watchedDir = createTempDir('muxbase-pane-session-burst-watched-');
+    const sessionDir = createTempDir('muxbase-pane-session-burst-');
     const boundFile = join(sessionDir, 'bound-session.jsonl');
     writeFileSync(boundFile, 'bound conversation\n');
 
@@ -519,7 +519,7 @@ describe('PaneSessionContext', () => {
 
   it('runs a discovery pass once the bound session file disappears', async () => {
     // Arrange
-    const sessionDir = createTempDir('aumx-pane-session-missing-');
+    const sessionDir = createTempDir('muxbase-pane-session-missing-');
     const boundFile = join(sessionDir, 'bound-session.jsonl');
     writeFileSync(boundFile, 'bound conversation\n');
 
@@ -551,7 +551,7 @@ describe('PaneSessionContext', () => {
   it('rebinds when an existing sibling session file is replaced in place', async () => {
     // Arrange: sibling already exists but is stale, so the bound file stays selected.
     // Rewriting it later emits no create/rename — on Linux it is a plain `change`.
-    const sessionDir = createTempDir('aumx-pane-session-inplace-');
+    const sessionDir = createTempDir('muxbase-pane-session-inplace-');
     const siblingFile = join(sessionDir, 'sibling-session.jsonl');
     writeFileSync(siblingFile, 'stale conversation\n');
     setModifiedTime(siblingFile, Date.now() - 20_000);
@@ -588,7 +588,7 @@ describe('PaneSessionContext', () => {
   it('polls for a replacement Codex session after an initial shared file is found', async () => {
     // Arrange
     vi.useFakeTimers();
-    const sessionDir = createTempDir('aumx-pane-session-codex-');
+    const sessionDir = createTempDir('muxbase-pane-session-codex-');
     const staleFile = join(sessionDir, 'stale-session.jsonl');
     const freshFile = join(sessionDir, 'fresh-session.jsonl');
     const now = Date.now();
@@ -635,7 +635,7 @@ describe('PaneSessionContext', () => {
   it('does not rebind a Codex session to an older shared file', async () => {
     // Arrange
     vi.useFakeTimers();
-    const sessionDir = createTempDir('aumx-pane-session-codex-');
+    const sessionDir = createTempDir('muxbase-pane-session-codex-');
     const olderFile = join(sessionDir, 'older-session.jsonl');
     const currentFile = join(sessionDir, 'current-session.jsonl');
     const now = Date.now();
@@ -675,7 +675,7 @@ describe('PaneSessionContext', () => {
     // Arrange: gate findSessionFile so we can stop() mid-start(), and spy on
     // parseSession — onFileFound starts the watcher and kicks a parse, so a
     // parseSession call after stop() means a watcher leaked.
-    const sessionDir = createTempDir('aumx-pane-session-');
+    const sessionDir = createTempDir('muxbase-pane-session-');
     const file = join(sessionDir, 'live-session.jsonl');
     writeFileSync(file, 'conversation\n');
 
@@ -708,7 +708,7 @@ describe('PaneSessionContext', () => {
   it('does not claim a replacement found after the context is stopped', async () => {
     // Arrange
     vi.useFakeTimers();
-    const sessionDir = createTempDir('aumx-pane-session-stop-replacement-');
+    const sessionDir = createTempDir('muxbase-pane-session-stop-replacement-');
     const currentFile = join(sessionDir, 'current-session.jsonl');
     const replacementFile = join(sessionDir, 'replacement-session.jsonl');
     const now = Date.now();
@@ -759,7 +759,7 @@ describe('PaneSessionContext', () => {
   it('does not emit an old parse that finishes after a replacement is bound', async () => {
     // Arrange
     vi.useFakeTimers();
-    const sessionDir = createTempDir('aumx-pane-session-stale-parse-');
+    const sessionDir = createTempDir('muxbase-pane-session-stale-parse-');
     const currentFile = join(sessionDir, 'current-session.jsonl');
     const replacementFile = join(sessionDir, 'replacement-session.jsonl');
     const now = Date.now();
@@ -828,7 +828,7 @@ describe('PaneSessionContext', () => {
  */
 describe('bound session file exclusivity', () => {
   async function countLookupsWhileBoundFileChanges(boundFileIsExclusive: boolean): Promise<number> {
-    const sessionDir = createTempDir('aumx-pane-session-exclusivity-');
+    const sessionDir = createTempDir('muxbase-pane-session-exclusivity-');
     const boundFile = join(sessionDir, 'bound-session.jsonl');
     writeFileSync(boundFile, 'bound conversation\n');
 
@@ -884,7 +884,7 @@ describe('bound session file exclusivity', () => {
   it('rate-limits discovery after an exclusive bound session file becomes idle', async () => {
     // Arrange
     vi.useFakeTimers();
-    const sessionDir = createTempDir('aumx-pane-session-exclusive-idle-');
+    const sessionDir = createTempDir('muxbase-pane-session-exclusive-idle-');
     const boundFile = join(sessionDir, 'bound-session.jsonl');
     writeFileSync(boundFile, 'bound conversation\n');
     const parser = makeSharedTreeParser('codex', true, () => boundFile);

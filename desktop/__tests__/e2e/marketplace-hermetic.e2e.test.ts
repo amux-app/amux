@@ -24,26 +24,26 @@ import { closeElectronApp, getAppWindow, waitForAppReady } from './e2e-helpers';
 
 const ROOT = resolve(__dirname, '..', '..');
 const MAIN_ENTRY = resolve(ROOT, 'out', 'main', 'index.js');
-const SOURCE_URL = 'https://example.invalid/aumx-hermetic-marketplace.git';
+const SOURCE_URL = 'https://example.invalid/muxbase-hermetic-marketplace.git';
 const PLUGIN_ID = 'hermetic-plugin';
 const SKILL_NAME = 'hermetic-skill';
 const STARTUP_TIMEOUT_MS = 30_000;
 const SHUTDOWN_TIMEOUT_MS = 30_000;
 
 interface E2EWindow {
-  aumx: {
+  muxbase: {
     invoke: <T>(channel: string, request?: unknown) => Promise<T>;
   };
 }
 
 function invoke<T>(page: Page, channel: string, request?: unknown): Promise<T> {
   return page.evaluate(
-    ({ ipcChannel, payload }) => (window as unknown as E2EWindow).aumx.invoke<T>(ipcChannel, payload),
+    ({ ipcChannel, payload }) => (window as unknown as E2EWindow).muxbase.invoke<T>(ipcChannel, payload),
     { ipcChannel: channel, payload: request },
   );
 }
 
-describe.runIf(process.env.AUMX_E2E === '1' && process.env.AUMX_E2E_FAKE_AGENTS === '1')(
+describe.runIf(process.env.MUXBASE_E2E === '1' && process.env.MUXBASE_E2E_FAKE_AGENTS === '1')(
   'Hermetic marketplace feature E2E',
   () => {
     let app: ElectronApplication;
@@ -54,9 +54,9 @@ describe.runIf(process.env.AUMX_E2E === '1' && process.env.AUMX_E2E_FAKE_AGENTS 
     beforeAll(async () => {
       expect(existsSync(MAIN_ENTRY), `Build output missing: ${MAIN_ENTRY}`).toBe(true);
       isolatedHome = realpathSync(process.env.HOME ?? '');
-      expect(isolatedHome).toContain('aumx-home-e2e-');
+      expect(isolatedHome).toContain('muxbase-home-e2e-');
 
-      testRoot = realpathSync(mkdtempSync(join(tmpdir(), 'aumx-marketplace-feature-')));
+      testRoot = realpathSync(mkdtempSync(join(tmpdir(), 'muxbase-marketplace-feature-')));
       const sourceClone = join(testRoot, 'source');
       const userData = join(isolatedHome, 'user-data');
       const pluginRoot = join(sourceClone, 'plugins', PLUGIN_ID);
@@ -64,7 +64,7 @@ describe.runIf(process.env.AUMX_E2E === '1' && process.env.AUMX_E2E_FAKE_AGENTS 
       mkdirSync(join(pluginRoot, 'skills', SKILL_NAME), { recursive: true });
       mkdirSync(userData, { recursive: true });
       writeFileSync(join(sourceClone, '.claude-plugin', 'marketplace.json'), JSON.stringify({
-        name: 'aumx-hermetic',
+        name: 'muxbase-hermetic',
         plugins: [{ name: PLUGIN_ID, source: `./plugins/${PLUGIN_ID}`, version: '1.0.0' }],
       }, null, 2));
       writeFileSync(
@@ -72,8 +72,8 @@ describe.runIf(process.env.AUMX_E2E === '1' && process.env.AUMX_E2E_FAKE_AGENTS 
         '# Hermetic marketplace skill\n',
       );
       execFileSync('git', ['init'], { cwd: sourceClone, stdio: 'ignore' });
-      execFileSync('git', ['config', 'user.email', 'e2e@aumx.test'], { cwd: sourceClone });
-      execFileSync('git', ['config', 'user.name', 'Amux E2E'], { cwd: sourceClone });
+      execFileSync('git', ['config', 'user.email', 'e2e@muxbase.test'], { cwd: sourceClone });
+      execFileSync('git', ['config', 'user.name', 'MuxBase E2E'], { cwd: sourceClone });
       execFileSync('git', ['add', '.'], { cwd: sourceClone });
       execFileSync('git', ['commit', '-m', 'test: hermetic marketplace fixture'], {
         cwd: sourceClone,
@@ -91,7 +91,7 @@ describe.runIf(process.env.AUMX_E2E === '1' && process.env.AUMX_E2E_FAKE_AGENTS 
           detectedFormat: 'claude-marketplace',
           headSha,
           lastUpdated: new Date(0).toISOString(),
-          name: 'aumx-hermetic',
+          name: 'muxbase-hermetic',
           url: SOURCE_URL,
         }],
       }, null, 2));
@@ -101,10 +101,10 @@ describe.runIf(process.env.AUMX_E2E === '1' && process.env.AUMX_E2E_FAKE_AGENTS 
         cwd: testRoot,
         env: {
           ...process.env,
-          AUMX_DEV: 'true',
-          AUMX_DISABLE_UPDATE_CHECKS: '1',
-          AUMX_E2E: '1',
-          AUMX_E2E_USER_DATA_DIR: userData,
+          MUXBASE_DEV: 'true',
+          MUXBASE_DISABLE_UPDATE_CHECKS: '1',
+          MUXBASE_E2E: '1',
+          MUXBASE_E2E_USER_DATA_DIR: userData,
           NODE_ENV: 'test',
         },
       });

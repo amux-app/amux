@@ -16,8 +16,8 @@ describe('ConfigWatcher', () => {
   });
 
   it('continues emitting after repeated atomic config replacements', async () => {
-    fixtureRoot = mkdtempSync(join(tmpdir(), 'aumx-config-watcher-'));
-    const configPath = join(fixtureRoot, 'aumx.config.json');
+    fixtureRoot = mkdtempSync(join(tmpdir(), 'muxbase-config-watcher-'));
+    const configPath = join(fixtureRoot, 'muxbase.config.json');
     writeFileSync(configPath, JSON.stringify({ panes: [] }), 'utf8');
     watcher = new ConfigWatcher(configPath);
     await watcher.start();
@@ -50,8 +50,8 @@ describe('ConfigWatcher', () => {
   }, 30_000);
 
   it('ignores malformed replacements and continues from the last valid config', async () => {
-    fixtureRoot = mkdtempSync(join(tmpdir(), 'aumx-config-watcher-'));
-    const configPath = join(fixtureRoot, 'aumx.config.json');
+    fixtureRoot = mkdtempSync(join(tmpdir(), 'muxbase-config-watcher-'));
+    const configPath = join(fixtureRoot, 'muxbase.config.json');
     watcher = new ConfigWatcher(configPath);
     const changes = vi.fn();
     watcher.on('change', changes);

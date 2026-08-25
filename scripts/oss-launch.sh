@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 # scripts/oss-launch.sh
 #
-# Phased OSS launch helper for Amux.
+# Phased OSS launch helper for MuxBase.
 # Run each phase explicitly. Phases are idempotent where safe; destructive ones
 # require explicit confirmation.
 #
 # Prereqs you've already done:
-#   - amux-app GitHub org created
-#   - amux-app/amux repo created (private, empty)
-#   - amux-app/homebrew-amux repo created (empty)
-#   - HOMEBREW_TAP_TOKEN secret added on amux-app/amux
-#   - 8 Apple signing/notarization secrets set on amux-app/amux
+#   - muxbase-app GitHub org created
+#   - muxbase-app/muxbase repo created (private, empty)
+#   - muxbase-app/homebrew-muxbase repo created (empty)
+#   - HOMEBREW_TAP_TOKEN secret added on muxbase-app/muxbase
+#   - 8 Apple signing/notarization secrets set on muxbase-app/muxbase
 #   - gh CLI authenticated to github.com:
 #       gh auth login --hostname github.com --web
-#   - Run this script from the real amux git checkout (with a .git directory).
+#   - Run this script from the real muxbase git checkout (with a .git directory).
 #
 # Phases:
 #   check               Verify gh auth + repo existence + secrets present
-#   init-tap            Bootstrap amux-app/homebrew-amux with Casks/.gitkeep + README
+#   init-tap            Bootstrap muxbase-app/homebrew-muxbase with Casks/.gitkeep + README
 #   verify-clean        Validate working tree is clean (tracked + untracked)
 #   push-main           Repoint origin and prompt for the final git push
 #   dry-run             Push v<version> tag, then dispatch publish.yml once
@@ -26,10 +26,10 @@
 set -euo pipefail
 
 PHASE="${1:-help}"
-REPO_OWNER="amux-app"
-MAIN_REPO="${REPO_OWNER}/amux"
-TAP_REPO="${REPO_OWNER}/homebrew-amux"
-TAP_DIR="${AMUX_TAP_DIR:-$HOME/projects/homebrew-amux}"
+REPO_OWNER="muxbase-app"
+MAIN_REPO="${REPO_OWNER}/muxbase"
+TAP_REPO="${REPO_OWNER}/homebrew-muxbase"
+TAP_DIR="${MUXBASE_TAP_DIR:-$HOME/projects/homebrew-muxbase}"
 
 die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 ok()  { printf 'OK:    %s\n' "$*"; }
@@ -43,7 +43,7 @@ require_gh_github_com() {
 
 require_in_repo() {
   git rev-parse --show-toplevel >/dev/null 2>&1 \
-    || die "Not inside a git repo. Run this from your real amux checkout (the one with .git/)."
+    || die "Not inside a git repo. Run this from your real muxbase checkout (the one with .git/)."
 }
 
 current_version() {
@@ -115,24 +115,24 @@ case "$PHASE" in
 
     if [ ! -f README.md ]; then
       cat > README.md <<'EOF'
-# homebrew-amux
+# homebrew-muxbase
 
-Official Homebrew tap for [Amux](https://github.com/amux-app/amux).
+Official Homebrew tap for [MuxBase](https://github.com/muxbase-app/muxbase).
 
 ## Install
 
 ```bash
-brew tap amux-app/amux
-brew install tmux && brew install --cask amux
+brew tap muxbase-app/muxbase
+brew install tmux && brew install --cask muxbase
 ```
 
-Amux requires tmux 3.7b or newer. The explicit `brew install tmux` step installs
+MuxBase requires tmux 3.7b or newer. The explicit `brew install tmux` step installs
 or upgrades tmux before the Cask; the Cask also refuses to install against an
 older linked tmux. After upgrading tmux, save and close active tmux sessions and
 restart tmux completely.
 
-The `Casks/amux.rb` file is generated and pushed by the release pipeline of
-[amux-app/amux](https://github.com/amux-app/amux) on every tagged release.
+The `Casks/muxbase.rb` file is generated and pushed by the release pipeline of
+[muxbase-app/muxbase](https://github.com/muxbase-app/muxbase) on every tagged release.
 Do not edit by hand.
 EOF
     fi
@@ -141,8 +141,8 @@ EOF
       ok "Tap already initialized - nothing to commit"
     else
       git add Casks/.gitkeep README.md
-      author_name=$(git config user.name || echo amux-bot)
-      author_email=$(git config user.email || echo bot@amux.dev)
+      author_name=$(git config user.name || echo muxbase-bot)
+      author_email=$(git config user.email || echo bot@muxbase.dev)
       git -c user.name="$author_name" -c user.email="$author_email" \
           commit -m "chore: initialize tap"
       git push -u origin main || die "Push to $TAP_REPO failed. Check HOMEBREW_TAP_TOKEN scope and tap-repo write access for your account."
@@ -241,8 +241,8 @@ EOF
     echo
     note "When the run is green, verify:"
     note "  gh release view $tag --repo $MAIN_REPO"
-    note "  gh api /repos/$TAP_REPO/contents/Casks/amux.rb --jq '.content' | base64 -d | head"
-    note "  brew tap amux-app/amux && brew install tmux && brew install --cask amux"
+    note "  gh api /repos/$TAP_REPO/contents/Casks/muxbase.rb --jq '.content' | base64 -d | head"
+    note "  brew tap muxbase-app/muxbase && brew install tmux && brew install --cask muxbase"
     ;;
 
   dry-run-cleanup)
@@ -265,8 +265,8 @@ EOF
       && ok "Deleted local tag $tag" \
       || note "No local tag $tag"
 
-    brew uninstall --cask amux 2>/dev/null || true
-    brew untap "$REPO_OWNER/amux" 2>/dev/null || true
+    brew uninstall --cask muxbase 2>/dev/null || true
+    brew untap "$REPO_OWNER/muxbase" 2>/dev/null || true
     ok "Cleanup done - rerun 'dry-run' when ready"
     ;;
 
@@ -274,7 +274,7 @@ EOF
     cat <<EOF
 Usage: $0 <phase>
 
-Run from your real amux git checkout. Phases (run in this order):
+Run from your real muxbase git checkout. Phases (run in this order):
 
   check               Verify gh auth, repos exist, all secrets configured
   init-tap            Clone $TAP_REPO, push Casks/.gitkeep + README on first commit
@@ -288,7 +288,7 @@ After dry-run succeeds, release-please drives all subsequent versions via
 merge -> release PR -> tag. Do not tag manually after the first release.
 
 Environment variables:
-  AMUX_TAP_DIR  Override clone path for $TAP_REPO (default: \$HOME/projects/homebrew-amux)
+  MUXBASE_TAP_DIR  Override clone path for $TAP_REPO (default: \$HOME/projects/homebrew-muxbase)
 EOF
     ;;
 esac

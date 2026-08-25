@@ -83,7 +83,7 @@ export function createClaudeVersionPreflight(
       }
       if (compareClaudeVersions(version, CLAUDE_FULLSCREEN_MINIMUM_VERSION) < 0) {
         throw new ClaudeFullscreenVersionError(
-          `Claude Code ${formatVersion(version)} is unsupported for fullscreen rendering; Amux requires ${formatVersion(CLAUDE_FULLSCREEN_MINIMUM_VERSION)} or newer.`,
+          `Claude Code ${formatVersion(version)} is unsupported for fullscreen rendering; MuxBase requires ${formatVersion(CLAUDE_FULLSCREEN_MINIMUM_VERSION)} or newer.`,
         );
       }
 

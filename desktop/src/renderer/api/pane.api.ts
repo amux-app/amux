@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type {
   PaneCreateRequest,
   PaneCreateResponse,
@@ -32,7 +32,7 @@ import type { ActivitySnapshot } from '../../shared/pane-activity';
 import { invoke } from './ipc';
 import { sanitizePaneList, warnDroppedItems, warnInvalidPayload } from '../lib/runtimeValidation';
 
-export async function listPanes(): Promise<AumxPane[]> {
+export async function listPanes(): Promise<MuxBasePane[]> {
   const payload = await invoke<unknown>(IPC.PANE_LIST);
   const panes = sanitizePaneList(payload);
 

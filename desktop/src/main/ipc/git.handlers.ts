@@ -8,7 +8,7 @@ import type {
   GitStatusRequest,
   GitStatusResponse,
 } from '../../shared/ipc-types.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { formatError } from '../utils/formatError.js';
 import { resolveAuthorizedFileRoot } from '../utils/file-root-authorization.js';
 import { REV_PARSE } from '../services/git/gitArgs.js';
@@ -93,7 +93,7 @@ async function buildRangeDiffResponse(
   return buildDiffResponse(meta, await collectRangeDiffData(worktreePath, diffMode, meta.baseBranch));
 }
 
-export function registerGitHandlers(bridge: AumxBridge): void {
+export function registerGitHandlers(bridge: MuxBaseBridge): void {
   const authorizeRoot = (requestedRoot: string): string =>
     resolveAuthorizedFileRoot(bridge.getProjectRoot(), bridge.getPanes(), requestedRoot);
 

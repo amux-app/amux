@@ -1,11 +1,11 @@
 import { IPC } from '../../shared/ipc-channels.js';
 import type { AgentListRequest } from '../../shared/ipc-types.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { formatError } from '../utils/formatError.js';
 import { secureHandle } from './ipc-security.js';
 import { log } from '../services/Logger.js';
 
-export function registerAgentHandlers(bridge: AumxBridge): void {
+export function registerAgentHandlers(bridge: MuxBaseBridge): void {
   secureHandle(IPC.AGENT_LIST, async (_event, request?: AgentListRequest) => {
     try {
       const agents = await bridge.getAvailableAgents(request?.capability);

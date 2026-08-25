@@ -1,4 +1,4 @@
-import type { AumxPane } from '../../types.js';
+import type { MuxBasePane } from '../../types.js';
 import type { ActionContext, ActionResult } from '../types.js';
 import { LogService } from '../../services/LogService.js';
 import { TmuxService } from '../../services/TmuxService.js';
@@ -6,7 +6,7 @@ import { validatePaneName } from '../../utils/paneName.js';
 import { getPaneTmuxTitle } from '../../utils/paneTitle.js';
 
 export async function renamePane(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   newName?: string,
 ): Promise<ActionResult> {
@@ -14,7 +14,7 @@ export async function renamePane(
   if (!validation.ok) return { type: 'error', message: validation.message };
   const { value } = validation;
 
-  const updated: AumxPane = { ...pane, slug: value, title: value, titleLocked: true };
+  const updated: MuxBasePane = { ...pane, slug: value, title: value, titleLocked: true };
   // When branchName is undefined, getPaneBranchName() falls back to slug — preserve the
   // original slug as branchName so merge/worktree ops still find the correct git branch.
   if (pane.worktreePath && pane.branchName === undefined) {

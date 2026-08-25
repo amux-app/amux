@@ -20,7 +20,7 @@ const REPO_ROOT = resolve(ROOT, '..');
 const MAIN_ENTRY = resolve(ROOT, 'out', 'main', 'index.js');
 const DEMO_OUTPUT_DIR = resolve(REPO_ROOT, '.tmp', 'demo');
 const KEPT_WEBM_NAMES = new Set(['hero.webm', 'full.webm']);
-const PROJECT_ROOT_TMUX_OPTION = '@aumx_project_root';
+const PROJECT_ROOT_TMUX_OPTION = '@muxbase_project_root';
 
 interface DemoSession {
   app: ElectronApplication;
@@ -84,18 +84,18 @@ async function launchDemoApp(): Promise<DemoSession> {
 
   try {
     const sessions = execSync('tmux list-sessions -F "#{session_name}" 2>/dev/null', { encoding: 'utf-8' });
-    for (const name of sessions.split('\n').filter((s) => s.includes('aumx-demo'))) {
+    for (const name of sessions.split('\n').filter((s) => s.includes('muxbase-demo'))) {
       execSync(`tmux kill-session -t "${name}" 2>/dev/null`, { stdio: 'ignore' });
     }
   } catch { /* no tmux */ }
 
-  const e2eRoot = realpathSync(mkdtempSync(resolve(tmpdir(), 'aumx-demo-cinema-')));
+  const e2eRoot = realpathSync(mkdtempSync(resolve(tmpdir(), 'muxbase-demo-cinema-')));
   let app: ElectronApplication | undefined;
   try {
     execSync('git init', { cwd: e2eRoot, stdio: 'ignore' });
-    execSync('git config user.email "demo@aumx.test"', { cwd: e2eRoot, stdio: 'ignore' });
-    execSync('git config user.name "aumx-demo"', { cwd: e2eRoot, stdio: 'ignore' });
-    writeFileSync(resolve(e2eRoot, '.gitignore'), '.amux/\n.aumx/\n');
+    execSync('git config user.email "demo@muxbase.test"', { cwd: e2eRoot, stdio: 'ignore' });
+    execSync('git config user.name "muxbase-demo"', { cwd: e2eRoot, stdio: 'ignore' });
+    writeFileSync(resolve(e2eRoot, '.gitignore'), '.muxbase/\n');
     execSync('git add .gitignore', { cwd: e2eRoot, stdio: 'ignore' });
     execSync('git commit -m "chore: demo workspace init"', { cwd: e2eRoot, stdio: 'ignore' });
 
@@ -107,7 +107,7 @@ async function launchDemoApp(): Promise<DemoSession> {
     app = await electron.launch({
       args: [MAIN_ENTRY],
       cwd: e2eRoot,
-      env: { ...inheritedEnv, NODE_ENV: 'test', AUMX_DEV: 'true', AUMX_E2E: '1' },
+      env: { ...inheritedEnv, NODE_ENV: 'test', MUXBASE_DEV: 'true', MUXBASE_E2E: '1' },
       recordVideo: { dir: DEMO_OUTPUT_DIR, size: VIEWPORT },
     });
     trace('electron.launch:done');
@@ -117,7 +117,7 @@ async function launchDemoApp(): Promise<DemoSession> {
     trace('getAppWindow:done');
 
     await app.context().addInitScript(() => {
-      (window as any).__AUMX_E2E = true;
+      (window as any).__MUXBASE_E2E = true;
       // A solid cover, installed before React ever paints, so the raw
       // empty-state boot frame never reaches the recording. Scenes.ts removes
       // it itself once the staged fleet is installed and painted.
@@ -202,7 +202,7 @@ async function finalizeRecording(session: DemoSession, outputFileName: string): 
   rmSync(session.e2eRoot, { recursive: true, force: true });
 }
 
-describe.runIf(process.env.AUMX_DEMO_VIDEO === '1')('Amux Cinematic Demo', () => {
+describe.runIf(process.env.MUXBASE_DEMO_VIDEO === '1')('MuxBase Cinematic Demo', () => {
   it('records the hero cut (~17.3s, seamless loop for the README autoplay hero)', async () => {
     const session = await launchDemoApp();
     try {

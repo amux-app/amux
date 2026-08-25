@@ -60,13 +60,13 @@ describe('TmuxWriteOperations', () => {
     // Act
     await tmux.respawnPane({
       command: "echo 'hello'",
-      cwd: '/tmp/aumx worktree',
+      cwd: '/tmp/muxbase worktree',
       paneId: '%1',
     });
 
     // Assert
     expect(tmux.commands).toEqual([
-      "tmux respawn-pane -k -t '%1' -c '/tmp/aumx worktree' 'echo '\\''hello'\\'''",
+      "tmux respawn-pane -k -t '%1' -c '/tmp/muxbase worktree' 'echo '\\''hello'\\'''",
     ]);
   });
 });

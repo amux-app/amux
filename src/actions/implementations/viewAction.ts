@@ -3,14 +3,14 @@
  */
 
 import { execFileSync } from 'child_process';
-import type { AumxPane } from '../../types.js';
+import type { MuxBasePane } from '../../types.js';
 import type { ActionResult, ActionContext } from '../types.js';
 
 /**
  * View/Jump to a pane
  */
 export async function viewPane(
-  pane: AumxPane,
+  pane: MuxBasePane,
   _context: ActionContext
 ): Promise<ActionResult> {
   try {

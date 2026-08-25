@@ -85,15 +85,15 @@ describe('CreatePaneDialog duel flow', () => {
     });
     useProjectStore.setState({
       activeProject: {
-        configPath: '/Users/me/projects/app/.aumx/aumx.config.json',
+        configPath: '/Users/me/projects/app/.muxbase/muxbase.config.json',
         name: 'app',
         paneCount: 0,
         root: '/Users/me/projects/app',
-        sessionName: 'aumx-app',
+        sessionName: 'muxbase-app',
       },
       projectSwitching: false,
       projects: [],
-      sessionName: 'aumx-app',
+      sessionName: 'muxbase-app',
       sessionProjectName: 'app',
       sessionProjectRoot: '/Users/me/projects/app',
     });

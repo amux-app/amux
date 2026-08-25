@@ -20,7 +20,7 @@ describe('atomic update publication workflow', () => {
     const auditIndex = workflow.indexOf('name: Audit uploaded draft');
     const publishIndex = workflow.indexOf('name: Publish verified draft');
 
-    expect(workflow).toContain('"$GITHUB_REPOSITORY" != "amux-app/amux"');
+    expect(workflow).toContain('"$GITHUB_REPOSITORY" != "muxbase-app/muxbase"');
     expect(workflow).toContain('group: publish-release-${{ github.repository }}');
     expect(workflow).toContain(".draft == true");
     expect(workflow).toContain('actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6');
@@ -67,9 +67,9 @@ describe('atomic update publication workflow', () => {
     for (const name of sensitiveNames) expect(publishJobEnv).not.toContain(name);
     expect(workflow).toContain('anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610');
     expect(workflow).toContain('format: cyclonedx-json');
-    expect(workflow).toContain('sbom-path: desktop/release/amux-sbom.cdx.json');
+    expect(workflow).toContain('sbom-path: desktop/release/muxbase-sbom.cdx.json');
     expect(workflow).toContain('name: Attest SBOM document provenance');
-    expect(workflow).toContain('subject-path: desktop/release/amux-sbom.cdx.json');
+    expect(workflow).toContain('subject-path: desktop/release/muxbase-sbom.cdx.json');
     expect(workflow).not.toContain('@cyclonedx/cyclonedx-npm');
     expect(workflow).toContain("jq -e '.private == false'");
   });

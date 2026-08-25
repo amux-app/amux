@@ -17,7 +17,7 @@ const log = LogService.getInstance();
 /**
  * Detect all git worktrees within a directory (recursively)
  *
- * @param rootWorktreePath - The root worktree path (aumx pane's worktree)
+ * @param rootWorktreePath - The root worktree path (muxbase pane's worktree)
  * @returns Array of WorktreeInfo objects, ordered by depth (deepest first, root last)
  */
 export async function detectAllWorktrees(rootWorktreePath: string): Promise<WorktreeInfo[]> {

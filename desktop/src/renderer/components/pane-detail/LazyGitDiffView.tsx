@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { lazy, Suspense } from 'react';
 
 const GitDiffView = lazy(async () => {
@@ -6,7 +6,7 @@ const GitDiffView = lazy(async () => {
   return { default: module.GitDiffView };
 });
 
-export function LazyGitDiffView({ pane }: { pane: AumxPane }) {
+export function LazyGitDiffView({ pane }: { pane: MuxBasePane }) {
   return (
     <Suspense fallback={<GitDiffLoading />}>
       <GitDiffView pane={pane} />

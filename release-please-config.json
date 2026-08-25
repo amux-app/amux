@@ -9,7 +9,7 @@
   "packages": {
     ".": {
       "release-type": "node",
-      "package-name": "aumx",
+      "package-name": "muxbase",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         {

@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve Amux.
+Thanks for helping improve MuxBase.
 
 ## Prerequisites
 

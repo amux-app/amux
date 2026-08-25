@@ -43,7 +43,7 @@ async function checkTmuxClientVersion(minVersion: string, homebrewFormula: strin
     if (didCommandTimeOut(outcome.error)) {
       return {
         valid: false,
-        errors: ['Amux could not verify tmux because the version check timed out. Retry startup.'],
+        errors: ['MuxBase could not verify tmux because the version check timed out. Retry startup.'],
       };
     }
     if (isCommandMissing(outcome.error)) {
@@ -51,7 +51,7 @@ async function checkTmuxClientVersion(minVersion: string, homebrewFormula: strin
     }
     return {
       valid: false,
-      errors: ['Amux could not verify tmux. Check the tmux installation and PATH, then retry startup.'],
+      errors: ['MuxBase could not verify tmux. Check the tmux installation and PATH, then retry startup.'],
     };
   }
 
@@ -59,7 +59,7 @@ async function checkTmuxClientVersion(minVersion: string, homebrewFormula: strin
   if (!parsed) {
     return {
       valid: false,
-      errors: [`Amux could not verify tmux version ${outcome.stdout.trim()}; install stable tmux >=${minVersion}.`],
+      errors: [`MuxBase could not verify tmux version ${outcome.stdout.trim()}; install stable tmux >=${minVersion}.`],
     };
   }
 
@@ -67,7 +67,7 @@ async function checkTmuxClientVersion(minVersion: string, homebrewFormula: strin
     return {
       valid: false,
       version: parsed.raw.replace(/^tmux\s+/, ''),
-      errors: [`tmux ${parsed.raw.replace(/^tmux\s+/, '')} is below Amux's minimum ${minVersion}. Run: brew upgrade ${homebrewFormula}`],
+      errors: [`tmux ${parsed.raw.replace(/^tmux\s+/, '')} is below MuxBase's minimum ${minVersion}. Run: brew upgrade ${homebrewFormula}`],
     };
   }
 
@@ -82,12 +82,12 @@ async function checkTmuxServerVersion(minVersion: string, clientVersion: string 
   const outcome = await runCommand('tmux', ['display-message', '-p', '#{version}']);
   if (outcome.error) {
     if (isNoServer(outcome)) return { valid: true, errors: [] };
-    return { valid: false, errors: [`Amux could not verify the running tmux server. Save and close active tmux sessions, restart tmux completely, then retry Amux startup.`] };
+    return { valid: false, errors: [`MuxBase could not verify the running tmux server. Save and close active tmux sessions, restart tmux completely, then retry MuxBase startup.`] };
   }
 
   const parsed = parseTmuxVersion(outcome.stdout);
   if (!parsed) {
-    return { valid: false, errors: [`Amux could not verify the running tmux server version ${outcome.stdout.trim()}; restart tmux completely, then retry Amux startup.`] };
+    return { valid: false, errors: [`MuxBase could not verify the running tmux server version ${outcome.stdout.trim()}; restart tmux completely, then retry MuxBase startup.`] };
   }
 
   if (!isSupportedTmuxVersion(parsed.raw, minVersion)) {
@@ -95,7 +95,7 @@ async function checkTmuxServerVersion(minVersion: string, clientVersion: string 
     return {
       valid: false,
       version: parsed.raw,
-      errors: [`tmux client ${client} is installed, but the running server is ${parsed.raw}. Save and close active tmux sessions, restart tmux completely, then retry Amux startup.`],
+      errors: [`tmux client ${client} is installed, but the running server is ${parsed.raw}. Save and close active tmux sessions, restart tmux completely, then retry MuxBase startup.`],
     };
   }
 
@@ -116,7 +116,7 @@ async function checkGitVersion(minVersion: string): Promise<DependencyCheck> {
     if (didCommandTimeOut(outcome.error)) {
       return {
         valid: false,
-        errors: ['Amux could not verify Git because the version check timed out. Retry startup.'],
+        errors: ['MuxBase could not verify Git because the version check timed out. Retry startup.'],
       };
     }
     if (isCommandMissing(outcome.error)) {
@@ -124,7 +124,7 @@ async function checkGitVersion(minVersion: string): Promise<DependencyCheck> {
     }
     return {
       valid: false,
-      errors: ['Amux could not verify Git. Check the Git installation and PATH, then retry startup.'],
+      errors: ['MuxBase could not verify Git. Check the Git installation and PATH, then retry startup.'],
     };
   }
 
@@ -198,7 +198,7 @@ function collectAgentWarnings(agents: AgentName[]): string[] {
 }
 
 /**
- * Validate all system requirements for aumx
+ * Validate all system requirements for muxbase
  * Returns validation result with errors and warnings
  */
 export async function validateRequiredSystemRequirements(): Promise<RequiredValidationResult> {

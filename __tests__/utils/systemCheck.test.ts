@@ -95,7 +95,7 @@ describe('validateSystemRequirements', () => {
 
     // Assert
     expect(result.canRun).toBe(false);
-    expect(result.errors).toContain("tmux 3.7a is below Amux's minimum 3.7b. Run: brew upgrade tmux");
+    expect(result.errors).toContain("tmux 3.7a is below MuxBase's minimum 3.7b. Run: brew upgrade tmux");
   });
 
   it('accepts a newer stable client', async () => {
@@ -147,7 +147,7 @@ describe('validateSystemRequirements', () => {
     const result = await validateSystemRequirements();
 
     expect(result.canRun).toBe(false);
-    expect(result.errors).toContain('Amux could not verify Git because the version check timed out. Retry startup.');
+    expect(result.errors).toContain('MuxBase could not verify Git because the version check timed out. Retry startup.');
     expect(result.errors).not.toContain('git is not installed or not in PATH');
   });
 

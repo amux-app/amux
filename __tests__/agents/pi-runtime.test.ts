@@ -26,7 +26,7 @@ describe('Pi runtime', () => {
   });
 
   it('resolves a selected session from a project-relative Pi session directory', async () => {
-    const projectRoot = await mkdtemp(path.join(os.tmpdir(), 'aumx-pi-source-'));
+    const projectRoot = await mkdtemp(path.join(os.tmpdir(), 'muxbase-pi-source-'));
     const sessionDirectory = path.join(projectRoot, '.pi-sessions');
     const sessionId = '019fd282-216d-7d9a-81af-323dd117ff21';
     const sessionFile = path.join(sessionDirectory, 'source.jsonl');

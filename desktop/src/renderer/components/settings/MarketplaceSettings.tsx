@@ -1,4 +1,4 @@
-import type { DetectedPlugin, InstalledPlugin, MarketplaceInstallMode } from 'aumx/core';
+import type { DetectedPlugin, InstalledPlugin, MarketplaceInstallMode } from 'muxbase/core';
 import { Plus, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useMarketplaceBootstrap } from '../../hooks/useMarketplaceBootstrap';

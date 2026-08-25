@@ -6,7 +6,7 @@ import { ProjectSwitcher } from '../src/renderer/components/layout/ProjectSwitch
 import type { ProjectInfo } from '../src/shared/ipc-types';
 
 function project(name: string, root: string): ProjectInfo {
-  return { configPath: `${root}/.aumx/aumx.config.json`, name, paneCount: 0, root, sessionName: `aumx-${name}` };
+  return { configPath: `${root}/.muxbase/muxbase.config.json`, name, paneCount: 0, root, sessionName: `muxbase-${name}` };
 }
 
 const PROJECTS = [project('alpha', '/tmp/alpha'), project('beta', '/tmp/beta'), project('gamma', '/tmp/gamma')];
@@ -267,6 +267,6 @@ describe('ProjectSwitcher', () => {
     render(<ProjectSwitcher activeProject={null} onSelect={vi.fn()} projects={PROJECTS} />);
 
     // Assert
-    expect(screen.getByRole('combobox', { name: 'Switch project, current: Amux' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Switch project, current: MuxBase' })).toBeTruthy();
   });
 });

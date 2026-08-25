@@ -27,7 +27,7 @@ function writeTranscript(terminalDir: string, name: string, mtimeMs: number): st
 
 describe('reapOrphanTranscripts', () => {
   it('runs cleanup asynchronously so large transcript directories do not block startup', async () => {
-    dir = mkdtempSync(join(tmpdir(), 'aumx-reaper-'));
+    dir = mkdtempSync(join(tmpdir(), 'muxbase-reaper-'));
 
     const cleanup = reapOrphanTranscripts(dir, new Set(), NOW, TRANSCRIPT_RETENTION_MS);
 
@@ -37,7 +37,7 @@ describe('reapOrphanTranscripts', () => {
 
   it('deletes an orphaned transcript older than the retention cutoff', async () => {
     // Arrange
-    dir = mkdtempSync(join(tmpdir(), 'aumx-reaper-'));
+    dir = mkdtempSync(join(tmpdir(), 'muxbase-reaper-'));
     const orphan = writeTranscript(dir, 'tmux-1-claude.ansi', OLD);
 
     // Act
@@ -50,7 +50,7 @@ describe('reapOrphanTranscripts', () => {
 
   it('keeps an orphaned transcript that is still within the retention window', async () => {
     // Arrange
-    dir = mkdtempSync(join(tmpdir(), 'aumx-reaper-'));
+    dir = mkdtempSync(join(tmpdir(), 'muxbase-reaper-'));
     const recent = writeTranscript(dir, 'tmux-2-codex.ansi', RECENT);
 
     // Act
@@ -63,7 +63,7 @@ describe('reapOrphanTranscripts', () => {
 
   it('keeps an old transcript that a live pane still references', async () => {
     // Arrange
-    dir = mkdtempSync(join(tmpdir(), 'aumx-reaper-'));
+    dir = mkdtempSync(join(tmpdir(), 'muxbase-reaper-'));
     const live = writeTranscript(dir, 'tmux-3-claude.ansi', OLD);
 
     // Act
@@ -76,8 +76,8 @@ describe('reapOrphanTranscripts', () => {
 
   it('ignores non-.ansi files', async () => {
     // Arrange
-    dir = mkdtempSync(join(tmpdir(), 'aumx-reaper-'));
-    const other = writeTranscript(dir, 'aumx-desktop-2026-06-01.log', OLD);
+    dir = mkdtempSync(join(tmpdir(), 'muxbase-reaper-'));
+    const other = writeTranscript(dir, 'muxbase-desktop-2026-06-01.log', OLD);
 
     // Act
     const deleted = await reapOrphanTranscripts(dir, new Set(), NOW, TRANSCRIPT_RETENTION_MS);
@@ -89,7 +89,7 @@ describe('reapOrphanTranscripts', () => {
 
   it('returns 0 without throwing when the directory is missing', async () => {
     // Arrange
-    dir = mkdtempSync(join(tmpdir(), 'aumx-reaper-'));
+    dir = mkdtempSync(join(tmpdir(), 'muxbase-reaper-'));
     const missing = join(dir, 'does-not-exist');
 
     // Act

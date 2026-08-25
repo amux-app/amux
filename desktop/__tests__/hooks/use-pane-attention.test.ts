@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 
 const jumpToPaneRecord = vi.hoisted(() => vi.fn());
 
@@ -18,7 +18,7 @@ import { usePaneStore } from '../../src/renderer/stores/pane.store';
 import { useUiStore } from '../../src/renderer/stores/ui.store';
 import { makeActivity as activity } from '../helpers/pane-activity-fixtures';
 
-function makePane(id: string, overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(id: string, overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     id,
     slug: id,
@@ -41,7 +41,7 @@ function ready(paneId: string): PaneAttention {
   return { paneId, kind: 'ready', reason: 'just-finished' };
 }
 
-function setPanes(panes: AumxPane[], selectedPaneId: string | null = null): void {
+function setPanes(panes: MuxBasePane[], selectedPaneId: string | null = null): void {
   usePaneStore.setState({ panes, selectedPaneId });
 }
 

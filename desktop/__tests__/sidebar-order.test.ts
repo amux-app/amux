@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import {
   orderSidebarPanes,
   type SidebarActivityLookup,
@@ -13,7 +13,7 @@ const BETA_ROOT = '/work/beta';
 const NO_STATUS: SidebarStatusLookup = new Map();
 const NO_ACTIVITY: SidebarActivityLookup = {};
 
-function makePane(id: string, overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(id: string, overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     id,
     slug: id,
@@ -217,7 +217,7 @@ describe('orderSidebarPanes updated and manual sorts', () => {
 
   it('labels the unresolvable-project group so it cannot merge into a labeled one', () => {
     // Arrange — one pane resolves to a project, one has nothing to resolve
-    const panes: AumxPane[] = [
+    const panes: MuxBasePane[] = [
       { agent: 'claude', id: 'a', paneId: '%1', projectRoot: ALPHA_ROOT, prompt: 'p', slug: 'a' },
       { agent: 'claude', id: 'b', paneId: '%2', prompt: 'p', slug: 'b' },
     ];

@@ -65,7 +65,7 @@ const KANBAN_DONE_CARD = `${CLUSTERS['kanban-done']} [data-card-id^="done-"]`;
 
 // Backlog and done fixtures are written through the real kanban IPC into an
 // isolated temp project, so the measurement runs against production markup
-// without touching any real project's .aumx data.
+// without touching any real project's .muxbase data.
 const KANBAN_BACKLOG_SEED = [
   { agent: 'claude', complexity: 'S', prompt: 'Add retry backoff to the capture loop and cover it with a test.', title: 'Add retry backoff', useWorktree: true },
   { agent: 'codex', complexity: 'M', prompt: 'Harden IPC validation for every kanban channel.', title: 'Harden IPC validation', useWorktree: true },
@@ -97,7 +97,7 @@ interface MeasuredTarget {
 
 interface BarLayout { barHeight: number; documentOverflow: number; tallestChild: { height: number; text: string } }
 
-interface InvokeWindow { aumx: { invoke: (channel: string, payload?: unknown) => Promise<unknown> } }
+interface InvokeWindow { muxbase: { invoke: (channel: string, payload?: unknown) => Promise<unknown> } }
 
 interface Verdict {
   clusters: string[];
@@ -288,7 +288,7 @@ function writeInventoryReport(): void {
 async function invokeInPage(page: Page, channel: string, payload: unknown): Promise<void> {
   await page.evaluate(
     async ({ ipcChannel, request }) => {
-      await (window as unknown as InvokeWindow).aumx.invoke(ipcChannel, request);
+      await (window as unknown as InvokeWindow).muxbase.invoke(ipcChannel, request);
     },
     { ipcChannel: channel, request: payload },
   );
@@ -310,7 +310,7 @@ async function seedFleet(page: Page, panes: BaselinePaneFixture[]): Promise<void
 
 async function setUiState(page: Page, partial: Record<string, boolean>): Promise<void> {
   await page.evaluate((value) => {
-    (window as unknown as BaselineStoreWindow).__aumxStores?.ui?.setState(value);
+    (window as unknown as BaselineStoreWindow).__muxbaseStores?.ui?.setState(value);
   }, partial);
   await page.waitForTimeout(SETTLE_MS);
 }
@@ -369,7 +369,7 @@ async function readBarLayout(page: Page): Promise<BarLayout> {
   }, RESOURCE_BAR);
 }
 
-describe.runIf(process.env.AUMX_E2E === '1')('Target size geometry (WCAG 2.2 SC 2.5.8)', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('Target size geometry (WCAG 2.2 SC 2.5.8)', () => {
   let app: ElectronApplication;
   let page: Page;
   let project: { projectName: string; projectRoot: string };
@@ -379,7 +379,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Target size geometry (WCAG 2.2 SC 
 
     app = await electron.launch({
       args: [MAIN_ENTRY],
-      env: { ...process.env, AUMX_DEV: 'true', NODE_ENV: 'test' },
+      env: { ...process.env, MUXBASE_DEV: 'true', NODE_ENV: 'test' },
     });
     page = await getAppWindow(app);
     await disableBackgroundThrottling(app);
@@ -545,12 +545,12 @@ describe.runIf(process.env.AUMX_E2E === '1')('Target size geometry (WCAG 2.2 SC 
   }, STEP_TIMEOUT_MS);
 });
 
-// The board is feature-flagged and its cards live in a project's .aumx data, so
+// The board is feature-flagged and its cards live in a project's .muxbase data, so
 // it is measured against a throwaway git project with its own Electron user data
-// (NODE_ENV=test + AUMX_E2E=1 gives every launch a fresh userData dir, and
+// (NODE_ENV=test + MUXBASE_E2E=1 gives every launch a fresh userData dir, and
 // project discovery falls back to cwd). Runs after the suite above so only one
 // Electron instance is ever alive.
-describe.runIf(process.env.AUMX_E2E === '1')('Kanban target size geometry (WCAG 2.2 SC 2.5.8)', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('Kanban target size geometry (WCAG 2.2 SC 2.5.8)', () => {
   let app: ElectronApplication;
   let page: Page;
   let projectRoot: string;
@@ -558,18 +558,18 @@ describe.runIf(process.env.AUMX_E2E === '1')('Kanban target size geometry (WCAG 
   beforeAll(async () => {
     expect(existsSync(MAIN_ENTRY), `Build output missing: ${MAIN_ENTRY}`).toBe(true);
 
-    projectRoot = realpathSync(mkdtempSync(resolve(tmpdir(), 'aumx-target-size-kanban-')));
-    writeFileSync(resolve(projectRoot, '.gitignore'), '.amux/\n.aumx/\n');
+    projectRoot = realpathSync(mkdtempSync(resolve(tmpdir(), 'muxbase-target-size-kanban-')));
+    writeFileSync(resolve(projectRoot, '.gitignore'), '.muxbase/\n');
     execSync('git init', { cwd: projectRoot, stdio: 'ignore' });
-    execSync('git config user.email "e2e@aumx.test"', { cwd: projectRoot, stdio: 'ignore' });
-    execSync('git config user.name "aumx-e2e"', { cwd: projectRoot, stdio: 'ignore' });
+    execSync('git config user.email "e2e@muxbase.test"', { cwd: projectRoot, stdio: 'ignore' });
+    execSync('git config user.name "muxbase-e2e"', { cwd: projectRoot, stdio: 'ignore' });
     execSync('git add .gitignore', { cwd: projectRoot, stdio: 'ignore' });
     execSync('git commit -m "chore: target size fixture"', { cwd: projectRoot, stdio: 'ignore' });
 
     app = await electron.launch({
       args: [MAIN_ENTRY],
       cwd: projectRoot,
-      env: { ...process.env, AUMX_DEV: 'true', NODE_ENV: 'test' },
+      env: { ...process.env, MUXBASE_DEV: 'true', NODE_ENV: 'test' },
     });
     page = await getAppWindow(app);
     await disableBackgroundThrottling(app);
@@ -604,7 +604,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Kanban target size geometry (WCAG 
     writeInventoryReport();
     if (app) await app.close();
     if (projectRoot) {
-      execSync(`tmux kill-session -t "aumx-${resolve(projectRoot).split('/').pop()}" 2>/dev/null || true`, {
+      execSync(`tmux kill-session -t "muxbase-${resolve(projectRoot).split('/').pop()}" 2>/dev/null || true`, {
         stdio: 'ignore',
       });
       rmSync(projectRoot, { force: true, recursive: true });

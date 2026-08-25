@@ -1,4 +1,4 @@
-import type { AgentStatus } from 'aumx/core';
+import type { AgentStatus } from 'muxbase/core';
 import { Command } from 'cmdk';
 import { Search, Terminal, MessageSquare, Zap, FileCode, Hash, User, Bot, FileText, FolderOpen, TextSearch } from 'lucide-react';
 import { useRef, useMemo } from 'react';

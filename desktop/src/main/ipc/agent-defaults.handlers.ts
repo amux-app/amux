@@ -6,10 +6,10 @@ import { readOpencodeDefaults } from '../services/agent-defaults/OpencodeDefault
 import { readPiDefaults } from '../services/agent-defaults/PiDefaultsReader.js';
 import { secureHandle } from './ipc-security.js';
 import { log } from '../services/Logger.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { authorizeProjectRoot } from '../services/projectRootAuthorization.js';
 
-export function registerAgentDefaultsHandlers(bridge: AumxBridge): void {
+export function registerAgentDefaultsHandlers(bridge: MuxBaseBridge): void {
   secureHandle(IPC.AGENT_DEFAULTS_GET, async (_event, req?: { projectRoot?: string }): Promise<AgentDefaultsResponse> => {
     const projectRoot = await authorizeProjectRoot(req?.projectRoot, bridge.getProjectRoot(), bridge.getPanes());
     const response: AgentDefaultsResponse = {

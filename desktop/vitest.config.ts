@@ -4,9 +4,9 @@ import { resolve } from 'path';
 export default defineConfig({
   resolve: {
     alias: {
-      'aumx/core': resolve(__dirname, '../src/core.ts'),
-      'aumx/pane-name': resolve(__dirname, '../src/utils/paneName.ts'),
-      'aumx/pane-terminal-profile': resolve(__dirname, '../src/utils/paneTerminalProfile.ts'),
+      'muxbase/core': resolve(__dirname, '../src/core.ts'),
+      'muxbase/pane-name': resolve(__dirname, '../src/utils/paneName.ts'),
+      'muxbase/pane-terminal-profile': resolve(__dirname, '../src/utils/paneTerminalProfile.ts'),
     },
   },
   test: {

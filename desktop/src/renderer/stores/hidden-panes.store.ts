@@ -58,7 +58,7 @@ export const useHiddenPanesStore = create<HiddenPanesState>()(
         }),
     }),
     {
-      name: 'aumx-hidden-panes',
+      name: 'muxbase-hidden-panes',
       version: 1,
       storage: createJSONStorage(() => getStorage()),
       // Serialise the Set as an array so JSON.stringify produces something useful.

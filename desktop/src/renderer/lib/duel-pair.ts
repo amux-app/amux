@@ -1,8 +1,8 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 
-export type DuelPair = readonly [paneA: AumxPane, paneB: AumxPane];
+export type DuelPair = readonly [paneA: MuxBasePane, paneB: MuxBasePane];
 
-export function resolveDuelPair(panes: AumxPane[], groupId: string | null): DuelPair | null {
+export function resolveDuelPair(panes: MuxBasePane[], groupId: string | null): DuelPair | null {
   if (!groupId) return null;
 
   const members = panes.filter((pane) => pane.duel?.groupId === groupId);

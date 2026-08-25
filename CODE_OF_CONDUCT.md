@@ -2,7 +2,7 @@
 
 ## Our Standards
 
-We want Amux to be a respectful, practical, and welcoming project for contributors and users.
+We want MuxBase to be a respectful, practical, and welcoming project for contributors and users.
 
 Expected behavior:
 
@@ -20,7 +20,7 @@ Unacceptable behavior:
 
 ## Scope
 
-This code of conduct applies in project spaces, including issues, pull requests, discussions, releases, and community channels connected to Amux.
+This code of conduct applies in project spaces, including issues, pull requests, discussions, releases, and community channels connected to MuxBase.
 
 ## Reporting
 

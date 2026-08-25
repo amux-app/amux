@@ -1,7 +1,7 @@
 import { existsSync, watch } from 'fs';
 import { basename, dirname, join } from 'path';
 import type { FSWatcher } from 'fs';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { AgentLogParser, SessionDiscoveryMode } from '../parsing/AgentLogParser.js';
 import type { NormalizedSession } from '../../../shared/agent-session-types.js';
 import {
@@ -63,7 +63,7 @@ export class PaneSessionContext {
   private discoveryWatchFailed = false;
 
   constructor(
-    private readonly pane: AumxPane,
+    private readonly pane: MuxBasePane,
     private readonly parser: AgentLogParser,
     projectRoot: string,
     private readonly onSessionUpdated: (paneId: string, session: NormalizedSession) => void,

@@ -9,7 +9,7 @@ const TERMINAL_AUTOWRAP_ENABLE = '\x1b[?7h';
 const TERMINAL_AUTOWRAP_DISABLE = '\x1b[?7l';
 const TERMINAL_ALTERNATE_SCREEN_ENTER = '\x1b[?1049h';
 const TERMINAL_ALTERNATE_SCREEN_EXIT = '\x1b[?1049l';
-const AUMX_STARTUP_ENV_PATTERN = /AUMX_PROMPT_(?:FILE|CONTENT)=/;
+const MUXBASE_STARTUP_ENV_PATTERN = /MUXBASE_PROMPT_(?:FILE|CONTENT)=/;
 const CLAUDE_STARTUP_SCAN_LINES = 32;
 const CLAUDE_STARTUP_HEADER = /^╭───\s*Claude\s+Code\s+v\d/i;
 const CLAUDE_STARTUP_BODY = /(Welcome back|Tips for getting started)/i;
@@ -102,17 +102,17 @@ export function renderCapturedPaneFrame(opts: {
     }
   }
 
-  // When the aumx startup command is visible in any line — either as the sole
+  // When the muxbase startup command is visible in any line — either as the sole
   // content (agentHeaderIdx === -1, agent not yet started) or mixed into the
   // right-side columns of the agent's UI lines (agent rendering on primary screen
   // without clearing the echoed command first) — show a blank frame.
   // paneCreation sends `printf '\033c'` before the agent, so once the agent is
   // rendering this check no longer fires. Safe: these env-var names are internal.
-  const hasAumxStartup = rawLines.some((l) => {
+  const hasMuxBaseStartup = rawLines.some((l) => {
     const plain = stripTerminalControls(l);
-    return AUMX_STARTUP_ENV_PATTERN.test(plain);
+    return MUXBASE_STARTUP_ENV_PATTERN.test(plain);
   });
-  if (hasAumxStartup) {
+  if (hasMuxBaseStartup) {
     rawLines = [];
   }
 

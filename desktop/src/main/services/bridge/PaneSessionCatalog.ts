@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { assertNever, type AgentName } from 'aumx/core';
+import { assertNever, type AgentName } from 'muxbase/core';
 import type { PaneSessionListResponse, PastSession } from '../../../shared/ipc-types.js';
 import { formatError } from '../../utils/formatError.js';
 import { listClaudeSessions } from '../agent-session/ClaudeSessionLister.js';

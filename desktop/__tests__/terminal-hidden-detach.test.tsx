@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, cleanup, render } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -149,7 +149,7 @@ vi.mock('../src/renderer/lib/terminalDebug', () => ({
   },
 }));
 
-function makePane(): AumxPane {
+function makePane(): MuxBasePane {
   return {
     agent: 'opencode',
     agentStatus: 'idle',
@@ -159,11 +159,11 @@ function makePane(): AumxPane {
     prompt: 'Explain the architecture',
     slug: 'explain-architecture',
     type: 'worktree',
-    worktreePath: '/repo/.aumx/worktrees/explain-architecture',
+    worktreePath: '/repo/.muxbase/worktrees/explain-architecture',
   };
 }
 
-function resetStores(pane: AumxPane): void {
+function resetStores(pane: MuxBasePane): void {
   useAgentSessionStore.setState({ sessions: {} });
   useElectronSettingsStore.setState({ isLoading: false, settings: null });
   useNotificationStore.setState({ toasts: [] });
@@ -177,15 +177,15 @@ function resetStores(pane: AumxPane): void {
   });
   useProjectStore.setState({
     activeProject: {
-      configPath: '/repo/.aumx/aumx.config.json',
+      configPath: '/repo/.muxbase/muxbase.config.json',
       name: 'repo',
       paneCount: 1,
       root: '/repo',
-      sessionName: 'aumx-repo',
+      sessionName: 'muxbase-repo',
     },
     projectSwitching: false,
     projects: [],
-    sessionName: 'aumx-repo',
+    sessionName: 'muxbase-repo',
     sessionProjectName: 'repo',
     sessionProjectRoot: '/repo',
   });

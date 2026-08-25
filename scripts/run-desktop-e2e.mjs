@@ -12,11 +12,11 @@ const FAKE_AGENT_SCRIPT = [
   '  exit 0',
   'fi',
   'if [ "${1:-}" = "--version" ]; then',
-  '  printf "%s\\n" "$name 2.2.0-aumx-e2e"',
+  '  printf "%s\\n" "$name 2.2.0-muxbase-e2e"',
   '  exit 0',
   'fi',
-  'printf "AUMX_FAKE_AGENT_READY %s\\n" "$name"',
-  'while IFS= read -r line; do printf "AUMX_FAKE_AGENT_INPUT %s %s\\n" "$name" "$line"; done',
+  'printf "MUXBASE_FAKE_AGENT_READY %s\\n" "$name"',
+  'while IFS= read -r line; do printf "MUXBASE_FAKE_AGENT_INPUT %s %s\\n" "$name" "$line"; done',
   '',
 ].join('\n');
 
@@ -44,9 +44,9 @@ process.on('SIGINT', () => forwardSignal('SIGINT'));
 process.on('SIGTERM', () => forwardSignal('SIGTERM'));
 
 function configureFakeAgents(childEnv) {
-  if (childEnv.AUMX_E2E_FAKE_AGENTS !== '1') return undefined;
+  if (childEnv.MUXBASE_E2E_FAKE_AGENTS !== '1') return undefined;
 
-  const isolatedHome = mkdtempSync(join(tmpdir(), 'aumx-home-e2e-'));
+  const isolatedHome = mkdtempSync(join(tmpdir(), 'muxbase-home-e2e-'));
   const fakeBin = join(isolatedHome, 'bin');
   mkdirSync(fakeBin, { recursive: true });
 
@@ -63,14 +63,14 @@ function configureFakeAgents(childEnv) {
 }
 
 async function runIsolated(runArgs) {
-  const tmuxDirectory = mkdtempSync(join(tmpdir(), 'aumx-tmux-e2e-'));
+  const tmuxDirectory = mkdtempSync(join(tmpdir(), 'muxbase-tmux-e2e-'));
   const childEnv = { ...process.env, TMUX_TMPDIR: tmuxDirectory };
   delete childEnv.TMUX;
   delete childEnv.TMUX_PANE;
   const isolatedHome = configureFakeAgents(childEnv);
 
-  if (childEnv.AUMX_E2E_RUNNER_TMPDIR_FILE) {
-    writeFileSync(childEnv.AUMX_E2E_RUNNER_TMPDIR_FILE, tmuxDirectory);
+  if (childEnv.MUXBASE_E2E_RUNNER_TMPDIR_FILE) {
+    writeFileSync(childEnv.MUXBASE_E2E_RUNNER_TMPDIR_FILE, tmuxDirectory);
   }
 
   const killPrivateTmuxServer = () => {

@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, statSync } from 'fs';
 import { basename, isAbsolute, relative, resolve } from 'path';
-import { execAsync, getProjectConfigPath, shQuote, type AumxConfig } from 'aumx/core';
+import { execAsync, getProjectConfigPath, shQuote, type MuxBaseConfig } from 'muxbase/core';
 import type { ProjectInfo } from '../../shared/ipc-types.js';
 import { isTerminalPtyViewSessionName } from './terminal-pty-session.js';
 
@@ -11,7 +11,7 @@ export interface CurrentProjectInfo {
 }
 
 export async function discoverCurrentProject(): Promise<CurrentProjectInfo | null> {
-  if (process.env.AUMX_E2E === '1') return null;
+  if (process.env.MUXBASE_E2E === '1') return null;
 
   try {
     const sessionList = await execAsync(
@@ -19,11 +19,11 @@ export async function discoverCurrentProject(): Promise<CurrentProjectInfo | nul
       { silent: true },
     );
 
-    const aumxSessions = sessionList
+    const muxbaseSessions = sessionList
       .split('\n')
-      .filter((s) => isAumxProjectSessionName(s));
+      .filter((s) => isMuxBaseProjectSessionName(s));
 
-    const projects = (await Promise.all(aumxSessions.map(resolveProjectInfo)))
+    const projects = (await Promise.all(muxbaseSessions.map(resolveProjectInfo)))
       .filter((project): project is ProjectInfo => project !== null);
 
     const preferred = chooseCurrentProject(projects);
@@ -48,13 +48,13 @@ export async function discoverProjects(): Promise<ProjectInfo[]> {
       { silent: true },
     );
 
-    const aumxSessions = sessionList
+    const muxbaseSessions = sessionList
       .split('\n')
-      .filter((s) => isAumxProjectSessionName(s));
+      .filter((s) => isMuxBaseProjectSessionName(s));
 
     // Resolve sessions concurrently, then fold results in original session order
     // so the preferSession dedupe stays deterministic.
-    const resolved = await Promise.all(aumxSessions.map(resolveProjectInfo));
+    const resolved = await Promise.all(muxbaseSessions.map(resolveProjectInfo));
 
     for (const info of resolved) {
       if (!info) continue;
@@ -72,8 +72,8 @@ export async function discoverProjects(): Promise<ProjectInfo[]> {
   return Array.from(byRoot.values());
 }
 
-function isAumxProjectSessionName(sessionName: string): boolean {
-  return sessionName.startsWith('aumx-') && !isTerminalPtyViewSessionName(sessionName);
+function isMuxBaseProjectSessionName(sessionName: string): boolean {
+  return sessionName.startsWith('muxbase-') && !isTerminalPtyViewSessionName(sessionName);
 }
 
 function preferSession(candidate: string, current: string): boolean {
@@ -85,16 +85,16 @@ function preferSession(candidate: string, current: string): boolean {
 
 async function resolveProjectInfo(sessionName: string): Promise<ProjectInfo | null> {
   let projectRoot = '';
-  let projectName = sessionName.replace('aumx-', '');
+  let projectName = sessionName.replace('muxbase-', '');
 
   // Try session metadata first
   try {
     const root = await execAsync(
-      `tmux show -t ${shQuote(sessionName)} @aumx_project_root`,
+      `tmux show -t ${shQuote(sessionName)} @muxbase_project_root`,
       { silent: true },
     );
     if (root) {
-      projectRoot = root.replace(/^@aumx_project_root\s+/, '').trim();
+      projectRoot = root.replace(/^@muxbase_project_root\s+/, '').trim();
     }
   } catch {
     // Not set
@@ -103,11 +103,11 @@ async function resolveProjectInfo(sessionName: string): Promise<ProjectInfo | nu
   if (!projectRoot) {
     try {
       const name = await execAsync(
-        `tmux show -t ${shQuote(sessionName)} @aumx_project_name`,
+        `tmux show -t ${shQuote(sessionName)} @muxbase_project_name`,
         { silent: true },
       );
       if (name) {
-        projectName = name.replace(/^@aumx_project_name\s+/, '').trim();
+        projectName = name.replace(/^@muxbase_project_name\s+/, '').trim();
       }
     } catch {
       // Not set
@@ -135,7 +135,7 @@ async function resolveProjectInfo(sessionName: string): Promise<ProjectInfo | nu
   if (existsSync(configPath)) {
     try {
       const raw = readFileSync(configPath, 'utf-8');
-      const config: AumxConfig = JSON.parse(raw);
+      const config: MuxBaseConfig = JSON.parse(raw);
       paneCount = config.panes?.length || 0;
       if (config.projectName) projectName = config.projectName;
     } catch {

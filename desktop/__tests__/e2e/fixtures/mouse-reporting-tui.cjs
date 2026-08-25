@@ -4,7 +4,7 @@ const eventLogPath = process.argv[2];
 const statsPath = process.argv[3];
 const lines = Array.from(
   { length: 90 },
-  (_, index) => `AUMX-MOUSE-TUI-LINE-${String(index + 1).padStart(3, '0')}`,
+  (_, index) => `MUXBASE-MOUSE-TUI-LINE-${String(index + 1).padStart(3, '0')}`,
 );
 const mouseModesOn = '\x1b[?1000h\x1b[?1002h\x1b[?1003h\x1b[?1006h';
 const mouseModesOff = '\x1b[?1006l\x1b[?1003l\x1b[?1002l\x1b[?1000l';
@@ -52,9 +52,9 @@ function render() {
   top = Math.max(0, Math.min(lines.length - bodyRows, top));
   renderedRows = rows;
   const frame = [
-    'AUMX-MOUSE-TUI-HEADER',
+    'MUXBASE-MOUSE-TUI-HEADER',
     ...lines.slice(top, top + bodyRows),
-    'AUMX-MOUSE-TUI-FOOTER',
+    'MUXBASE-MOUSE-TUI-FOOTER',
   ];
   process.stdout.write('\x1b[2J\x1b[H' + frame.join('\r\n'));
   topHistory.push({ ts: Date.now(), top });

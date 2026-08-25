@@ -11,13 +11,13 @@ const OPENCODE_IDLE_FRAME = [
   '┃  Build · GPT-5.5 Fast OpenAI',
   'tab agents  ctrl+p commands',
   ...Array.from({ length: 10 }, () => ''),
-  '~/projects/dmux:main  1.18.15',
+  '~/projects/muxbase:main  1.18.15',
 ].join('\n');
 const PI_IDLE_FRAME = [
   '────────────────────────────────────',
   '',
   '────────────────────────────────────',
-  '~/projects/dmux (main)',
+  '~/projects/muxbase (main)',
   '0.0%/1.0M (auto)  anthropic--claude-4.8-opus • high',
 ].join('\n');
 const CLAUDE_BYPASS_LINE = '⏵⏵ bypass permissions on (shift+tab to cycle)';

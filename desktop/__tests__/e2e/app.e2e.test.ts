@@ -45,10 +45,10 @@ async function getAppWindow(app: ElectronApplication): Promise<Page> {
 }
 
 interface E2EWindow {
-  __aumxTerminalDebug?: {
+  __muxbaseTerminalDebug?: {
     getFontFamily: (paneId: string) => string | null;
   };
-  aumx: {
+  muxbase: {
     invoke: <T>(channel: string, ...args: unknown[]) => Promise<T>;
   };
 }
@@ -56,7 +56,7 @@ interface E2EWindow {
 async function getPaneIds(page: Page): Promise<string[]> {
   return page.evaluate(async (channel) => {
     const e2eWindow = window as unknown as E2EWindow;
-    const panes = await e2eWindow.aumx.invoke<Array<{ id: string }>>(channel);
+    const panes = await e2eWindow.muxbase.invoke<Array<{ id: string }>>(channel);
     return panes.map((pane) => pane.id);
   }, IPC.PANE_LIST);
 }
@@ -78,13 +78,13 @@ async function closePane(page: Page, paneId: string): Promise<void> {
   await page.evaluate(
     async ({ channel, request }) => {
       const e2eWindow = window as unknown as E2EWindow;
-      await e2eWindow.aumx.invoke(channel, request);
+      await e2eWindow.muxbase.invoke(channel, request);
     },
     { channel: IPC.PANE_CLOSE, request: { paneId } },
   );
 }
 
-describe.runIf(process.env.AUMX_E2E === '1')('Desktop App E2E', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('Desktop App E2E', () => {
   let app: ElectronApplication;
   let page: Page;
   const createdPaneIds: string[] = [];
@@ -99,7 +99,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Desktop App E2E', () => {
       env: {
         ...process.env,
         NODE_ENV: 'test',
-        AUMX_DEV: 'true',
+        MUXBASE_DEV: 'true',
       },
     });
 
@@ -200,7 +200,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Desktop App E2E', () => {
 
     const terminalFontFamily = await page.evaluate((id) => {
       const e2eWindow = window as unknown as E2EWindow;
-      return e2eWindow.__aumxTerminalDebug?.getFontFamily(id) ?? null;
+      return e2eWindow.__muxbaseTerminalDebug?.getFontFamily(id) ?? null;
     }, paneId);
     expect(terminalFontFamily).toBe(DEFAULT_TERMINAL_FONT_FAMILY);
 
@@ -359,7 +359,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Desktop App E2E', () => {
   it('matches the stable Fleet and settings visual baselines', async () => {
     const originalViewport = page.viewportSize();
     const original = await page.evaluate(() => {
-      const stores = (window as unknown as BaselineStoreWindow).__aumxStores;
+      const stores = (window as unknown as BaselineStoreWindow).__muxbaseStores;
       return {
         panes: stores?.pane?.getState().panes ?? [],
         ui: stores?.ui?.getState() ?? {},
@@ -373,7 +373,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Desktop App E2E', () => {
       await page.setViewportSize({ height: 720, width: 1280 });
       await seedBaselineFleet(page, []);
       await page.evaluate(() => {
-        (window as unknown as BaselineStoreWindow).__aumxStores?.ui?.setState({
+        (window as unknown as BaselineStoreWindow).__muxbaseStores?.ui?.setState({
           activeView: 'dashboard',
           focusPaneId: null,
           sidebarCollapsed: false,
@@ -391,7 +391,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Desktop App E2E', () => {
       await assertVisualBaseline(page, main, 'fleet-empty-light');
 
       await page.evaluate(() => {
-        (window as unknown as BaselineStoreWindow).__aumxStores?.ui?.setState({
+        (window as unknown as BaselineStoreWindow).__muxbaseStores?.ui?.setState({
           activeView: 'settings',
           settingsCategory: 'appearance',
           theme: 'dark',
@@ -402,7 +402,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Desktop App E2E', () => {
       await assertVisualBaseline(page, main, 'settings-appearance-dark');
     } finally {
       await page.evaluate((restore) => {
-        const stores = (window as unknown as BaselineStoreWindow).__aumxStores;
+        const stores = (window as unknown as BaselineStoreWindow).__muxbaseStores;
         stores?.pane?.setState({ panes: restore.panes, selectedPaneId: null });
         stores?.ui?.setState(restore.ui);
       }, original);
@@ -413,7 +413,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Desktop App E2E', () => {
 
   // --- UI/UX baseline capture (opt-in, records artifacts, asserts nothing) ---
 
-  it.runIf(process.env.AUMX_UI_BASELINE === '1')('records the UI baseline matrix', async () => {
+  it.runIf(process.env.MUXBASE_UI_BASELINE === '1')('records the UI baseline matrix', async () => {
     prepareBaselineDir();
 
     await page.evaluate(readBaselineAxeSource());
@@ -423,19 +423,19 @@ describe.runIf(process.env.AUMX_E2E === '1')('Desktop App E2E', () => {
 
     const session = await getSessionInfo(page);
     const project = {
-      projectName: session.projectName ?? 'aumx',
+      projectName: session.projectName ?? 'muxbase',
       projectRoot: session.projectRoot ?? ROOT,
     };
     const originalViewport = page.viewportSize();
     const original = await page.evaluate(() => {
-      const stores = (window as unknown as BaselineStoreWindow).__aumxStores;
+      const stores = (window as unknown as BaselineStoreWindow).__muxbaseStores;
       return {
         panes: stores?.pane?.getState().panes ?? [],
         theme: stores?.ui?.getState().theme ?? 'dark',
       };
     });
     await page.evaluate(() => {
-      (window as unknown as BaselineStoreWindow).__aumxStores?.ui?.setState({
+      (window as unknown as BaselineStoreWindow).__muxbaseStores?.ui?.setState({
         activeView: 'dashboard',
         focusPaneId: null,
         viewMode: 'fleet',
@@ -462,7 +462,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Desktop App E2E', () => {
     }
 
     await page.evaluate((restore) => {
-      const stores = (window as unknown as BaselineStoreWindow).__aumxStores;
+      const stores = (window as unknown as BaselineStoreWindow).__muxbaseStores;
       stores?.pane?.setState({ panes: restore.panes, selectedPaneId: null });
       stores?.ui?.setState({ theme: restore.theme });
     }, original);

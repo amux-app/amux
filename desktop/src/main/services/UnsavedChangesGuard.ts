@@ -20,7 +20,7 @@ interface GuardedApplicationQuitOptions {
 }
 
 interface QuitEnvironment {
-  AUMX_E2E?: string;
+  MUXBASE_E2E?: string;
   NODE_ENV?: string;
 }
 
@@ -43,7 +43,7 @@ export function createDiscardUnsavedChangesOptions(
     cancelId: 0,
     defaultId: 0,
     detail: `${actionDescription} now discards those changes. Cancel to resolve the conflict in the editor first.`,
-    message: 'Amux could not save changes to the open file.',
+    message: 'MuxBase could not save changes to the open file.',
     noLink: true,
     title: 'Unsaved Changes',
     type: 'warning',
@@ -114,7 +114,7 @@ export function shouldBypassQuitDiscardPrompt(
   environment: QuitEnvironment,
   isPackaged: boolean,
 ): boolean {
-  return !isPackaged && environment.NODE_ENV === 'test' && environment.AUMX_E2E === '1';
+  return !isPackaged && environment.NODE_ENV === 'test' && environment.MUXBASE_E2E === '1';
 }
 
 export function runSingleFlight<Args extends unknown[], Result>(

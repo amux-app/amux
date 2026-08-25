@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const AUMX_BUILD_KEY = 'aumxBuild';
+const MUXBASE_BUILD_KEY = 'muxbaseBuild';
 const BUILD_NUMBER_KEY = 'number';
 const BUILD_VERSION_KEY = 'version';
 const PACKAGE_FILE = 'package.json';
@@ -31,7 +31,7 @@ export function readAppBuildInfo(appPath: string, appVersion: string): AppBuildI
     return { buildVersion: appVersion };
   }
 
-  const buildMetadata = packageJson[AUMX_BUILD_KEY];
+  const buildMetadata = packageJson[MUXBASE_BUILD_KEY];
   if (!isRecord(buildMetadata)) {
     return { buildVersion: appVersion };
   }

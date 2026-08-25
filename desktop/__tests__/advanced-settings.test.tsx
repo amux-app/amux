@@ -75,16 +75,16 @@ describe('AdvancedSettings', () => {
   beforeEach(() => {
     useElectronSettingsStore.setState({ isLoading: false, settings: DEFAULT_SETTINGS });
     getSessionInfoMock.mockResolvedValue({
-      logDir: '/tmp/aumx-logs',
-      logFile: '/tmp/aumx-logs/aumx-desktop-test.log',
-      projectName: 'aumx',
+      logDir: '/tmp/muxbase-logs',
+      logFile: '/tmp/muxbase-logs/muxbase-desktop-test.log',
+      projectName: 'muxbase',
       projectRoot: '/tmp/project',
-      sessionName: 'aumx-aumx',
+      sessionName: 'muxbase-muxbase',
     });
     clipboardWriteMock.mockResolvedValue(undefined);
     exportSupportBundleMock.mockResolvedValue({
-      includedFiles: ['/tmp/aumx-logs/aumx-desktop-test.log'],
-      path: '/tmp/aumx-support-test.zip',
+      includedFiles: ['/tmp/muxbase-logs/muxbase-desktop-test.log'],
+      path: '/tmp/muxbase-support-test.zip',
     });
     previewSupportBundleMock.mockResolvedValue({
       files: [{ category: 'metadata', name: 'metadata/session.json', sizeBytes: 100 }],
@@ -107,7 +107,7 @@ describe('AdvancedSettings', () => {
     render(<AdvancedSettings />);
 
     // Assert
-    await screen.findByText('/tmp/aumx-logs/aumx-desktop-test.log');
+    await screen.findByText('/tmp/muxbase-logs/muxbase-desktop-test.log');
 
     // Act
     fireEvent.click(screen.getByTitle('Copy log file path'));
@@ -115,15 +115,15 @@ describe('AdvancedSettings', () => {
 
     // Assert
     await waitFor(() => {
-      expect(clipboardWriteMock).toHaveBeenCalledWith('/tmp/aumx-logs/aumx-desktop-test.log');
-      expect(revealPathMock).toHaveBeenCalledWith('/tmp/aumx-logs/aumx-desktop-test.log');
+      expect(clipboardWriteMock).toHaveBeenCalledWith('/tmp/muxbase-logs/muxbase-desktop-test.log');
+      expect(revealPathMock).toHaveBeenCalledWith('/tmp/muxbase-logs/muxbase-desktop-test.log');
     });
   });
 
   it('exports and reveals a support bundle from the debug log row', async () => {
     // Arrange
     render(<AdvancedSettings />);
-    await screen.findByText('/tmp/aumx-logs/aumx-desktop-test.log');
+    await screen.findByText('/tmp/muxbase-logs/muxbase-desktop-test.log');
 
     // Act — opening the dialog previews the bundle but must NOT export yet.
     fireEvent.click(screen.getByTitle('Export support bundle'));
@@ -139,7 +139,7 @@ describe('AdvancedSettings', () => {
     // Assert
     await waitFor(() => {
       expect(exportSupportBundleMock).toHaveBeenCalledWith(false);
-      expect(revealPathMock).toHaveBeenCalledWith('/tmp/aumx-support-test.zip');
+      expect(revealPathMock).toHaveBeenCalledWith('/tmp/muxbase-support-test.zip');
     });
   });
 

@@ -10,7 +10,7 @@ export const GIT_DIFF_FILE_LIST_MIN_SIZE = 160;
 
 export const GIT_DIFF_FILE_LIST_PANEL_ID_PREFIX = 'git-diff-file-list';
 
-export const GIT_DIFF_RESIZE_HANDLE_CLASS = 'aumx-resize-handle aumx-resize-handle--git-diff';
+export const GIT_DIFF_RESIZE_HANDLE_CLASS = 'muxbase-resize-handle muxbase-resize-handle--git-diff';
 
 export const GIT_DIFF_RESIZE_HANDLE_LABEL = 'Resize changed files panel';
 

@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mergePane } from '../../../src/actions/implementations/mergeAction.js';
-import type { AumxPane } from '../../../src/types.js';
+import type { MuxBasePane } from '../../../src/types.js';
 import type { ActionContext } from '../../../src/actions/types.js';
 
 // Mock all dependencies
@@ -32,7 +32,7 @@ vi.mock('../../../src/utils/hooks.js', () => ({
 vi.mock('../../../src/utils/worktreeDiscovery.js', () => ({
   detectAllWorktrees: vi.fn(async () => ([
     {
-      worktreePath: '/test/main/.aumx/worktrees/test-branch',
+      worktreePath: '/test/main/.muxbase/worktrees/test-branch',
       parentRepoPath: '/test/main',
       branch: 'test-branch',
       repoName: 'main',
@@ -95,12 +95,12 @@ vi.mock('../../../src/services/LogService.js', () => ({
 }));
 
 describe('Merge Action Integration', () => {
-  const mockPane: AumxPane = {
+  const mockPane: MuxBasePane = {
     id: 'test-1',
     slug: 'test-branch',
     prompt: 'test prompt',
     paneId: '%1',
-    worktreePath: '/test/main/.aumx/worktrees/test-branch',
+    worktreePath: '/test/main/.muxbase/worktrees/test-branch',
   };
 
   const mockContext: ActionContext = {
@@ -145,7 +145,7 @@ describe('Merge Action Integration', () => {
       if (result.type === 'confirm' && result.onConfirm) {
         await result.onConfirm();
         expect(triggerHook).toHaveBeenCalledWith('pre_merge', '/test/main', mockPane, {
-          AUMX_TARGET_BRANCH: 'main',
+          MUXBASE_TARGET_BRANCH: 'main',
         });
       }
     });

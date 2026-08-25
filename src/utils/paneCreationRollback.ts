@@ -1,6 +1,6 @@
 import { existsSync, unlinkSync } from 'fs';
 import { LogService } from '../services/LogService.js';
-import { removeAumxPane } from './aumxConfigMutation.js';
+import { removeMuxBasePane } from './muxbaseConfigMutation.js';
 import { execFileAsync } from './execAsync.js';
 
 interface RollbackStep {
@@ -29,7 +29,7 @@ export class PaneCreationRollback {
   trackConfigPane(configPath: string, paneId: string): void {
     this.add(`config pane ${paneId}`, () => {
       if (!existsSync(configPath)) return;
-      removeAumxPane(configPath, paneId);
+      removeMuxBasePane(configPath, paneId);
     });
   }
 

@@ -10,7 +10,7 @@ vi.mock('../../src/utils/execAsync.js', () => ({
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 import {
-  AUMX_PANE_INCARNATION_OPTION,
+  MUXBASE_PANE_INCARNATION_OPTION,
   ensureTmuxPaneIncarnationOption,
   stampTmuxPaneIncarnationOption,
 } from '../../src/utils/paneRebinding.js';
@@ -28,7 +28,7 @@ describe('stampTmuxPaneIncarnationOption', () => {
     expect(execFileAsyncMock).toHaveBeenCalledTimes(1);
     expect(execFileAsyncMock).toHaveBeenCalledWith(
       'tmux',
-      ['set', '-p', '-t', '%1', AUMX_PANE_INCARNATION_OPTION, incarnationId],
+      ['set', '-p', '-t', '%1', MUXBASE_PANE_INCARNATION_OPTION, incarnationId],
       { silent: true },
     );
     expect(execFileAsyncMock.mock.calls.some(([, args]) => args[0] === 'show-options')).toBe(false);
@@ -53,7 +53,7 @@ describe('ensureTmuxPaneIncarnationOption', () => {
     expect(execFileAsyncMock).toHaveBeenCalledTimes(1);
     expect(execFileAsyncMock).toHaveBeenCalledWith(
       'tmux',
-      ['show-options', '-p', '-v', '-t', '%1', AUMX_PANE_INCARNATION_OPTION],
+      ['show-options', '-p', '-v', '-t', '%1', MUXBASE_PANE_INCARNATION_OPTION],
       { silent: true },
     );
   });
@@ -68,7 +68,7 @@ describe('ensureTmuxPaneIncarnationOption', () => {
     expect(execFileAsyncMock).toHaveBeenNthCalledWith(
       2,
       'tmux',
-      ['set', '-p', '-t', '%1', AUMX_PANE_INCARNATION_OPTION, result],
+      ['set', '-p', '-t', '%1', MUXBASE_PANE_INCARNATION_OPTION, result],
       { silent: true },
     );
   });
@@ -83,7 +83,7 @@ describe('ensureTmuxPaneIncarnationOption', () => {
     expect(execFileAsyncMock).toHaveBeenNthCalledWith(
       2,
       'tmux',
-      ['set', '-p', '-t', '%1', AUMX_PANE_INCARNATION_OPTION, result],
+      ['set', '-p', '-t', '%1', MUXBASE_PANE_INCARNATION_OPTION, result],
       { silent: true },
     );
   });

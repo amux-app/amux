@@ -3,7 +3,7 @@ import { isSafeExternalUrl } from '../../src/main/utils/externalUrl';
 
 describe('isSafeExternalUrl', () => {
   it('allows https and loopback http', () => {
-    expect(isSafeExternalUrl('https://github.com/amux-app/amux')).toBe(true);
+    expect(isSafeExternalUrl('https://github.com/muxbase-app/muxbase')).toBe(true);
     expect(isSafeExternalUrl('https://example.com')).toBe(true);
     expect(isSafeExternalUrl('http://localhost:5173')).toBe(true);
     expect(isSafeExternalUrl('http://localhost:3000')).toBe(true);

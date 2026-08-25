@@ -1,8 +1,8 @@
 import fs from 'fs';
-import type { AumxConfig } from '../types.js';
+import type { MuxBaseConfig } from '../types.js';
 import { createWelcomePane, welcomePaneExists, destroyWelcomePane } from './welcomePane.js';
 import { LogService } from '../services/LogService.js';
-import { updateAumxWelcomePane } from './aumxConfigMutation.js';
+import { updateMuxBaseWelcomePane } from './muxbaseConfigMutation.js';
 import { getProjectConfigPath } from './worktreePaths.js';
 
 // Global lock to prevent concurrent welcome pane operations
@@ -58,14 +58,14 @@ export function destroyWelcomePaneCoordinated(projectRoot: string): boolean {
     }
 
     const configContent = fs.readFileSync(configPath, 'utf-8');
-    const config: AumxConfig = JSON.parse(configContent);
+    const config: MuxBaseConfig = JSON.parse(configContent);
 
     if (config.welcomePaneId) {
       // Destroy the pane
       destroyWelcomePane(config.welcomePaneId);
 
       // Clear from config (use atomic write to prevent race conditions)
-      updateAumxWelcomePane(configPath, undefined);
+      updateMuxBaseWelcomePane(configPath, undefined);
 
       // DO NOT recalculate layout here - layout was already calculated in paneCreation.ts
       // before this function was called. Recalculating now would cause a mismatch because
@@ -111,7 +111,7 @@ export async function createWelcomePaneCoordinated(
     }
 
     const configContent = fs.readFileSync(configPath, 'utf-8');
-    const config: AumxConfig = JSON.parse(configContent);
+    const config: MuxBaseConfig = JSON.parse(configContent);
 
     // Check if we already have a valid welcome pane
     if (config.welcomePaneId && await welcomePaneExists(config.welcomePaneId)) {
@@ -123,7 +123,7 @@ export async function createWelcomePaneCoordinated(
 
     if (welcomePaneId) {
       // Update config with new welcome pane ID (use atomic write)
-      updateAumxWelcomePane(configPath, welcomePaneId);
+      updateMuxBaseWelcomePane(configPath, welcomePaneId);
       return true;
     } else {
       return false;
@@ -137,7 +137,7 @@ export async function createWelcomePaneCoordinated(
 }
 
 /**
- * LEGACY: Ensures a welcome pane exists when there are no aumx panes
+ * LEGACY: Ensures a welcome pane exists when there are no muxbase panes
  *
  * NOTE: This function is no longer used in normal operation.
  * Welcome pane management is now fully event-based:
@@ -149,7 +149,7 @@ export async function createWelcomePaneCoordinated(
  *
  * @param projectRoot - The project root directory
  * @param controlPaneId - The control pane ID
- * @param panesCount - Number of active aumx panes
+ * @param panesCount - Number of active muxbase panes
  */
 export async function ensureWelcomePane(
   projectRoot: string,
@@ -160,7 +160,7 @@ export async function ensureWelcomePane(
 
   logService.debug(`ensureWelcomePane called: panesCount=${panesCount}, controlPaneId=${controlPaneId}`, 'WelcomePaneManager');
 
-  // Only create welcome pane if there are no aumx panes
+  // Only create welcome pane if there are no muxbase panes
   if (panesCount > 0 || !controlPaneId) {
     logService.debug(`Skipping: panesCount > 0 (${panesCount}) or no controlPaneId (${controlPaneId})`, 'WelcomePaneManager');
     return;

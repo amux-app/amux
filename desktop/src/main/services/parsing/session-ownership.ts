@@ -10,8 +10,8 @@
  * arbitrarily older than the pane that resumed it.
  */
 
-/** Panes created outside the timestamped-id path (`aumx-<uuid>`, `aumx-<n>`) have no known age. */
-const PANE_ID_EPOCH_PATTERN = /^aumx-(\d{13,})$/;
+/** Panes created outside the timestamped-id path (`muxbase-<uuid>`, `muxbase-<n>`) have no known age. */
+const PANE_ID_EPOCH_PATTERN = /^muxbase-(\d{13,})$/;
 
 const DEFAULT_OWNERSHIP_SLACK_MS = 30_000;
 

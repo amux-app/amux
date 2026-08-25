@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { EventEmitter } from 'node:events';
 import { tmpdir } from 'node:os';
@@ -13,7 +13,7 @@ import { fallbackTextSearch, gitGrep } from '../../src/main/services/project-sea
 const spawnMock = vi.hoisted(() => vi.fn());
 vi.mock('node:child_process', () => ({ spawn: spawnMock }));
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     id: 'pane-1',
     paneId: '%1',
@@ -52,11 +52,11 @@ describe('ProjectSearchService helpers', () => {
 
   it('resolves only allowed pane or project roots', () => {
     const panes = [
-      makePane({ projectRoot: '/repo', worktreePath: '/repo/.aumx/worktrees/pane-1' }),
-      makePane({ id: 'pane-2', paneId: '%2', projectRoot: '/repo', slug: 'pane-2', worktreePath: '/repo/.aumx/worktrees/pane-2' }),
+      makePane({ projectRoot: '/repo', worktreePath: '/repo/.muxbase/worktrees/pane-1' }),
+      makePane({ id: 'pane-2', paneId: '%2', projectRoot: '/repo', slug: 'pane-2', worktreePath: '/repo/.muxbase/worktrees/pane-2' }),
     ];
 
-    expect(__test__.resolveProjectSearchRoot('/repo', panes, '/repo/.aumx/worktrees/pane-2')).toBe('/repo/.aumx/worktrees/pane-2');
+    expect(__test__.resolveProjectSearchRoot('/repo', panes, '/repo/.muxbase/worktrees/pane-2')).toBe('/repo/.muxbase/worktrees/pane-2');
     expect(__test__.resolveProjectSearchRoot('/repo', panes, '/tmp/not-allowed')).toBe('/repo');
   });
 
@@ -67,10 +67,10 @@ describe('ProjectSearchService helpers', () => {
       'src/platform/application-state.ts',
     ]);
 
-    const results = __test__.searchFileIndex(cache, '/repo/.aumx/worktrees/pane-1', 'app');
+    const results = __test__.searchFileIndex(cache, '/repo/.muxbase/worktrees/pane-1', 'app');
 
     expect(results[0]).toEqual({
-      rootPath: '/repo/.aumx/worktrees/pane-1',
+      rootPath: '/repo/.muxbase/worktrees/pane-1',
       path: 'src/app.ts',
       filename: 'app.ts',
     });
@@ -83,10 +83,10 @@ describe('ProjectSearchService helpers', () => {
       'src/shared/ipc-types.ts',
     ]);
 
-    const results = __test__.searchFileIndex(cache, '/repo/.aumx/worktrees/pane-7', 'renderer file viewer');
+    const results = __test__.searchFileIndex(cache, '/repo/.muxbase/worktrees/pane-7', 'renderer file viewer');
 
     expect(results[0]).toEqual({
-      rootPath: '/repo/.aumx/worktrees/pane-7',
+      rootPath: '/repo/.muxbase/worktrees/pane-7',
       path: 'src/renderer/components/file-browser/FileViewer.tsx',
       filename: 'FileViewer.tsx',
     });
@@ -149,7 +149,7 @@ describe('ProjectTextSearch boundaries', () => {
   });
 
   it('skips binary, oversized, and unreadable files during fallback scanning', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'aumx-project-search-'));
+    const root = await mkdtemp(join(tmpdir(), 'muxbase-project-search-'));
     try {
       await writeFile(join(root, 'text.ts'), 'needle first\nneedle second\nneedle third\nneedle fourth');
       await writeFile(join(root, 'image.png'), Buffer.from([0, 1, 2, 3]));
@@ -171,7 +171,7 @@ describe('ProjectTextSearch boundaries', () => {
   });
 
   it('enforces the global fallback result limit', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'aumx-project-search-cap-'));
+    const root = await mkdtemp(join(tmpdir(), 'muxbase-project-search-cap-'));
     try {
       const entries = [];
       for (let index = 0; index < 30; index += 1) {

@@ -31,7 +31,7 @@ export function validateUpdateRehearsalRecord(record, options = {}) {
   if (record.schemaVersion !== 1) errors.push('schemaVersion must be 1.');
   if (!ARCHITECTURES.has(record.architecture)) errors.push('architecture must be arm64 or x64.');
   if (!CHANNELS.has(record.channel)) errors.push('channel must be beta or stable.');
-  if (record.repository !== 'amux-app/amux') errors.push('repository must be amux-app/amux.');
+  if (record.repository !== 'muxbase-app/muxbase') errors.push('repository must be muxbase-app/muxbase.');
 
   const from = parseVersion(record.fromVersion);
   const to = parseVersion(record.toVersion);

@@ -10,7 +10,7 @@ vi.mock('os', async () => {
   const actual = await vi.importActual<typeof import('os')>('os');
   return { ...actual, homedir: () => homeState.value };
 });
-vi.mock('aumx/core', () => ({
+vi.mock('muxbase/core', () => ({
   SettingsManager: {
     getInstance: vi.fn(() => ({ getSettings: () => settings })),
   },
@@ -29,7 +29,7 @@ describe('agent default readers', () => {
   let home = '';
 
   beforeEach(async () => {
-    home = await mkdtemp(join(tmpdir(), 'aumx-agent-defaults-'));
+    home = await mkdtemp(join(tmpdir(), 'muxbase-agent-defaults-'));
     homeState.value = home;
     settings.claudeEffort = '';
     settings.claudeModel = '';
@@ -41,7 +41,7 @@ describe('agent default readers', () => {
     await rm(home, { force: true, recursive: true });
   });
 
-  it('reads Claude settings with Amux, environment, file, and fallback precedence', async () => {
+  it('reads Claude settings with MuxBase, environment, file, and fallback precedence', async () => {
     const claudeDir = join(home, '.claude');
     await (await import('node:fs/promises')).mkdir(claudeDir, { recursive: true });
     await writeFile(

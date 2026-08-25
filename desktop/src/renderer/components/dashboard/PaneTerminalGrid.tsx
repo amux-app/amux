@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Group, Panel, Separator } from 'react-resizable-panels';
@@ -83,7 +83,7 @@ function SpawningCell({ pending }: { pending: PendingPane }) {
 
 interface FleetPaneSlot {
   key: string;
-  pane?: AumxPane;
+  pane?: MuxBasePane;
   pendingPane?: PendingPane;
   slotIndex: number;
 }
@@ -96,7 +96,7 @@ interface FleetPanePairModel {
 }
 
 function buildFleetSlots(
-  panes: AumxPane[],
+  panes: MuxBasePane[],
   pendingPane: PendingPane | null,
   slotsByPaneId: ReadonlyMap<string, number>,
 ): FleetPaneSlot[] {
@@ -171,7 +171,7 @@ function buildPositionalPairs(remaining: FleetPaneSlot[]): FleetPanePairModel[] 
 }
 
 function buildFleetPanePairs(
-  panes: AumxPane[],
+  panes: MuxBasePane[],
   pendingPane: PendingPane | null,
   slotsByPaneId: ReadonlyMap<string, number>,
 ): FleetPanePairModel[] {
@@ -264,7 +264,7 @@ function FleetPanePair({
           <Fragment key={slot.key}>
             {index > 0 && (
               <Separator
-                className="aumx-resize-handle"
+                className="muxbase-resize-handle"
                 data-fleet-pane-separator="true"
                 data-testid={`fleet-pane-separator-${pair.key}`}
                 id={`fleet-pane-separator-${pair.key}`}
@@ -311,7 +311,7 @@ function StableFleetLayout({
             <Fragment key={`row-${pair.key}`}>
               {visiblePairIndex > 0 && (
                 <Separator
-                  className="aumx-resize-handle"
+                  className="muxbase-resize-handle"
                   data-fleet-row-separator="true"
                   data-testid={`fleet-row-separator-${pair.key}`}
                   id={`fleet-row-separator-${pair.key}`}

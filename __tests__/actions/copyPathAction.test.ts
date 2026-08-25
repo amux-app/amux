@@ -20,7 +20,7 @@ describe('copyPathAction', () => {
 
   it('should copy worktree path to clipboard successfully', async () => {
     const mockPane = createMockPane({
-      worktreePath: '/test/project/.aumx/worktrees/my-feature',
+      worktreePath: '/test/project/.muxbase/worktrees/my-feature',
     });
     const mockContext = createMockContext([mockPane]);
 
@@ -37,7 +37,7 @@ describe('copyPathAction', () => {
       'pbcopy',
       [],
       {
-        input: '/test/project/.aumx/worktrees/my-feature',
+        input: '/test/project/.muxbase/worktrees/my-feature',
         encoding: 'utf-8',
         stdio: ['pipe', 'pipe', 'pipe'],
         shell: false,
@@ -45,7 +45,7 @@ describe('copyPathAction', () => {
     );
 
     // Verify success result with path in message
-    expectSuccess(result, '/test/project/.aumx/worktrees/my-feature');
+    expectSuccess(result, '/test/project/.muxbase/worktrees/my-feature');
   });
 
   it('should return error for shell pane without worktree', async () => {
@@ -87,7 +87,7 @@ describe('copyPathAction', () => {
 
   it('should handle paths with special characters', async () => {
     const mockPane = createMockPane({
-      worktreePath: '/test/project name with spaces/.aumx/worktrees/my-feature',
+      worktreePath: '/test/project name with spaces/.muxbase/worktrees/my-feature',
     });
     const mockContext = createMockContext([mockPane]);
 
@@ -104,7 +104,7 @@ describe('copyPathAction', () => {
       'pbcopy',
       [],
       expect.objectContaining({
-        input: '/test/project name with spaces/.aumx/worktrees/my-feature',
+        input: '/test/project name with spaces/.muxbase/worktrees/my-feature',
       })
     );
   });

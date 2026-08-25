@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { isBusyForKanban, type PaneActivity } from './pane-activity';
 
 export interface PaneKanbanActivityState {
@@ -9,7 +9,7 @@ export interface PaneKanbanActivityState {
 
 /** Kanban consumes the same runtime activity state as every other surface. */
 export function getPaneKanbanActivityState(
-  _pane: AumxPane,
+  _pane: MuxBasePane,
   _session: unknown,
   _now = Date.now(),
   activity?: PaneActivity,
@@ -24,7 +24,7 @@ export function getPaneKanbanActivityState(
 
 /** Activity transitions are event-driven; there is no legacy grace timeout. */
 export function getPaneKanbanNextTransitionTime(
-  _pane: AumxPane,
+  _pane: MuxBasePane,
   _session?: unknown,
   _now = Date.now(),
   _activity?: PaneActivity,

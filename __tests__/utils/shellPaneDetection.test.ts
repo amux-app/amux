@@ -19,7 +19,7 @@ vi.mock('../../src/services/TmuxService.js', () => ({
 const { createShellPane, detectShellType } = await import('../../src/utils/shellPaneDetection.js');
 const { execFileAsync: realExecFileAsync } = await vi.importActual<ExecAsyncModule>('../../src/utils/execAsync.js');
 
-const HOSTILE_PANE_ID = "%1'; touch /tmp/aumx-injected; echo '";
+const HOSTILE_PANE_ID = "%1'; touch /tmp/muxbase-injected; echo '";
 
 describe('shellPaneDetection command construction', () => {
   beforeEach(() => {
@@ -80,7 +80,7 @@ describe('shellPaneDetection command construction', () => {
 describe('execFileAsync literal argument execution', () => {
   it('treats shell metacharacters in an argument as data', async () => {
     // Arrange
-    const sentinel = join(tmpdir(), `aumx-shell-injection-${process.pid}.txt`);
+    const sentinel = join(tmpdir(), `muxbase-shell-injection-${process.pid}.txt`);
     rmSync(sentinel, { force: true });
     const hostileArgument = `%1'; touch ${sentinel}; echo '`;
 

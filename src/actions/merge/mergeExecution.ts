@@ -6,7 +6,7 @@
  */
 
 import type { ActionResult, ActionContext } from "../types.js"
-import type { AumxPane } from "../../types.js"
+import type { MuxBasePane } from "../../types.js"
 import { triggerHook } from "../../utils/hooks.js"
 import { getPaneBranchName } from "../../utils/git.js"
 import { LogService } from "../../services/LogService.js"
@@ -51,7 +51,7 @@ async function rollbackPreparedManualMerge(
 }
 
 async function prepareManualResolution(
-  pane: AumxPane,
+  pane: MuxBasePane,
   mainBranch: string,
   mainRepoPath: string,
 ): Promise<ActionResult> {
@@ -118,7 +118,7 @@ async function prepareManualResolution(
  * Execute merge with conflict handling
  */
 export async function executeMergeWithConflictHandling(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   mainBranch: string,
   mainRepoPath: string,
@@ -155,7 +155,7 @@ export async function executeMergeWithConflictHandling(
  * @param skipWorktreeMerge - Set to true when resuming after conflict resolution (step 1 already done)
  */
 export async function executeMerge(
-  pane: AumxPane,
+  pane: MuxBasePane,
   context: ActionContext,
   mainBranch: string,
   mainRepoPath: string,
@@ -286,7 +286,7 @@ export async function executeMerge(
   // Trigger post_merge hook after successful merge
   log.debug(`[mergeExecution] About to trigger post_merge hook for ${pane.slug}`, "mergeExecution")
   await triggerHook("post_merge", mainRepoPath, pane, {
-    AUMX_TARGET_BRANCH: mainBranch,
+    MUXBASE_TARGET_BRANCH: mainBranch,
   })
   log.debug(`[mergeExecution] post_merge hook completed for ${pane.slug}`, "mergeExecution")
 

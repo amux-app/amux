@@ -3,7 +3,7 @@ import { FIRST_IDLE_STABLE_CAPTURES } from '../../src/constants/timing.js';
 import type { PaneStatusChange } from '../../src/services/PaneStatusAnalyzer.js';
 import { PaneStatusAnalyzer } from '../../src/services/PaneStatusAnalyzer.js';
 import { selectStatusMonitoredPanes, StatusDetector } from '../../src/services/StatusDetector.js';
-import type { AumxPane } from '../../src/types.js';
+import type { MuxBasePane } from '../../src/types.js';
 
 function handleChange(detector: StatusDetector, paneId: string, change: PaneStatusChange): void {
   Reflect.get(detector, 'handleStatusChange').call(detector, paneId, change);
@@ -13,7 +13,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function makePane(overrides: Partial<AumxPane>): AumxPane {
+function makePane(overrides: Partial<MuxBasePane>): MuxBasePane {
   return {
     id: 'pane',
     paneId: '%1',

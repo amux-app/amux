@@ -3,13 +3,13 @@ import { launchManagedConflictResolutionPane } from '../../src/actions/merge/con
 import { executeMultiMerge } from '../../src/actions/merge/multiMergeOrchestrator.js';
 import type { MergeQueueItem } from '../../src/actions/merge/types.js';
 import type { ActionContext } from '../../src/actions/types.js';
-import type { AumxPane } from '../../src/types.js';
+import type { MuxBasePane } from '../../src/types.js';
 import { getAvailableAgents } from '../../src/utils/agentDetection.js';
 
 const killPaneMock = vi.hoisted(() => vi.fn());
 const mergeWorktreeIntoMainMock = vi.hoisted(() => vi.fn());
 const triggerHookMock = vi.hoisted(() => vi.fn());
-const statePanes = vi.hoisted(() => [] as AumxPane[]);
+const statePanes = vi.hoisted(() => [] as MuxBasePane[]);
 
 vi.mock('../../src/actions/merge/conflictPaneLifecycle.js', () => ({
   launchManagedConflictResolutionPane: vi.fn(),
@@ -47,7 +47,7 @@ vi.mock('../../src/utils/agentDetection.js', () => ({
   getAvailableAgents: vi.fn(),
 }));
 
-const sourcePane: AumxPane = {
+const sourcePane: MuxBasePane = {
   id: 'source',
   slug: 'feature',
   prompt: 'feature',
@@ -56,7 +56,7 @@ const sourcePane: AumxPane = {
   worktreePath: '/workspace/worktrees/feature',
 };
 
-const conflictPane: AumxPane = {
+const conflictPane: MuxBasePane = {
   id: 'conflict',
   slug: 'merge-nested-feature-into-main',
   prompt: 'resolve',
@@ -120,7 +120,7 @@ function makeContext(): ActionContext {
     panes: [sourcePane],
     projectName: 'main-project',
     savePanes: vi.fn(),
-    sessionName: 'aumx-main-project',
+    sessionName: 'muxbase-main-project',
     terminalTranscriptDir: '/logs/terminal',
     onActionResult: vi.fn(),
   };

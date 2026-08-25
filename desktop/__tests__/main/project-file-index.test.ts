@@ -12,7 +12,7 @@ afterEach(() => {
 
 describe('buildFileIndex', () => {
   it('bounds git discovery and falls back to the filesystem walk', async () => {
-    const temporaryRoot = await mkdtemp(join(tmpdir(), 'aumx-file-index-'));
+    const temporaryRoot = await mkdtemp(join(tmpdir(), 'muxbase-file-index-'));
     const projectRoot = join(temporaryRoot, 'project');
     const binRoot = join(temporaryRoot, 'bin');
 
@@ -36,7 +36,7 @@ describe('buildFileIndex', () => {
   });
 
   it('rejects rather than caching an incomplete file-limited fallback walk', async () => {
-    const temporaryRoot = await mkdtemp(join(tmpdir(), 'aumx-file-index-'));
+    const temporaryRoot = await mkdtemp(join(tmpdir(), 'muxbase-file-index-'));
     const projectRoot = join(temporaryRoot, 'project');
     const binRoot = join(temporaryRoot, 'bin');
 
@@ -63,7 +63,7 @@ describe('buildFileIndex', () => {
   });
 
   it('rejects rather than caching an incomplete time-limited fallback walk', async () => {
-    const temporaryRoot = await mkdtemp(join(tmpdir(), 'aumx-file-index-'));
+    const temporaryRoot = await mkdtemp(join(tmpdir(), 'muxbase-file-index-'));
     const projectRoot = join(temporaryRoot, 'project');
     const binRoot = join(temporaryRoot, 'bin');
 

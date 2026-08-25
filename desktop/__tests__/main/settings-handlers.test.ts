@@ -13,7 +13,7 @@ vi.mock('../../src/main/services/Logger.js', () => ({
   log: { debug: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
 
-vi.mock('aumx/core', () => ({
+vi.mock('muxbase/core', () => ({
   SETTING_DEFINITIONS: [],
   SettingsManager: { getInstance: () => ({ updateSetting, getSettings: vi.fn(() => ({})) }) },
   isSettingKey: (key: string) => key === 'useWorktree',

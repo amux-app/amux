@@ -1,4 +1,4 @@
-import type { AumxPane, AumxSettings } from '../types.js';
+import type { MuxBasePane, MuxBaseSettings } from '../types.js';
 
 export const CLAUDE_TERMINAL_COLS = 100;
 
@@ -16,7 +16,7 @@ export type PaneTerminalProfile =
     terminalFixedCols?: never;
   };
 
-type TerminalProfileSettings = Pick<AumxSettings, 'claudeFullscreenRendering'>;
+type TerminalProfileSettings = Pick<MuxBaseSettings, 'claudeFullscreenRendering'>;
 
 type ClaudeTerminalProfile = Extract<PaneTerminalProfile, { claudeRenderer: 'classic' | 'fullscreen' }>;
 
@@ -34,7 +34,7 @@ export function claudeUsesFullscreen(settings: TerminalProfileSettings): boolean
  * Consumers read the pane metadata; they never need to repeat the policy.
  */
 export function resolvePaneTerminalProfile(
-  agent: AumxPane['agent'],
+  agent: MuxBasePane['agent'],
   settings: TerminalProfileSettings,
 ): PaneTerminalProfile {
   if (agent !== 'claude') return {};
@@ -66,7 +66,7 @@ export function resolveClaudeRendererEnvironment(
 }
 
 export function hasValidPaneTerminalProfile(
-  pane: Pick<AumxPane, 'claudeRenderer' | 'terminalFixedCols'>,
+  pane: Pick<MuxBasePane, 'claudeRenderer' | 'terminalFixedCols'>,
 ): boolean {
   if (pane.claudeRenderer === 'fullscreen') return pane.terminalFixedCols === undefined;
   if (pane.claudeRenderer === 'classic') return pane.terminalFixedCols === CLAUDE_TERMINAL_COLS;

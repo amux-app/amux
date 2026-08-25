@@ -13,7 +13,7 @@ describe('createReviewSnapshot (real git)', () => {
   let repo: string;
 
   beforeEach(() => {
-    repo = mkdtempSync(join(tmpdir(), 'amux-review-snap-'));
+    repo = mkdtempSync(join(tmpdir(), 'muxbase-review-snap-'));
     git(repo, ['init', '-q', '-b', 'main']);
     git(repo, ['config', 'user.email', 't@t.com']);
     git(repo, ['config', 'user.name', 't']);
@@ -168,16 +168,16 @@ describe('createReviewSnapshot in a linked worktree (real git)', () => {
   let worktree: string;
 
   beforeEach(() => {
-    repo = mkdtempSync(join(tmpdir(), 'amux-review-wt-repo-'));
+    repo = mkdtempSync(join(tmpdir(), 'muxbase-review-wt-repo-'));
     git(repo, ['init', '-q', '-b', 'main']);
     git(repo, ['config', 'user.email', 't@t.com']);
     git(repo, ['config', 'user.name', 't']);
     writeFileSync(join(repo, 'f.txt'), 'base\n');
     git(repo, ['add', '-A']);
     git(repo, ['commit', '-qm', 'base']);
-    // A linked worktree is what every Amux pane runs in — its `.git` is a FILE
+    // A linked worktree is what every MuxBase pane runs in — its `.git` is a FILE
     // (`gitdir: …`), not a directory, so a temp index under `.git` would fail.
-    worktree = mkdtempSync(join(tmpdir(), 'amux-review-wt-'));
+    worktree = mkdtempSync(join(tmpdir(), 'muxbase-review-wt-'));
     rmSync(worktree, { recursive: true, force: true });
     git(repo, ['worktree', 'add', '-q', worktree, '-b', 'feat']);
   });
@@ -213,7 +213,7 @@ describe('non-worktree review on a shared checkout (real git)', () => {
   let repo: string;
 
   beforeEach(() => {
-    repo = mkdtempSync(join(tmpdir(), 'amux-review-direct-'));
+    repo = mkdtempSync(join(tmpdir(), 'muxbase-review-direct-'));
     git(repo, ['init', '-q', '-b', 'main']);
     git(repo, ['config', 'user.email', 't@t.com']);
     git(repo, ['config', 'user.name', 't']);

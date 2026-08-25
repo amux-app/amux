@@ -390,7 +390,7 @@ describe('MarketplaceInstaller', () => {
   });
 
   it('rejects a symlinked selected artifact before installation', () => {
-    const root = mkdtempSync(path.join(tmpdir(), 'aumx-marketplace-'));
+    const root = mkdtempSync(path.join(tmpdir(), 'muxbase-marketplace-'));
     const outside = path.join(root, 'outside-skill');
     const linked = path.join(root, 'linked-skill');
     mkdirSync(outside);
@@ -415,7 +415,7 @@ describe('MarketplaceInstaller', () => {
   });
 
   it('rejects installation when selected artifact content changes after preview', async () => {
-    const root = mkdtempSync(path.join(tmpdir(), 'aumx-marketplace-'));
+    const root = mkdtempSync(path.join(tmpdir(), 'muxbase-marketplace-'));
     const skillDir = path.join(root, 'skill');
     const skillPath = path.join(skillDir, 'SKILL.md');
     mkdirSync(skillDir);
@@ -442,7 +442,7 @@ describe('MarketplaceInstaller', () => {
   });
 
   it('binds local MCP script content into preview consent', async () => {
-    const clonePath = mkdtempSync(path.join(tmpdir(), 'aumx-marketplace-'));
+    const clonePath = mkdtempSync(path.join(tmpdir(), 'muxbase-marketplace-'));
     const scriptPath = path.join(clonePath, 'server.js');
     writeFileSync(scriptPath, 'console.log("first");\n');
     const plugin: DetectedPlugin = {
@@ -529,7 +529,7 @@ describe('MarketplaceInstaller', () => {
   });
 
   it('does not crash preview on an option-like MCP arg that ends in a script extension', () => {
-    const clonePath = mkdtempSync(path.join(tmpdir(), 'aumx-marketplace-'));
+    const clonePath = mkdtempSync(path.join(tmpdir(), 'muxbase-marketplace-'));
     const scriptPath = path.join(clonePath, 'server.js');
     writeFileSync(scriptPath, 'console.log("ok");\n');
     const plugin: DetectedPlugin = {
@@ -557,7 +557,7 @@ describe('MarketplaceInstaller', () => {
   });
 
   it('does not throw and does not hash a nonexistent positional script argument', () => {
-    const clonePath = mkdtempSync(path.join(tmpdir(), 'aumx-marketplace-'));
+    const clonePath = mkdtempSync(path.join(tmpdir(), 'muxbase-marketplace-'));
     const plugin: DetectedPlugin = {
       id: 'missing-script-plugin',
       name: 'Missing Script Plugin',
@@ -582,7 +582,7 @@ describe('MarketplaceInstaller', () => {
   });
 
   it('still rejects a traversal MCP script argument that does not exist on disk', () => {
-    const clonePath = mkdtempSync(path.join(tmpdir(), 'aumx-marketplace-'));
+    const clonePath = mkdtempSync(path.join(tmpdir(), 'muxbase-marketplace-'));
     const plugin: DetectedPlugin = {
       id: 'traversal-plugin',
       name: 'Traversal Plugin',
@@ -603,8 +603,8 @@ describe('MarketplaceInstaller', () => {
   });
 
   it('rejects a symlinked local MCP script before installation', () => {
-    const clonePath = mkdtempSync(path.join(tmpdir(), 'aumx-marketplace-'));
-    const outsidePath = path.join(tmpdir(), `aumx-outside-mcp-${Date.now()}.js`);
+    const clonePath = mkdtempSync(path.join(tmpdir(), 'muxbase-marketplace-'));
+    const outsidePath = path.join(tmpdir(), `muxbase-outside-mcp-${Date.now()}.js`);
     const scriptPath = path.join(clonePath, 'server.js');
     writeFileSync(outsidePath, 'console.log("outside");\n');
     symlinkSync(outsidePath, scriptPath);

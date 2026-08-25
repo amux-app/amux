@@ -1,10 +1,10 @@
 import type {
-  AumxPane,
+  MuxBasePane,
   AgentCapability,
   SettingsScope,
   AgentName,
   MarketplaceInstallMode,
-} from 'aumx/core';
+} from 'muxbase/core';
 import type { TerminalAlternateScreenMode } from './terminal-scroll-protocol.js';
 import type { TerminalThemePreference } from './theme-mode.js';
 
@@ -158,7 +158,7 @@ export interface PaneCreateRequest {
 
 export interface PaneCreateResponse {
   success: boolean;
-  pane?: AumxPane;
+  pane?: MuxBasePane;
   needsAgentChoice?: boolean;
   availableAgents?: AgentName[];
   error?: string;
@@ -217,8 +217,8 @@ export interface PaneDuelCreateRequest {
 export interface PaneDuelCreateResponse {
   success: boolean;
   groupId?: string;
-  paneA?: AumxPane;
-  paneB?: AumxPane;
+  paneA?: MuxBasePane;
+  paneB?: MuxBasePane;
   survivorPaneId?: string;
   error?: string;
   claudeFullscreenPreflightFailed?: boolean;
@@ -253,7 +253,7 @@ export interface PaneStartReviewRequest {
 export interface PaneStartReviewResponse {
   success: boolean;
   reviewId?: string;
-  pane?: AumxPane;
+  pane?: MuxBasePane;
   error?: string;
 }
 
@@ -943,7 +943,7 @@ export interface ElectronSettings {
   enableTelemetryCostTracking: boolean;
   costCurrency: 'USD' | 'EUR-hai' | 'EUR-market';
   enableConversationTopics: boolean;
-  /** Explicit consent to let Amux install local agent lifecycle hook adapters. */
+  /** Explicit consent to let MuxBase install local agent lifecycle hook adapters. */
   enableAgentLifecycleAdapters: boolean;
   enableReviewAgent: boolean;
   enableLanguageIntelligence: boolean;
@@ -1087,7 +1087,7 @@ export interface WorkspaceCreateSessionResponse {
  * Persisted appearance settings read synchronously during preload so the first
  * renderer frame is painted in the user's theme instead of the async default.
  */
-export interface AumxBootSettings {
+export interface MuxBaseBootSettings {
   terminalSelectionIntegrationEnabled: boolean;
   theme: ElectronSettings['theme'];
   terminalTheme: ElectronSettings['terminalTheme'];
@@ -1097,8 +1097,8 @@ export interface AumxBootSettings {
   sidebarWidth: ElectronSettings['sidebarWidth'];
 }
 
-export interface AumxElectronAPI {
-  bootSettings: AumxBootSettings;
+export interface MuxBaseElectronAPI {
+  bootSettings: MuxBaseBootSettings;
   invoke: <T = unknown>(channel: string, ...args: unknown[]) => Promise<T>;
   on: (channel: string, callback: (...args: unknown[]) => void) => () => void;
 }
@@ -1111,7 +1111,7 @@ export interface MarketplaceSourceAddRequest {
 
 export interface MarketplaceSourceAddResponse {
   success: boolean;
-  source?: import('aumx/core').MarketplaceSource;
+  source?: import('muxbase/core').MarketplaceSource;
   error?: string;
 }
 
@@ -1128,7 +1128,7 @@ export interface MarketplaceBrowseRequest {
 }
 
 export interface MarketplaceBrowseResponse {
-  plugins: import('aumx/core').DetectedPlugin[];
+  plugins: import('muxbase/core').DetectedPlugin[];
   error?: string;
 }
 
@@ -1143,7 +1143,7 @@ export interface MarketplacePreviewRequest {
 
 export interface MarketplacePreviewResponse {
   success: boolean;
-  preview?: import('aumx/core').MarketplaceInstallPreview;
+  preview?: import('muxbase/core').MarketplaceInstallPreview;
   error?: string;
 }
 
@@ -1159,7 +1159,7 @@ export interface MarketplaceInstallRequest {
 
 export interface MarketplaceInstallResponse {
   success: boolean;
-  result?: import('aumx/core').InstallResult;
+  result?: import('muxbase/core').InstallResult;
   error?: string;
   errorCode?: 'DESTINATION_CONFLICT' | 'ARTIFACT_MODIFIED' | 'CONCURRENT_MODIFICATION' | 'TRANSACTION_RECOVERED' | 'ROLLBACK_FAILED';
   affectedPaths?: string[];

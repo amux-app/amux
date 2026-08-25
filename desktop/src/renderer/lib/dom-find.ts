@@ -82,9 +82,9 @@ export function findMatches(
   return ranges;
 }
 
-const HIGHLIGHT_KEY_ALL = 'amux-find';
-const HIGHLIGHT_KEY_ACTIVE = 'amux-find-active';
-const HIGHLIGHT_STYLE_ID = 'aumx-find-highlight-style';
+const HIGHLIGHT_KEY_ALL = 'muxbase-find';
+const HIGHLIGHT_KEY_ACTIVE = 'muxbase-find-active';
+const HIGHLIGHT_STYLE_ID = 'muxbase-find-highlight-style';
 
 interface HighlightCtor {
   new (...ranges: AbstractRange[]): Highlight;
@@ -111,8 +111,8 @@ function ensureHighlightStyle(): void {
   const style = document.createElement('style');
   style.id = HIGHLIGHT_STYLE_ID;
   style.textContent = [
-    '::highlight(amux-find) { background-color: color-mix(in srgb, var(--accent) 22%, transparent); }',
-    '::highlight(amux-find-active) { background-color: var(--accent); color: var(--bg); text-shadow: none; }',
+    '::highlight(muxbase-find) { background-color: color-mix(in srgb, var(--accent) 22%, transparent); }',
+    '::highlight(muxbase-find-active) { background-color: var(--accent); color: var(--bg); text-shadow: none; }',
   ].join('\n');
   document.head.appendChild(style);
 }

@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { PaneActivityState } from '../../../shared/pane-activity';
 import { FolderOpen, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -28,7 +28,7 @@ type WorktreeEntry =
     branch: string;
     id: string;
     kind: 'active';
-    pane: AumxPane;
+    pane: MuxBasePane;
     path: string;
     prompt: string;
     slug: string;

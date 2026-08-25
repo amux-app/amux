@@ -10,8 +10,8 @@ import {
   SettingsManager,
   type ActionContext,
   type ActionResult,
-  type AumxPane,
-} from 'aumx/core';
+  type MuxBasePane,
+} from 'muxbase/core';
 import { formatError } from '../../utils/formatError.js';
 import { releaseWorktreeSnapshot } from '../git/gitDiff.js';
 import { log } from '../Logger.js';
@@ -19,16 +19,16 @@ import { log } from '../Logger.js';
 const FULLSCREEN_RESUME_IN_PROGRESS_MESSAGE = 'A fullscreen resume is already in progress for this pane.';
 
 interface PaneActionWorkflowDependencies {
-  addPaneToDone(pane: AumxPane): void;
+  addPaneToDone(pane: MuxBasePane): void;
   buildActionContext(): ActionContext;
   clearDuelMetadata(paneIds: readonly string[]): void;
   getConfigPath(): string;
-  getPane(paneId: string): AumxPane | undefined;
-  getPanes(): AumxPane[];
+  getPane(paneId: string): MuxBasePane | undefined;
+  getPanes(): MuxBasePane[];
   getPaneCurrentCommand(paneId: string): Promise<string>;
   getProjectRoot(): string;
   paneExists(paneId: string): Promise<boolean>;
-  persistPanesTransactionally(panes: AumxPane[]): void;
+  persistPanesTransactionally(panes: MuxBasePane[]): void;
   reapOrphanedTranscripts(): Promise<void>;
 }
 
@@ -84,7 +84,7 @@ export class PaneActionWorkflow {
     return {
       cancelLabel: 'Cancel',
       confirmLabel: 'Resume in fullscreen',
-      message: 'Claude has exited. Amux will resume the exact registered conversation in fullscreen. Any unsent text currently typed at the shell will be discarded.',
+      message: 'Claude has exited. MuxBase will resume the exact registered conversation in fullscreen. Any unsent text currently typed at the shell will be discarded.',
       onConfirm: async () => this.executeFullscreenResume(
         paneId,
         expectedConfigPath,
@@ -95,7 +95,7 @@ export class PaneActionWorkflow {
     };
   }
 
-  private decorateCloseResult(pane: AumxPane, result: ActionResult): ActionResult {
+  private decorateCloseResult(pane: MuxBasePane, result: ActionResult): ActionResult {
     if (result.type === 'success') {
       void this.dependencies.reapOrphanedTranscripts();
       if (pane.worktreePath) releaseWorktreeSnapshot(pane.worktreePath);
@@ -119,7 +119,7 @@ export class PaneActionWorkflow {
     };
   }
 
-  private decorateMergeResult(pane: AumxPane, result: ActionResult): ActionResult {
+  private decorateMergeResult(pane: MuxBasePane, result: ActionResult): ActionResult {
     const hasCallback = typeof result.onConfirm === 'function'
       || typeof result.onSelect === 'function'
       || typeof result.onSubmit === 'function';
@@ -185,7 +185,7 @@ export class PaneActionWorkflow {
       const paneIndex = panes.findIndex((candidate) => candidate.id === paneId);
       if (paneIndex < 0) return { type: 'error', message: 'Pane not found.' };
 
-      const fullscreenPane: AumxPane = {
+      const fullscreenPane: MuxBasePane = {
         ...eligibility.pane,
         claudeRenderer: 'fullscreen',
       };
@@ -204,7 +204,7 @@ export class PaneActionWorkflow {
         settings,
         eligibility.sessionId,
         'fullscreen',
-        { aumxPaneId: fullscreenPane.id },
+        { muxbasePaneId: fullscreenPane.id },
       );
       if (!resumed) {
         return {
@@ -228,7 +228,7 @@ export class PaneActionWorkflow {
   private async inspectFullscreenResumeEligibility(
     paneId: string,
   ): Promise<
-    | { eligible: true; pane: AumxPane; sessionId: string }
+    | { eligible: true; pane: MuxBasePane; sessionId: string }
     | { eligible: false; reason: string }
   > {
     const pane = this.dependencies.getPane(paneId);
@@ -247,7 +247,7 @@ export class PaneActionWorkflow {
     if (await isAgentRunningInPane(pane.paneId, 'claude')) {
       return {
         eligible: false,
-        reason: 'Exit Claude first; Amux will not interrupt a live conversation.',
+        reason: 'Exit Claude first; MuxBase will not interrupt a live conversation.',
       };
     }
     const currentCommand = await this.dependencies.getPaneCurrentCommand(pane.paneId);
@@ -261,7 +261,7 @@ export class PaneActionWorkflow {
     if (!registeredSession?.sessionId) {
       return {
         eligible: false,
-        reason: 'Amux could not find an exact registered Claude session for this pane.',
+        reason: 'MuxBase could not find an exact registered Claude session for this pane.',
       };
     }
 

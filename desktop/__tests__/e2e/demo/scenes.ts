@@ -62,8 +62,8 @@ async function installDemoBootstrap(page: Page): Promise<void> {
   await page.evaluate(
     (data) => {
       const w = window as any;
-      w.__AUMX_E2E = true;
-      const stores = w.__aumxStores;
+      w.__MUXBASE_E2E = true;
+      const stores = w.__muxbaseStores;
       if (!stores) return;
 
       const sanitizedPanes = data.panes.map((p: any) => ({ ...p, type: 'worktree' }));
@@ -87,7 +87,7 @@ async function installDemoBootstrap(page: Page): Promise<void> {
 async function setProviderHealth(page: Page): Promise<void> {
   await page.evaluate((statuses) => {
     const w = window as any;
-    const store = w.__aumxStores?.['providerStatus'] ?? w.useProviderStatusStore;
+    const store = w.__muxbaseStores?.['providerStatus'] ?? w.useProviderStatusStore;
     if (store && typeof store.setState === 'function') {
       store.setState({ statuses, fetchedAt: Date.now() });
       return;
@@ -102,7 +102,7 @@ async function setProviderHealth(page: Page): Promise<void> {
 async function setView(page: Page, viewMode: ViewMode, focusPaneId?: string): Promise<void> {
   await page.evaluate(
     ({ mode, fid }) => {
-      const stores = (window as any).__aumxStores;
+      const stores = (window as any).__muxbaseStores;
       if (!stores?.ui) return;
       if (mode === 'focus' && fid) {
         stores.ui.setState({ activeView: 'dashboard', viewMode: 'focus', focusPaneId: fid, scrollToMessageId: null });
@@ -118,14 +118,14 @@ async function setView(page: Page, viewMode: ViewMode, focusPaneId?: string): Pr
 
 async function setSelectedPane(page: Page, paneId: string | null): Promise<void> {
   await page.evaluate((id) => {
-    (window as any).__aumxStores?.pane?.setState?.({ selectedPaneId: id });
+    (window as any).__muxbaseStores?.pane?.setState?.({ selectedPaneId: id });
   }, paneId);
 }
 
 async function updatePaneStatus(page: Page, paneId: string, status: AgentStatus): Promise<void> {
   await page.evaluate(
     ({ id, status }) => {
-      const stores = (window as any).__aumxStores;
+      const stores = (window as any).__muxbaseStores;
       const state = stores?.pane?.getState?.();
       if (!state) return;
       const panes = state.panes.map((p: any) => (p.id === id ? { ...p, agentStatus: status } : p));
@@ -137,7 +137,7 @@ async function updatePaneStatus(page: Page, paneId: string, status: AgentStatus)
 
 async function markPaneReady(page: Page, paneId: string): Promise<void> {
   await page.evaluate((id) => {
-    const stores = (window as any).__aumxStores;
+    const stores = (window as any).__muxbaseStores;
     const state = stores?.pane?.getState?.();
     if (!state) return;
     const next = new Set(state.justFinishedPaneIds ?? []);
@@ -215,7 +215,7 @@ export async function runHeroCut(page: Page): Promise<CutResult> {
   await bootstrapAndReveal(page);
   await showCursor(page);
 
-  const posterOpts = { brand: 'Amux', tagline: 'The agentic IDE — mission control for your AI coding agents' };
+  const posterOpts = { brand: 'MuxBase', tagline: 'The agentic IDE — mission control for your AI coding agents' };
 
   // Frame 1 — the poster. Fully-populated fleet, lockup on a scrim, held.
   await brand.showPosterLockup(page, posterOpts);
@@ -326,7 +326,7 @@ export async function runHeroCut(page: Page): Promise<CutResult> {
   trace('hero:outro:gate:start');
   await assertStagedTerminalsClean(page);
   trace('hero:outro:gate:done');
-  await brand.showPosterLockup(page, { ...posterOpts, github: 'github.com/amux-app/amux' });
+  await brand.showPosterLockup(page, { ...posterOpts, github: 'github.com/muxbase-app/muxbase' });
   await sleep(1100);
 
   return { revealEpochMs };
@@ -339,7 +339,7 @@ export async function runFullCut(page: Page): Promise<CutResult> {
 
   // Scene 1 — title over the live fleet
   await brand.showTitleCard(page, {
-    brand: 'Amux',
+    brand: 'MuxBase',
     tagline: 'Claude · Codex · opencode — in parallel',
     sub: 'Run Claude Code, Codex, and opencode on the same repo — in parallel, in isolated git worktrees.',
   });
@@ -542,7 +542,7 @@ export async function runFullCut(page: Page): Promise<CutResult> {
   await hideCursor(page);
   await brand.showOutroCard(page, {
     pills: ['Many agents in parallel', 'Isolated worktrees', 'Fleet · Focus · Files', 'Agent-to-agent review', 'Marketplace'],
-    github: 'github.com/amux-app/amux',
+    github: 'github.com/muxbase-app/muxbase',
   });
   await sleep(2600);
   await brand.hideOutroCard(page);

@@ -542,7 +542,7 @@ export function KanbanBoard() {
           <AnimatePresence>
             {(selectedPane || selectedLaunchingItem) && (
               <>
-                <Separator className="aumx-resize-handle" />
+                <Separator className="muxbase-resize-handle" />
                 <Panel defaultSize={40} minSize={25}>
                   <motion.div
                     className="h-full"

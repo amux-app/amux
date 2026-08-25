@@ -19,7 +19,7 @@ const OSC52_SEQUENCE = '\x1b]52;c;QU1VWC1PU0MtNTI=\x07';
 const OSC52_ST_SEQUENCE = '\x1b]52;c;U1QtVEVSTUlOQVRPUg==\x1b\\';
 
 function makeTranscript(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'aumx-pty-osc52-'));
+  const dir = mkdtempSync(join(tmpdir(), 'muxbase-pty-osc52-'));
   tempDirs.push(dir);
   return join(dir, 'pane.ansi');
 }

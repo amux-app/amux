@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DuelView } from '../src/renderer/components/dashboard/DuelView';
@@ -13,7 +13,7 @@ vi.mock('react-resizable-panels', () => ({
 }));
 
 vi.mock('../src/renderer/components/pane-detail/InteractiveTerminal', () => ({
-  InteractiveTerminal: ({ pane }: { pane: AumxPane }) => (
+  InteractiveTerminal: ({ pane }: { pane: MuxBasePane }) => (
     <div data-testid="interactive-terminal">{pane.id}</div>
   ),
 }));
@@ -25,7 +25,7 @@ vi.mock('../src/renderer/api/pane.api', () => ({
   resolveDuel: (...args: unknown[]) => resolveDuel(...args),
 }));
 
-function makeDuelPane(role: 'a' | 'b'): AumxPane {
+function makeDuelPane(role: 'a' | 'b'): MuxBasePane {
   const id = role === 'a' ? 'pane-a' : 'pane-b';
   return {
     agent: 'claude',
@@ -40,7 +40,7 @@ function makeDuelPane(role: 'a' | 'b'): AumxPane {
   };
 }
 
-function setState(panes: AumxPane[], duelGroupId: string | null): void {
+function setState(panes: MuxBasePane[], duelGroupId: string | null): void {
   usePaneStore.setState({
     isCreating: false,
     justFinishedPaneIds: new Set<string>(),

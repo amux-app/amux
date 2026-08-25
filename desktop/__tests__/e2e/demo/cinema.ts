@@ -14,7 +14,7 @@ const CALLOUT_MARGIN = 48;
 
 export const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
-const TRACE = process.env.AUMX_DEMO_TRACE === '1';
+const TRACE = process.env.MUXBASE_DEMO_TRACE === '1';
 export const trace = (label: string): void => { if (TRACE) console.log(`[trace] ${label} @ ${Date.now()}`); };
 
 export async function setupCinema(page: Page): Promise<void> {

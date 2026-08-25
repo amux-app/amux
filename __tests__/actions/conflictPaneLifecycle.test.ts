@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { launchManagedConflictResolutionPane } from '../../src/actions/merge/conflictPaneLifecycle.js';
 import type { ActionContext } from '../../src/actions/types.js';
-import type { AumxPane } from '../../src/types.js';
+import type { MuxBasePane } from '../../src/types.js';
 import {
   createConflictResolutionPane,
   disposeConflictResolutionPane,
@@ -17,7 +17,7 @@ vi.mock('../../src/utils/conflictMonitor.js', () => ({
   startConflictMonitoring: vi.fn(() => vi.fn()),
 }));
 
-const sourcePane: AumxPane = {
+const sourcePane: MuxBasePane = {
   id: 'source-pane',
   slug: 'feature',
   prompt: 'source',
@@ -26,7 +26,7 @@ const sourcePane: AumxPane = {
   worktreePath: '/workspace/worktrees/feature',
 };
 
-const conflictPane: AumxPane = {
+const conflictPane: MuxBasePane = {
   id: 'conflict-pane',
   slug: 'merge-feature-into-main',
   prompt: 'resolve',
@@ -50,7 +50,7 @@ function makeContext(): ActionContext {
     panes: [sourcePane],
     projectName: 'main-project',
     savePanes: vi.fn(async () => undefined),
-    sessionName: 'aumx-main-project',
+    sessionName: 'muxbase-main-project',
     onPaneUpdate: vi.fn(),
   };
 }

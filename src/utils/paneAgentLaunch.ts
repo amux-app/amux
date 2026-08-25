@@ -3,7 +3,7 @@ import path from 'path';
 import { agentHasCapability, assertNever } from '../agents/agent-contract.js';
 import { buildPiFlags } from '../agents/pi-runtime.js';
 import { TmuxService } from '../services/TmuxService.js';
-import type { AumxSettings } from '../types.js';
+import type { MuxBaseSettings } from '../types.js';
 import { type AgentName, getCodexEffortFlags, getCodexModelFlags, getEffortFlags, getModelFlags, getOpencodeModelFlags, getOpencodeTuiCommand, getOpencodeVariantFlags, getPermissionFlags, getReadOnlyFlags } from './agentLaunch.js';
 import {
   CLAUDE_ENV_UNSETS,
@@ -30,7 +30,7 @@ import { getProjectMetadataDir } from './worktreePaths.js';
 interface AgentLaunchOptions {
   agent?: AgentName;
   agentPrompt: string;
-  aumxPaneId: string;
+  muxbasePaneId: string;
   activityJournal?: string;
   activityIncarnationId?: string;
   enableActivityAdapters?: boolean;
@@ -39,7 +39,7 @@ interface AgentLaunchOptions {
   projectRoot: string;
   promptMode: 'argument' | 'input';
   readOnly?: boolean;
-  settings: Pick<AumxSettings, 'permissionMode'> & {
+  settings: Pick<MuxBaseSettings, 'permissionMode'> & {
     claudeModel?: string;
     claudeEffort?: string;
     codexModel?: string;
@@ -112,12 +112,12 @@ async function launchClaude(options: AgentLaunchOptions): Promise<void> {
   const paneEnv: Record<string, string> = {
     ...activityEnvironment(options),
     ...adapterEnvironment(adapter),
-    AUMX_PANE_ID: options.aumxPaneId,
+    MUXBASE_PANE_ID: options.muxbasePaneId,
     ...rendererEnvironment.set,
   };
   const claudeEnvUnsets = [...CLAUDE_ENV_UNSETS, ...rendererEnvironment.unset];
   if (options.otlpEndpoint) {
-    // Tell Claude Code to push OpenTelemetry to Amux's localhost receiver. Localhost only —
+    // Tell Claude Code to push OpenTelemetry to MuxBase's localhost receiver. Localhost only —
     // no external traffic. Set both general and signal-specific endpoints because some OTLP
     // SDK implementations don't auto-append `/v1/metrics` to the general endpoint.
     paneEnv.CLAUDE_CODE_ENABLE_TELEMETRY = '1';
@@ -130,7 +130,7 @@ async function launchClaude(options: AgentLaunchOptions): Promise<void> {
     paneEnv.OTEL_METRIC_EXPORT_INTERVAL = '10000';
   }
   if (options.settings.claudeEffort === 'ultracode') {
-    paneEnv.AUMX_ULTRACODE = '1';
+    paneEnv.MUXBASE_ULTRACODE = '1';
   }
   const inlinePrefix = 'claude';
   const commandPrefix = `claude${permissionSuffix}${claudeSuffix}${mcpSuffix}${settingsSuffix}`;
@@ -153,9 +153,9 @@ async function launchClaude(options: AgentLaunchOptions): Promise<void> {
         inlinePrefix,
         projectRoot: options.projectRoot,
         prompt: options.agentPrompt,
-        promptFileEnabled: process.env.AUMX_E2E !== '1',
+        promptFileEnabled: process.env.MUXBASE_E2E !== '1',
         promptSnippetCommand: withAgentTerminalEnvironment(
-          `claude "$AUMX_PROMPT_CONTENT"${permissionSuffix}${claudeSuffix}${mcpSuffix}${settingsSuffix}`,
+          `claude "$MUXBASE_PROMPT_CONTENT"${permissionSuffix}${claudeSuffix}${mcpSuffix}${settingsSuffix}`,
           paneEnv,
           claudeEnvUnsets,
         ),
@@ -164,7 +164,7 @@ async function launchClaude(options: AgentLaunchOptions): Promise<void> {
       : withHiddenAgentTerminalEnvironment(commandPrefix, paneEnv, claudeEnvUnsets);
     await startAgentCommand(options.tmuxService, options.paneId, command, options.cwd, paneEnv, fallbackShellSetup);
 
-    if (process.env.AUMX_E2E === '1' && hasInitialPrompt(options.agentPrompt)) {
+    if (process.env.MUXBASE_E2E === '1' && hasInitialPrompt(options.agentPrompt)) {
       const started = await waitForAgentReady(options.tmuxService, options.paneId, 'claude', 15000);
       if (started) {
         await wait(500);
@@ -176,20 +176,20 @@ async function launchClaude(options: AgentLaunchOptions): Promise<void> {
   autoApproveTrustPrompt(options.paneId, options.agentPrompt).catch(() => {});
 }
 
-function activityEnvironment(options: Pick<AgentLaunchOptions, 'activityIncarnationId' | 'activityJournal' | 'aumxPaneId'>): Record<string, string> {
+function activityEnvironment(options: Pick<AgentLaunchOptions, 'activityIncarnationId' | 'activityJournal' | 'muxbasePaneId'>): Record<string, string> {
   if (!options.activityJournal || !options.activityIncarnationId) return {};
   return {
-    AUMX_ACTIVITY_JOURNAL: options.activityJournal,
-    AUMX_PANE_ID: options.aumxPaneId,
-    AUMX_PANE_INCARNATION_ID: options.activityIncarnationId,
+    MUXBASE_ACTIVITY_JOURNAL: options.activityJournal,
+    MUXBASE_PANE_ID: options.muxbasePaneId,
+    MUXBASE_PANE_INCARNATION_ID: options.activityIncarnationId,
   };
 }
 
 function adapterEnvironment(adapter: PreparedActivityAdapter): Record<string, string> {
   return {
-    AUMX_ACTIVITY_ADAPTER_SUPPORT: adapter.support,
-    AUMX_ACTIVITY_ADAPTER_VERSION: adapter.version ?? 'unknown',
-    AUMX_ACTIVITY_ADAPTER_CAPABILITIES: JSON.stringify(adapter.capabilities),
+    MUXBASE_ACTIVITY_ADAPTER_SUPPORT: adapter.support,
+    MUXBASE_ACTIVITY_ADAPTER_VERSION: adapter.version ?? 'unknown',
+    MUXBASE_ACTIVITY_ADAPTER_CAPABILITIES: JSON.stringify(adapter.capabilities),
   };
 }
 
@@ -197,7 +197,7 @@ async function launchCodex(options: AgentLaunchOptions): Promise<void> {
   const permissionSuffix = resolvePermissionSuffix('codex', options, options.settings.permissionMode);
   const codexSuffix = buildCodexFlagsSuffix(options.settings);
   // Codex exposes an official inline mode specifically to preserve terminal
-  // scrollback. Keep Amux's terminal history authoritative instead of trying
+  // scrollback. Keep MuxBase's terminal history authoritative instead of trying
   // to reconstruct content repainted in Codex's alternate screen.
   const commandPrefix = `codex --no-alt-screen${permissionSuffix}${codexSuffix}`;
   const adapter = await prepareActivityAdapter('codex', options.enableActivityAdapters === true);
@@ -215,7 +215,7 @@ async function launchCodex(options: AgentLaunchOptions): Promise<void> {
       inlinePrefix: commandPrefix,
       projectRoot: options.projectRoot,
       prompt: options.agentPrompt,
-      promptSnippetCommand: withAgentTerminalEnvironment(`${commandPrefix} "$AUMX_PROMPT_CONTENT"`, paneEnv),
+      promptSnippetCommand: withAgentTerminalEnvironment(`${commandPrefix} "$MUXBASE_PROMPT_CONTENT"`, paneEnv),
       slug: options.slug,
     })
     : withHiddenAgentTerminalEnvironment(commandPrefix, paneEnv);
@@ -231,7 +231,7 @@ async function launchOpencode(options: AgentLaunchOptions): Promise<void> {
   const adapter = await prepareActivityAdapter('opencode', options.enableActivityAdapters === true);
   // A live E2E run must exercise the installed TUI without an unrelated
   // network-driven updater modal taking over its alternate screen.
-  const e2eEnvironment = process.env.AUMX_E2E === '1'
+  const e2eEnvironment = process.env.MUXBASE_E2E === '1'
     ? { OPENCODE_DISABLE_AUTOUPDATE: '1' }
     : undefined;
   const paneEnv = { ...activityEnvironment(options), ...adapterEnvironment(adapter), ...e2eEnvironment };
@@ -256,7 +256,7 @@ async function launchOpencode(options: AgentLaunchOptions): Promise<void> {
       projectRoot: options.projectRoot,
       prompt: options.agentPrompt,
       promptSnippetCommand: withAgentTerminalEnvironment(
-        `${commandPrefix} -- "$AUMX_PROMPT_CONTENT"`,
+        `${commandPrefix} -- "$MUXBASE_PROMPT_CONTENT"`,
         paneEnv,
       ),
       slug: options.slug,
@@ -289,7 +289,7 @@ async function launchPi(options: AgentLaunchOptions): Promise<void> {
       inlinePrefix: commandPrefix,
       projectRoot: options.projectRoot,
       prompt,
-      promptSnippetCommand: withAgentTerminalEnvironment(`${commandPrefix} "$AUMX_PROMPT_CONTENT"`, paneEnv),
+      promptSnippetCommand: withAgentTerminalEnvironment(`${commandPrefix} "$MUXBASE_PROMPT_CONTENT"`, paneEnv),
       slug: options.slug,
     })
     : withHiddenAgentTerminalEnvironment(commandPrefix, paneEnv);
@@ -349,7 +349,7 @@ async function buildPromptCommand(options: PromptCommandOptions): Promise<string
 
 function buildPermissionSuffix(
   agent: AgentName,
-  permissionMode: AumxSettings['permissionMode'] | '',
+  permissionMode: MuxBaseSettings['permissionMode'] | '',
 ): string {
   const permissionFlags = getPermissionFlags(agent, permissionMode);
   return permissionFlags ? ` ${permissionFlags}` : '';
@@ -358,7 +358,7 @@ function buildPermissionSuffix(
 function resolvePermissionSuffix(
   agent: AgentName,
   options: AgentLaunchOptions,
-  permissionMode: AumxSettings['permissionMode'] | '',
+  permissionMode: MuxBaseSettings['permissionMode'] | '',
 ): string {
   if (options.readOnly) {
     const readOnlyFlags = getReadOnlyFlags(agent);
@@ -370,7 +370,7 @@ function resolvePermissionSuffix(
 function buildMcpSuffix(projectRoot: string): string {
   // For E2E tests, hard-isolate MCP servers: empty config + --strict-mcp-config so no
   // user-scope / project-scope servers leak into the test agent.
-  if (process.env.AUMX_E2E === '1') {
+  if (process.env.MUXBASE_E2E === '1') {
     const mcpDir = getProjectMetadataDir(projectRoot);
     const mcpConfigPath = path.join(mcpDir, 'e2e-mcp-config.json');
     fs.mkdirSync(mcpDir, { recursive: true });
@@ -386,7 +386,7 @@ function buildMcpSuffix(projectRoot: string): string {
 }
 
 function buildClaudeFallbackShellSetup(wrapperDir: string): string {
-  return `export AUMX_CLAUDE_ORIGINAL_PATH="$PATH"; export PATH=${shQuote(wrapperDir)}:"$PATH"`;
+  return `export MUXBASE_CLAUDE_ORIGINAL_PATH="$PATH"; export PATH=${shQuote(wrapperDir)}:"$PATH"`;
 }
 
 function buildClaudeFlagsSuffix(

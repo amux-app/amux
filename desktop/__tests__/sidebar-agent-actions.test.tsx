@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import React, { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
@@ -8,7 +8,7 @@ import { axe } from 'vitest-axe';
 import { SidebarAgentRow } from '../src/renderer/components/layout/SidebarAgentRow';
 
 const CHAT_NAME = 'Who are you';
-const TEST_PANE: AumxPane = {
+const TEST_PANE: MuxBasePane = {
   agent: 'codex',
   agentStatus: 'idle',
   branchName: 'feature/original-branch',
@@ -21,7 +21,7 @@ const TEST_PANE: AumxPane = {
   worktreePath: '/worktrees/who-are-you',
 };
 
-const SECOND_TEST_PANE: AumxPane = {
+const SECOND_TEST_PANE: MuxBasePane = {
   ...TEST_PANE,
   id: 'pane-2',
   paneId: '%2',

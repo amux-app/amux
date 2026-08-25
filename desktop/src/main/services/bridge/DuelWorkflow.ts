@@ -6,9 +6,9 @@ import {
   type ActionContext,
   type ActionResult,
   type AgentName,
-  type AumxPane,
+  type MuxBasePane,
   type DuelMetadata,
-} from 'aumx/core';
+} from 'muxbase/core';
 import { randomUUID } from 'node:crypto';
 import type {
   DuelSideConfig,
@@ -41,14 +41,14 @@ interface DuelPaneLaunchOptions {
 
 interface DuelWorkflowDependencies {
   buildActionContext(): ActionContext;
-  closePane(pane: AumxPane, context: ActionContext): Promise<ActionResult>;
+  closePane(pane: MuxBasePane, context: ActionContext): Promise<ActionResult>;
   createPane(prompt: string, agent: AgentName, options: DuelPaneLaunchOptions): Promise<PaneCreateResponse>;
-  getPane(paneId: string): AumxPane | undefined;
-  getPanes(): AumxPane[];
+  getPane(paneId: string): MuxBasePane | undefined;
+  getPanes(): MuxBasePane[];
   getProjectRoot(): string;
   hasActiveProjectContext(): boolean;
   reapOrphanedTranscripts(): Promise<void>;
-  replacePanesBestEffort(panes: AumxPane[]): void;
+  replacePanesBestEffort(panes: MuxBasePane[]): void;
   setProgress(action: string, active: boolean): void;
 }
 
@@ -112,7 +112,7 @@ export class DuelWorkflow {
     });
     this.dependencies.setProgress('Creating duel panes...', true);
 
-    let paneA: AumxPane | undefined;
+    let paneA: MuxBasePane | undefined;
     try {
       const resultA = await this.dependencies.createPane(prompt, sideA.agent, {
         ...sharedOptions,
@@ -204,7 +204,7 @@ export class DuelWorkflow {
     this.dependencies.replacePanesBestEffort(updated);
   }
 
-  private async closeLoser(loser: AumxPane): Promise<string | null> {
+  private async closeLoser(loser: MuxBasePane): Promise<string | null> {
     const context = this.dependencies.buildActionContext();
     const closeResult = await this.dependencies.closePane(loser, context);
     const result = closeResult.type === 'choice' && closeResult.onSelect
@@ -216,11 +216,11 @@ export class DuelWorkflow {
     return null;
   }
 
-  private linkSibling(paneId: string, siblingPaneId: string): AumxPane | null {
+  private linkSibling(paneId: string, siblingPaneId: string): MuxBasePane | null {
     const current = this.dependencies.getPanes();
     const index = current.findIndex((pane) => pane.id === paneId);
     if (index < 0 || !current[index].duel) return null;
-    const linked: AumxPane = {
+    const linked: MuxBasePane = {
       ...current[index],
       duel: { ...current[index].duel, siblingPaneId },
     };

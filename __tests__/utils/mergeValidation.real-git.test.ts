@@ -12,11 +12,11 @@ function git(root: string, args: string[]): string {
 }
 
 function createRepo(): string {
-  const root = mkdtempSync(path.join(tmpdir(), 'aumx-merge-validation-'));
+  const root = mkdtempSync(path.join(tmpdir(), 'muxbase-merge-validation-'));
   roots.push(root);
   git(root, ['init', '-q', '-b', 'main']);
-  git(root, ['config', 'user.email', 'aumx-tests@example.com']);
-  git(root, ['config', 'user.name', 'Amux Tests']);
+  git(root, ['config', 'user.email', 'muxbase-tests@example.com']);
+  git(root, ['config', 'user.name', 'MuxBase Tests']);
   writeFileSync(path.join(root, 'base.txt'), 'base\n');
   git(root, ['add', '.']);
   git(root, ['commit', '-qm', 'base']);

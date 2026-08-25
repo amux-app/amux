@@ -76,7 +76,7 @@ describe('FileBrowserWatchService ignored predicate', () => {
     expect(isIgnored('/repo/node_modules/react/index.js')).toBe(true);
     expect(isIgnored('/repo/packages/app/node_modules/dep/x.js')).toBe(true);
     expect(isIgnored('/repo/dist/bundle.js')).toBe(true);
-    expect(isIgnored('/repo/.aumx/worktrees/pane-1/file.ts')).toBe(true);
+    expect(isIgnored('/repo/.muxbase/worktrees/pane-1/file.ts')).toBe(true);
   });
 
   it('does not ignore regular source files or the root itself', () => {
@@ -119,7 +119,7 @@ describe('FileBrowserWatchService watch scope', () => {
 
 describe('FileBrowserWatchService real filesystem events', () => {
   it('continues watching a root file after it is deleted and recreated', async () => {
-    const rootPath = await mkdtemp(join(tmpdir(), 'aumx-file-watch-'));
+    const rootPath = await mkdtemp(join(tmpdir(), 'muxbase-file-watch-'));
     const filePath = join(rootPath, 'README.md');
     const eventRootPath = '/logical/project';
     const events: FileChangedEvent[] = [];

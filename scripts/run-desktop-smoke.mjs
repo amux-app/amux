@@ -18,7 +18,7 @@ const vitestArgs = [
 
 const env = {
   ...process.env,
-  AUMX_E2E: '1',
+  MUXBASE_E2E: '1',
 };
 
 function run(command, args) {

@@ -37,7 +37,7 @@ vi.mock('../../src/main/services/Logger.js', () => ({
 }));
 
 vi.mock('electron', () => ({
-  app: { getPath: vi.fn(() => '/tmp/aumx-user-data') },
+  app: { getPath: vi.fn(() => '/tmp/muxbase-user-data') },
 }));
 
 vi.mock('fs', () => ({
@@ -45,7 +45,7 @@ vi.mock('fs', () => ({
   rmSync: vi.fn(),
 }));
 
-vi.mock('aumx/core', () => ({
+vi.mock('muxbase/core', () => ({
   MarketplaceIntegrityError: class MarketplaceIntegrityError extends Error {
     constructor(
       readonly code: string,
@@ -174,8 +174,8 @@ describe('marketplace IPC preview/install coordination', () => {
 
   it('blocks registry construction and returns structured integrity details when recovery fails', async () => {
     const rollbackFailures = [
-      '/tmp/aumx-user-data/marketplace-transactions/transactions/failed-one.json',
-      '/tmp/aumx-user-data/marketplace-transactions/transactions/failed-two.json',
+      '/tmp/muxbase-user-data/marketplace-transactions/transactions/failed-one.json',
+      '/tmp/muxbase-user-data/marketplace-transactions/transactions/failed-two.json',
     ];
     recoverMock.mockReturnValue({
       recovered: 1,

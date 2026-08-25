@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { PaneActivityState } from '../../shared/pane-activity';
 import { useEffect } from 'react';
 import { isReadyForMutation } from '../../shared/pane-activity';
@@ -20,7 +20,7 @@ interface ReviewControls {
   showHandedOffPill: boolean;
 }
 
-export function useReviewControls(pane: AumxPane, _status: PaneActivityState): ReviewControls {
+export function useReviewControls(pane: MuxBasePane, _status: PaneActivityState): ReviewControls {
   const reviewAgentEnabled = useElectronSettingsStore((s) => isReviewAgentEnabled(s.settings));
   const isReviewPane = pane.role === 'review';
   const activity = usePaneActivityStore((s) => s.activityByPaneId[pane.id]);

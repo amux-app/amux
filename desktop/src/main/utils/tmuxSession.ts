@@ -3,7 +3,7 @@ import {
   AGENT_TERMINAL_ENV_UNSETS,
   execAsync,
   shQuote,
-} from 'aumx/core';
+} from 'muxbase/core';
 import type { ThemeMode } from '../../shared/theme-mode.js';
 import { getTerminalThemeMode } from '../services/app-theme.js';
 import { log } from '../services/Logger.js';
@@ -15,7 +15,7 @@ export interface TmuxSessionResult {
 }
 
 const MAX_SUFFIX = 99;
-const PROJECT_ROOT_OPTION = '@aumx_project_root';
+const PROJECT_ROOT_OPTION = '@muxbase_project_root';
 const TMUX_HISTORY_LIMIT = 50000;
 
 // TUIs that probe COLORFGBG read it as "<foreground>;<background>" ANSI indices.
@@ -85,8 +85,8 @@ async function setSessionMetadata(
   await Promise.all([
     execAsync(`tmux set-option -t ${quotedSessionName} window-size manual`, { silent: true }),
     execAsync(`tmux set-option -t ${quotedSessionName} history-limit ${TMUX_HISTORY_LIMIT}`, { silent: true }),
-    execAsync(`tmux set -t ${quotedSessionName} @aumx_project_root ${shQuote(projectRoot)}`),
-    execAsync(`tmux set -t ${quotedSessionName} @aumx_project_name ${shQuote(projectName)}`),
+    execAsync(`tmux set -t ${quotedSessionName} @muxbase_project_root ${shQuote(projectRoot)}`),
+    execAsync(`tmux set -t ${quotedSessionName} @muxbase_project_name ${shQuote(projectName)}`),
     ...AGENT_TERMINAL_ENV_UNSETS.map((name) => execAsync(
       `tmux set-environment -t ${quotedSessionName} -r ${name}`,
       { silent: true },

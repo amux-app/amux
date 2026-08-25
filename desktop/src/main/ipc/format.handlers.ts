@@ -1,6 +1,6 @@
 import { IPC } from '../../shared/ipc-channels.js';
 import type { FormatDocumentCancelRequest, FormatDocumentRequest } from '../../shared/ipc-types.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { FormatterService } from '../services/FormatterService.js';
 import {
   resolveAuthorizedFileRoot,
@@ -15,7 +15,7 @@ function getFormatterService(): FormatterService {
   return formatterService;
 }
 
-export function registerFormatHandlers(bridge: AumxBridge): void {
+export function registerFormatHandlers(bridge: MuxBaseBridge): void {
   secureHandle(IPC.FILE_FORMAT, async (_event, request: FormatDocumentRequest) => {
     const rootPath = resolveAuthorizedFileRoot(
       bridge.getProjectRoot(),

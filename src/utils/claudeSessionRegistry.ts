@@ -12,9 +12,9 @@ export interface ClaudeSessionRecord {
   updatedAt: number;
 }
 
-const AUMX_DIR = join(homedir(), '.aumx');
-const REGISTRY_DIR = join(AUMX_DIR, 'claude-sessions');
-const INTERNAL_DIR = join(AUMX_DIR, 'internal');
+const MUXBASE_DIR = join(homedir(), '.muxbase');
+const REGISTRY_DIR = join(MUXBASE_DIR, 'claude-sessions');
+const INTERNAL_DIR = join(MUXBASE_DIR, 'internal');
 const WRAPPER_DIR = join(INTERNAL_DIR, 'bin');
 const CLAUDE_WRAPPER_PATH = join(WRAPPER_DIR, 'claude');
 const HOOK_SCRIPT_PATH = join(INTERNAL_DIR, 'record-claude-session.cjs');
@@ -36,13 +36,13 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('data', (chunk) => { raw += chunk; });
 process.stdin.on('end', () => {
   try {
-    const paneId = process.env.AUMX_PANE_ID;
+    const paneId = process.env.MUXBASE_PANE_ID;
     if (!paneId) return;
     const data = JSON.parse(raw || '{}');
     appendActivityEvent(paneId, data);
     const transcriptPath = data.transcript_path;
     if (typeof transcriptPath !== 'string' || /[\\\\/]subagents[\\\\/]/.test(transcriptPath)) return;
-    const dir = path.join(os.homedir(), '.aumx', 'claude-sessions');
+    const dir = path.join(os.homedir(), '.muxbase', 'claude-sessions');
     fs.mkdirSync(dir, { recursive: true });
     const safe = paneId.replace(/[^a-zA-Z0-9_.-]/g, '_');
     const payload = JSON.stringify({
@@ -58,13 +58,13 @@ process.stdin.on('end', () => {
     fs.writeFileSync(tmp, payload, { mode: 0o600 });
     fs.renameSync(tmp, finalPath);
   } catch (error) {
-    process.stderr.write('[aumx] Failed to record Claude session: ' + formatError(error) + '\\n');
+    process.stderr.write('[muxbase] Failed to record Claude session: ' + formatError(error) + '\\n');
   }
 });
 
 function appendActivityEvent(paneId, data) {
-  const journal = process.env.AUMX_ACTIVITY_JOURNAL;
-  const paneIncarnationId = process.env.AUMX_PANE_INCARNATION_ID;
+  const journal = process.env.MUXBASE_ACTIVITY_JOURNAL;
+  const paneIncarnationId = process.env.MUXBASE_PANE_INCARNATION_ID;
   const kind = eventKind(data.hook_event_name);
   if (!journal || !paneIncarnationId || !kind) return;
   if (data.hook_event_name === 'Notification' && !humanInputNotification(data.notification_type)) return;
@@ -91,9 +91,9 @@ function appendActivityEvent(paneId, data) {
       paneId,
       paneIncarnationId,
       sessionId: data.session_id,
-      adapterVersion: process.env.AUMX_ACTIVITY_ADAPTER_VERSION || data.version || 'unknown',
-      adapterSupport: process.env.AUMX_ACTIVITY_ADAPTER_SUPPORT === 'full' || process.env.AUMX_ACTIVITY_ADAPTER_SUPPORT === 'partial'
-        ? process.env.AUMX_ACTIVITY_ADAPTER_SUPPORT
+      adapterVersion: process.env.MUXBASE_ACTIVITY_ADAPTER_VERSION || data.version || 'unknown',
+      adapterSupport: process.env.MUXBASE_ACTIVITY_ADAPTER_SUPPORT === 'full' || process.env.MUXBASE_ACTIVITY_ADAPTER_SUPPORT === 'partial'
+        ? process.env.MUXBASE_ACTIVITY_ADAPTER_SUPPORT
         : 'partial',
       adapterCapabilities: parseAdapterCapabilities(),
       emittedAt: Date.now(),
@@ -130,7 +130,7 @@ function stableTurnId(paneId, data) {
   if (typeof data.prompt_id === 'string' && data.prompt_id) return data.prompt_id;
   if (typeof data.session_id !== 'string' || !data.session_id) return undefined;
   const safePaneId = paneId.replace(/[^a-zA-Z0-9_.-]/g, '_');
-  const statePath = path.join(os.homedir(), '.aumx', 'claude-turns', safePaneId + '.json');
+  const statePath = path.join(os.homedir(), '.muxbase', 'claude-turns', safePaneId + '.json');
   let state = {};
   try { state = JSON.parse(fs.readFileSync(statePath, 'utf8')); } catch (_) {}
   if (data.hook_event_name === 'UserPromptSubmit' || !state.turnId || state.sessionId !== data.session_id) {
@@ -176,7 +176,7 @@ function backgroundSnapshot(data) {
 
 function parseAdapterCapabilities() {
   try {
-    const value = JSON.parse(process.env.AUMX_ACTIVITY_ADAPTER_CAPABILITIES || '[]');
+    const value = JSON.parse(process.env.MUXBASE_ACTIVITY_ADAPTER_CAPABILITIES || '[]');
     return Array.isArray(value) ? value : [];
   } catch (_) {
     return [];
@@ -223,7 +223,7 @@ function buildHookSettings(): string {
   const command = `node ${shQuote(HOOK_SCRIPT_PATH)}`;
   const hook = { hooks: [{ type: 'command', command }] };
   return JSON.stringify({
-    _aumxHookVersion: 2,
+    _muxbaseHookVersion: 2,
     hooks: {
       SessionStart: [hook],
       SessionEnd: [hook],
@@ -248,8 +248,8 @@ function buildHookSettings(): string {
 
 function buildClaudeWrapper(settingsPath: string): string {
   return `#!/bin/sh
-if [ -n "$AUMX_CLAUDE_ORIGINAL_PATH" ]; then
-  PATH="$AUMX_CLAUDE_ORIGINAL_PATH"
+if [ -n "$MUXBASE_CLAUDE_ORIGINAL_PATH" ]; then
+  PATH="$MUXBASE_CLAUDE_ORIGINAL_PATH"
   export PATH
 fi
 exec claude --settings ${shQuote(settingsPath)} "$@"
@@ -287,7 +287,7 @@ export function ensureClaudeSessionShellWrapper(settingsPath: string): string | 
   }
 }
 
-/** Removes only the files owned by Amux; user Claude settings are untouched. */
+/** Removes only the files owned by MuxBase; user Claude settings are untouched. */
 export function removeClaudeSessionHookSettings(): boolean {
   let removed = false;
   for (const path of [HOOK_SCRIPT_PATH, HOOK_SETTINGS_PATH, CLAUDE_WRAPPER_PATH]) {

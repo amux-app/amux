@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useUpdateStore } from '../../stores';
 
-const DISMISSAL_KEY = 'amux:update-location-notice-dismissed';
+const DISMISSAL_KEY = 'muxbase:update-location-notice-dismissed';
 
 function wasDismissed(): boolean {
   try {
@@ -40,10 +40,10 @@ export function UpdateLocationNotice() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-[var(--text)]">
-            Move Amux to Applications to enable automatic updates.
+            Move MuxBase to Applications to enable automatic updates.
           </p>
           <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">
-            Quit Amux, drag it to the DMG’s Applications shortcut, eject the DMG, and relaunch Amux.
+            Quit MuxBase, drag it to the DMG’s Applications shortcut, eject the DMG, and relaunch MuxBase.
           </p>
         </div>
         <button

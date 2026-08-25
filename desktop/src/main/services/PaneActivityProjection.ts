@@ -1,4 +1,4 @@
-import type { AgentStatus } from 'aumx/core';
+import type { AgentStatus } from 'muxbase/core';
 import type { NormalizedSession } from '../../shared/agent-session-types.js';
 import { deriveAgentTurnState } from '../../shared/agent-turn-state.js';
 import {

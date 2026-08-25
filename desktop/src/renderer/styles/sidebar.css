@@ -59,19 +59,19 @@
 
 /* The sidebar edge carries no resting divider — separation is the surface colour.
    The handle only draws itself once it is hovered or dragged. */
-.aumx-resize-handle--sidebar::before {
+.muxbase-resize-handle--sidebar::before {
   opacity: 0;
 }
 
-.aumx-resize-handle--sidebar:hover::before,
-.aumx-resize-handle--sidebar[data-separator="hover"]::before,
-.aumx-resize-handle--sidebar[data-separator="active"]::before {
+.muxbase-resize-handle--sidebar:hover::before,
+.muxbase-resize-handle--sidebar[data-separator="hover"]::before,
+.muxbase-resize-handle--sidebar[data-separator="active"]::before {
   opacity: 1;
 }
 
 /* Keyboard users get the same affordance the pointer gets, in the focus colour. */
-.aumx-resize-handle--sidebar:focus-visible::before,
-.aumx-resize-handle--sidebar[data-separator="focus"]::before {
+.muxbase-resize-handle--sidebar:focus-visible::before,
+.muxbase-resize-handle--sidebar[data-separator="focus"]::before {
   opacity: 1;
   width: 2px;
   left: 1.5px;

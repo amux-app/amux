@@ -22,7 +22,7 @@ const STEP_TIMEOUT_MS = 60_000;
 const SETTLE_MS = 250;
 
 const FLEET_SIZE = 3;
-const PROJECT = { projectName: 'aumx', projectRoot: resolve(ROOT, '..') };
+const PROJECT = { projectName: 'muxbase', projectRoot: resolve(ROOT, '..') };
 // One populated row measures ~40px. At 200% with the sidebar expanded the
 // rigid action cluster moves below the stats; the measured result is 71px.
 const SINGLE_LINE_BAR_MAX_PX = 48;
@@ -108,7 +108,7 @@ async function setWaitingCount(
 
 async function setZenMode(page: Page, zenMode: boolean): Promise<void> {
   await page.evaluate((value) => {
-    (window as unknown as BaselineStoreWindow).__aumxStores?.ui?.setState({ zenMode: value });
+    (window as unknown as BaselineStoreWindow).__muxbaseStores?.ui?.setState({ zenMode: value });
   }, zenMode);
   await page.waitForTimeout(SETTLE_MS);
 }
@@ -274,7 +274,7 @@ async function measureSidebarWidth(page: Page): Promise<number> {
 
 async function setSidebarCollapsed(page: Page, collapsed: boolean): Promise<void> {
   await page.evaluate((value) => {
-    (window as unknown as BaselineStoreWindow).__aumxStores?.ui?.setState({ sidebarCollapsed: value });
+    (window as unknown as BaselineStoreWindow).__muxbaseStores?.ui?.setState({ sidebarCollapsed: value });
   }, collapsed);
   await page.waitForTimeout(SETTLE_MS);
 }
@@ -286,7 +286,7 @@ async function setZoomFactor(app: ElectronApplication, factor: number): Promise<
   }, factor);
 }
 
-describe.runIf(process.env.AUMX_E2E === '1')('ResourceBar attention + command controls', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('ResourceBar attention + command controls', () => {
   let app: ElectronApplication;
   let page: Page;
   let originalViewport: { height: number; width: number };
@@ -296,7 +296,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('ResourceBar attention + command co
 
     app = await electron.launch({
       args: [MAIN_ENTRY],
-      env: { ...process.env, AUMX_DEV: 'true', NODE_ENV: 'test' },
+      env: { ...process.env, MUXBASE_DEV: 'true', NODE_ENV: 'test' },
     });
     page = await getAppWindow(app);
     await disableBackgroundThrottling(app);

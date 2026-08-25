@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Copy, FolderOpen } from 'lucide-react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { GitDiffResponse } from '../../../shared/ipc-types';
 import { IPC } from '../../../shared/ipc-channels';
 import { invoke } from '../../api/ipc';
@@ -11,7 +11,7 @@ import { fileStatusColor, fileStatusLabel } from '../../lib/git-display';
 import { GitPill } from '../shared/GitPill';
 
 interface KanbanHoverPopoverProps {
-  pane: AumxPane;
+  pane: MuxBasePane;
   anchorEl: HTMLElement | null;
 }
 

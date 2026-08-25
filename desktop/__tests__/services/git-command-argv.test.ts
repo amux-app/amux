@@ -19,7 +19,7 @@ describe('git argv passing (no shell)', () => {
   beforeEach(() => {
     // Arrange: a repo whose absolute path contains spaces — a shell-quoted
     // command would break here if any argument were double-quoted or unsplit.
-    repo = mkdtempSync(join(tmpdir(), 'aumx argv repo '));
+    repo = mkdtempSync(join(tmpdir(), 'muxbase argv repo '));
     run(['init', '-q', '-b', 'main']);
     run(['config', 'user.email', 't@t.com']);
     run(['config', 'user.name', 't']);

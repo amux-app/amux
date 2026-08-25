@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IPC } from '../../src/shared/ipc-channels';
 import { registerElectronSettingsHandlers } from '../../src/main/ipc/electron-settings.handlers';
-import type { AumxBridge } from '../../src/main/services/AumxBridge';
+import type { MuxBaseBridge } from '../../src/main/services/MuxBaseBridge';
 import type { ThemeMode } from '../../src/shared/theme-mode';
 
 const execAsyncMock = vi.hoisted(() => vi.fn(() => Promise.resolve('')));
@@ -10,7 +10,7 @@ const terminalTheme = vi.hoisted(() => ({ mode: 'dark' as ThemeMode }));
 const updateMock = vi.hoisted(() => vi.fn());
 const setLevelMock = vi.hoisted(() => vi.fn());
 
-vi.mock('aumx/core', () => ({
+vi.mock('muxbase/core', () => ({
   AGENT_TERMINAL_ENVIRONMENT: [],
   AGENT_TERMINAL_ENV_UNSETS: [],
   execAsync: execAsyncMock,
@@ -73,10 +73,10 @@ function getHandler(channel: string): (...args: unknown[]) => unknown {
 }
 
 const bridge = {
-  getSessionName: () => 'aumx-example-rag',
+  getSessionName: () => 'muxbase-example-rag',
   setAgentLifecycleAdaptersEnabled: vi.fn(),
   setTelemetryCostTrackingEnabled: vi.fn(),
-} as unknown as AumxBridge;
+} as unknown as MuxBaseBridge;
 
 describe('electron settings IPC handlers', () => {
   beforeEach(() => {
@@ -138,7 +138,7 @@ describe('electron settings IPC handlers', () => {
     // Assert
     expect(execAsyncMock, 'new panes inherit a stale COLORFGBG until the session env is refreshed')
       .toHaveBeenCalledWith(
-        `tmux set-environment -t 'aumx-example-rag' COLORFGBG '${expected}'`,
+        `tmux set-environment -t 'muxbase-example-rag' COLORFGBG '${expected}'`,
         { silent: true },
       );
   });

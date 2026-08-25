@@ -1,8 +1,8 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { describe, expect, it } from 'vitest';
 import { getCommandPaletteSearchScope } from '../src/renderer/lib/commandPaletteSearchScope';
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     id: 'pane-1',
     paneId: '%1',
@@ -15,13 +15,13 @@ function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
 describe('getCommandPaletteSearchScope', () => {
   it('prefers the selected pane worktree', () => {
     const scope = getCommandPaletteSearchScope([
-      makePane({ id: 'pane-1', projectRoot: '/repo', slug: 'frontend', worktreePath: '/repo/.aumx/worktrees/frontend' }),
-      makePane({ id: 'pane-2', projectRoot: '/repo', slug: 'backend', worktreePath: '/repo/.aumx/worktrees/backend' }),
+      makePane({ id: 'pane-1', projectRoot: '/repo', slug: 'frontend', worktreePath: '/repo/.muxbase/worktrees/frontend' }),
+      makePane({ id: 'pane-2', projectRoot: '/repo', slug: 'backend', worktreePath: '/repo/.muxbase/worktrees/backend' }),
     ], 'pane-2', '/repo');
 
     expect(scope).toEqual({
       label: 'backend',
-      rootPath: '/repo/.aumx/worktrees/backend',
+      rootPath: '/repo/.muxbase/worktrees/backend',
       scopeId: 'pane-2',
     });
   });
@@ -40,13 +40,13 @@ describe('getCommandPaletteSearchScope', () => {
 
   it('falls back to the first pane when nothing is selected', () => {
     const scope = getCommandPaletteSearchScope([
-      makePane({ id: 'pane-1', projectRoot: '/repo', slug: 'first-pane', worktreePath: '/repo/.aumx/worktrees/first-pane' }),
-      makePane({ id: 'pane-2', projectRoot: '/repo', slug: 'second-pane', worktreePath: '/repo/.aumx/worktrees/second-pane' }),
+      makePane({ id: 'pane-1', projectRoot: '/repo', slug: 'first-pane', worktreePath: '/repo/.muxbase/worktrees/first-pane' }),
+      makePane({ id: 'pane-2', projectRoot: '/repo', slug: 'second-pane', worktreePath: '/repo/.muxbase/worktrees/second-pane' }),
     ], null, '/repo');
 
     expect(scope).toEqual({
       label: 'first-pane',
-      rootPath: '/repo/.aumx/worktrees/first-pane',
+      rootPath: '/repo/.muxbase/worktrees/first-pane',
       scopeId: 'pane-1',
     });
   });

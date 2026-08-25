@@ -124,7 +124,7 @@ describe('terminal IPC validation', () => {
         cols: 120,
         fixedCols: 100,
         rows: 36,
-        sessionName: 'aumx-test',
+        sessionName: 'muxbase-test',
       }]);
     }).not.toThrow();
   });
@@ -133,7 +133,7 @@ describe('terminal IPC validation', () => {
     expect(() => {
       validateIpcInvokeArgs(IPC.TERMINAL_ATTACH, [{
         paneId: 'p1',
-        sessionName: 'aumx-test',
+        sessionName: 'muxbase-test',
         tmuxPaneId: '%1',
       }]);
     }).toThrow();
@@ -158,7 +158,7 @@ describe('terminal IPC validation', () => {
         cols: 80,
         fixedCols: 1,
         rows: 24,
-        sessionName: 'aumx-test',
+        sessionName: 'muxbase-test',
       }]);
     }).toThrow();
   });
@@ -169,7 +169,7 @@ describe('terminal IPC validation', () => {
         paneId: 'p1',
         cols: 80,
         rows: 0,
-        sessionName: 'aumx-test',
+        sessionName: 'muxbase-test',
       }]);
     }).toThrow();
   });
@@ -186,13 +186,13 @@ describe('terminal IPC validation', () => {
     ['resize cols above the supported maximum', IPC.TERMINAL_RESIZE, { paneId: 'p1', cols: 1001, rows: 24 }],
     ['resize rows above the supported maximum', IPC.TERMINAL_RESIZE, { paneId: 'p1', cols: 80, rows: 501 }],
     ['attach cols above the supported maximum', IPC.TERMINAL_ATTACH, {
-      paneId: 'p1', cols: 1001, rows: 24, sessionName: 'aumx-test',
+      paneId: 'p1', cols: 1001, rows: 24, sessionName: 'muxbase-test',
     }],
     ['attach fixed cols above the supported maximum', IPC.TERMINAL_ATTACH, {
-      paneId: 'p1', cols: 80, fixedCols: 1001, rows: 24, sessionName: 'aumx-test',
+      paneId: 'p1', cols: 80, fixedCols: 1001, rows: 24, sessionName: 'muxbase-test',
     }],
     ['attach rows above the supported maximum', IPC.TERMINAL_ATTACH, {
-      paneId: 'p1', cols: 80, rows: 501, sessionName: 'aumx-test',
+      paneId: 'p1', cols: 80, rows: 501, sessionName: 'muxbase-test',
     }],
   ])('rejects %s', (_name, channel, payload) => {
     expect(() => {

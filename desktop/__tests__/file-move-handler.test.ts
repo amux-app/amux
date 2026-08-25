@@ -68,7 +68,7 @@ describe('FILE_MOVE handler', () => {
     fsHooks.beforeLink = null;
     fsHooks.beforeMkdir = null;
     fsHooks.unlinkFailsFor = null;
-    rootPath = await mkdtemp(join(tmpdir(), 'aumx-file-move-'));
+    rootPath = await mkdtemp(join(tmpdir(), 'muxbase-file-move-'));
     registerFileHandlers({
       getPanes: () => [],
       getProjectRoot: () => rootPath,
@@ -428,7 +428,7 @@ describe('FILE_MOVE handler', () => {
 
   it('does not collide with a user-owned file resembling a staging name', async () => {
     // Arrange
-    await writeFile(join(rootPath, 'dest', '.aumx-copy-notes.md'), 'user data');
+    await writeFile(join(rootPath, 'dest', '.muxbase-copy-notes.md'), 'user data');
 
     // Act
     const response = await move({}, {
@@ -440,8 +440,8 @@ describe('FILE_MOVE handler', () => {
 
     // Assert
     expect(response.results[0]).toMatchObject({ finalPath: 'dest/notes.md', status: 'succeeded' });
-    expect(await entryNames(join(rootPath, 'dest'))).toEqual(['.aumx-copy-notes.md', 'notes.md']);
-    expect(await readFile(join(rootPath, 'dest', '.aumx-copy-notes.md'), 'utf8')).toBe('user data');
+    expect(await entryNames(join(rootPath, 'dest'))).toEqual(['.muxbase-copy-notes.md', 'notes.md']);
+    expect(await readFile(join(rootPath, 'dest', '.muxbase-copy-notes.md'), 'utf8')).toBe('user data');
   });
 
   it('reports one result per source when the middle item fails', async () => {

@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -25,12 +25,12 @@ afterEach(() => {
 describe('SupportBundleService', () => {
   it('exports logs, metadata, and terminal transcripts into a zip bundle', async () => {
     // Arrange
-    root = mkdtempSync(join(tmpdir(), 'aumx-support-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-support-'));
     const logDir = join(root, '.log');
     const terminalDir = join(logDir, 'terminal');
     mkdirSync(terminalDir, { recursive: true });
 
-    const logFile = join(logDir, 'aumx-desktop-2026-06-30.log');
+    const logFile = join(logDir, 'muxbase-desktop-2026-06-30.log');
     const rotatedLogFile = `${logFile}.1`;
     const transcriptPath = join(terminalDir, 'tmux-1-claude.ansi');
     writeFileSync(logFile, 'current log line');
@@ -54,9 +54,9 @@ describe('SupportBundleService', () => {
         slug: 'claude-pane',
         terminalTranscriptPath: transcriptPath,
       }],
-      projectName: 'aumx',
+      projectName: 'muxbase',
       projectRoot: '/tmp/project',
-      sessionName: 'aumx-aumx',
+      sessionName: 'muxbase-muxbase',
       systemCheck: {
         agents: ['claude'],
         git: { available: true, version: '2.50.0' },
@@ -65,7 +65,7 @@ describe('SupportBundleService', () => {
     });
 
     // Assert
-    expect(result.path).toBe(join(root, 'aumx-support-2026-06-30-123456.zip'));
+    expect(result.path).toBe(join(root, 'muxbase-support-2026-06-30-123456.zip'));
     expect(existsSync(result.path)).toBe(true);
     expect(result.includedFiles).toEqual(expect.arrayContaining([logFile, rotatedLogFile, transcriptPath]));
 
@@ -75,11 +75,11 @@ describe('SupportBundleService', () => {
 
     const zipText = zipBytes.toString('utf8');
     expect(zipText).toContain('metadata/session.json');
-    expect(zipText).toContain('logs/aumx-desktop-2026-06-30.log');
+    expect(zipText).toContain('logs/muxbase-desktop-2026-06-30.log');
     expect(zipText).toContain('terminal/tmux-1-claude.ansi');
     expect(zipText).toContain('current log line');
     expect(zipText).toContain('terminal transcript line');
-    expect(zipText).toContain('"sessionName": "aumx-aumx"');
+    expect(zipText).toContain('"sessionName": "muxbase-muxbase"');
     expect(zipText).toContain('redaction-manifest.json');
     expect(zipText).toContain('README.txt');
     expect(zipText).not.toContain('redacted from metadata');
@@ -87,8 +87,8 @@ describe('SupportBundleService', () => {
 
   it('omits transcripts, tokenizes paths, and never leaks the raw home path when transcripts are off', async () => {
     // Arrange
-    home = mkdtempSync(join(homedir(), 'aumx-bundle-home-'));
-    root = mkdtempSync(join(tmpdir(), 'aumx-support-'));
+    home = mkdtempSync(join(homedir(), 'muxbase-bundle-home-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-support-'));
     const { options, transcriptPath } = buildOptions(home, root, false);
 
     // Act
@@ -105,8 +105,8 @@ describe('SupportBundleService', () => {
 
   it('strips ANSI and redacts a token split by an escape code inside a transcript', async () => {
     // Arrange
-    home = mkdtempSync(join(homedir(), 'aumx-bundle-home-'));
-    root = mkdtempSync(join(tmpdir(), 'aumx-support-'));
+    home = mkdtempSync(join(homedir(), 'muxbase-bundle-home-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-support-'));
     const { options, transcriptPath } = buildOptions(home, root, true);
     writeFileSync(transcriptPath, 'auth ghp_0123456789\x1b[0mABCDEFGHIJ0123456789ABCD end\n');
 
@@ -121,8 +121,8 @@ describe('SupportBundleService', () => {
 
   it('redacts a private-key block from a transcript', async () => {
     // Arrange
-    home = mkdtempSync(join(homedir(), 'aumx-bundle-home-'));
-    root = mkdtempSync(join(tmpdir(), 'aumx-support-'));
+    home = mkdtempSync(join(homedir(), 'muxbase-bundle-home-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-support-'));
     const { options, transcriptPath } = buildOptions(home, root, true);
     writeFileSync(
       transcriptPath,
@@ -141,8 +141,8 @@ describe('SupportBundleService', () => {
 
   it('previews the transcript opt-in without writing a file', () => {
     // Arrange
-    home = mkdtempSync(join(homedir(), 'aumx-bundle-home-'));
-    root = mkdtempSync(join(tmpdir(), 'aumx-support-'));
+    home = mkdtempSync(join(homedir(), 'muxbase-bundle-home-'));
+    root = mkdtempSync(join(tmpdir(), 'muxbase-support-'));
 
     // Act
     const off = previewSupportBundle(buildOptions(home, root, false).options);
@@ -159,14 +159,14 @@ function buildOptions(homeDir: string, outputDir: string, includeTranscripts: bo
   const logDir = join(homeDir, 'logs');
   const projectRoot = join(homeDir, 'proj');
   const worktreePath = join(projectRoot, '.worktrees', 'feat-x');
-  const logFile = join(logDir, 'aumx-desktop-2026-07-18.log');
+  const logFile = join(logDir, 'muxbase-desktop-2026-07-18.log');
   const transcriptPath = join(logDir, 'terminal', 'pane-1.ansi');
   mkdirSync(join(logDir, 'terminal'), { recursive: true });
   mkdirSync(worktreePath, { recursive: true });
   writeFileSync(logFile, 'ready\n');
   writeFileSync(transcriptPath, 'transcript body\n');
 
-  const pane: AumxPane = {
+  const pane: MuxBasePane = {
     agent: 'claude',
     id: 'pane-1',
     paneId: '%1',
@@ -187,7 +187,7 @@ function buildOptions(homeDir: string, outputDir: string, includeTranscripts: bo
       panes: [pane],
       projectName: 'proj',
       projectRoot,
-      sessionName: 'aumx-proj',
+      sessionName: 'muxbase-proj',
     },
     transcriptPath,
   };

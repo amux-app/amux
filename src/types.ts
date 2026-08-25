@@ -16,7 +16,7 @@ export interface ConflictMergeMetadata {
   targetCommit: string;
 }
 
-export interface AumxPane {
+export interface MuxBasePane {
   id: string;
   slug: string;
   title?: string;
@@ -106,7 +106,7 @@ export interface ProjectSettings {
   firstDevRun?: boolean;
 }
 
-export interface AumxSettings {
+export interface MuxBaseSettings {
   // Agent permission mode
   // '' = agent default behavior, auto = safe workspace automation
   // acceptEdits/plan/bypassPermissions are legacy values normalized to auto for implementation panes
@@ -126,13 +126,13 @@ export interface AumxSettings {
   initGitIfMissing?: boolean;
   // Claude Code model — '' lets Claude use its default; 'opus' tracks latest Opus
   claudeModel?: '' | 'opus' | 'sonnet' | 'haiku' | 'fable';
-  // Claude Code reasoning effort — '' lets Claude use its default. 'ultracode' is a amux harness
-  // marker that maps to CLI '--effort xhigh' plus AUMX_ULTRACODE=1 env hint for the spawned session.
+  // Claude Code reasoning effort — '' lets Claude use its default. 'ultracode' is a muxbase harness
+  // marker that maps to CLI '--effort xhigh' plus MUXBASE_ULTRACODE=1 env hint for the spawned session.
   claudeEffort?: '' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultracode';
   // Render Claude Code on its alternate-screen conversation renderer by default. Explicit false
-  // keeps the known-lossy classic compatibility profile; see claudeRenderer on AumxPane.
+  // keeps the known-lossy classic compatibility profile; see claudeRenderer on MuxBasePane.
   claudeFullscreenRendering?: boolean;
-  // Codex model — '' lets amux defer to ~/.codex/config.toml
+  // Codex model — '' lets muxbase defer to ~/.codex/config.toml
   codexModel?: '' | 'gpt-5-codex' | 'gpt-5' | 'o4-mini' | 'o3' | 'gpt-4.1';
   // Codex reasoning effort — '' lets Codex use its built-in default
   codexEffort?: '' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
@@ -150,7 +150,7 @@ export interface AumxSettings {
 export type SettingsScope = 'global' | 'project';
 
 export interface SettingDefinition {
-  key: keyof AumxSettings | string;
+  key: keyof MuxBaseSettings | string;
   label: string;
   description: string;
   type: 'boolean' | 'select' | 'text' | 'action';
@@ -159,7 +159,7 @@ export interface SettingDefinition {
   section?: string;
 }
 
-export interface AumxAppProps {
+export interface MuxBaseAppProps {
   panesFile: string;
   projectName: string;
   sessionName: string;
@@ -169,11 +169,11 @@ export interface AumxAppProps {
   controlPaneId?: string;
 }
 
-export interface AumxConfig {
+export interface MuxBaseConfig {
   projectName: string;
   projectRoot: string;
-  panes: AumxPane[];
-  settings: AumxSettings;
+  panes: MuxBasePane[];
+  settings: MuxBaseSettings;
   lastUpdated: string;
   controlPaneId?: string;
   controlPaneSize?: number;

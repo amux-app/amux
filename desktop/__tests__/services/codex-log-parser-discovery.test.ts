@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { CodexLogParser } from '../../src/main/services/parsing/CodexLogParser';
 
 const homeDirState = vi.hoisted(() => ({ value: '' }));
@@ -13,15 +13,15 @@ vi.mock('os', () => ({
 const tempDirs: string[] = [];
 
 function createTempHome(): string {
-  const dir = mkdtempSync(join('/tmp', 'aumx-codex-home-'));
+  const dir = mkdtempSync(join('/tmp', 'muxbase-codex-home-'));
   tempDirs.push(dir);
   homeDirState.value = dir;
   return dir;
 }
 
-function makePane(createdAt: number, overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(createdAt: number, overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
-    id: `aumx-${createdAt}`,
+    id: `muxbase-${createdAt}`,
     paneId: '%1',
     prompt: 'test prompt',
     slug: 'codex-pane',

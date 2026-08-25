@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ActionCallbackRegistry } from '../../src/main/services/ActionCallbackRegistry';
-import type { ActionResult } from 'aumx/core';
+import type { ActionResult } from 'muxbase/core';
 
 function makeSuccessResult(overrides: Partial<ActionResult> = {}): ActionResult {
   return { type: 'success', message: 'Done', ...overrides };
@@ -164,9 +164,9 @@ describe('ActionCallbackRegistry', () => {
       const result = registry.serializeActionResult({
         type: 'navigation',
         message: 'Navigate',
-        targetPaneId: 'aumx-3',
+        targetPaneId: 'muxbase-3',
       });
-      expect(result.targetPaneId).toBe('aumx-3');
+      expect(result.targetPaneId).toBe('muxbase-3');
     });
 
     it('serializes data', () => {

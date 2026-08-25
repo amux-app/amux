@@ -1,4 +1,4 @@
-import { execFileAsync } from 'aumx/core';
+import { execFileAsync } from 'muxbase/core';
 import { log } from './Logger.js';
 
 const FOOTPRINT_BIN = '/usr/bin/footprint';

@@ -1,24 +1,24 @@
 /**
- * aumx Core API Surface
+ * muxbase Core API Surface
  *
  * Barrel export for consumption by the desktop Electron app (and any future interfaces).
- * Desktop app imports: import { createPane, TmuxService, ... } from 'aumx/core'
+ * Desktop app imports: import { createPane, TmuxService, ... } from 'muxbase/core'
  */
 
 // Types
 export type {
   AgentStatus,
-  AumxPane,
+  MuxBasePane,
   DuelMetadata,
   PanePosition,
   ReviewMetadata,
   WindowDimensions,
   ProjectSettings,
-  AumxSettings,
+  MuxBaseSettings,
   SettingsScope,
   SettingDefinition,
-  AumxAppProps,
-  AumxConfig,
+  MuxBaseAppProps,
+  MuxBaseConfig,
 } from './types.js';
 
 // Pane Creation
@@ -83,7 +83,7 @@ export { StateManager } from './shared/StateManager.js';
 
 // Settings
 export { SettingsManager, SETTING_DEFINITIONS } from './utils/settingsManager.js';
-export { parseAumxConfig, parseStoredAumxSettings } from './utils/persistedStateValidation.js';
+export { parseMuxBaseConfig, parseMuxBaseStoredSettings } from './utils/persistedStateValidation.js';
 export { isSettingKey, validateSettingValue, validateSettingsPatch } from './utils/settingsSchema.js';
 export {
   abortAllConflictMergeTransactions,
@@ -120,7 +120,7 @@ export {
   getOrphanedWorktrees,
   isValidBranchName,
   getPaneBranchName,
-  ensureAumxGitignore,
+  ensureMuxBaseGitignore,
 } from './utils/git.js';
 export {
   getProjectConfigPath,
@@ -280,14 +280,14 @@ export {
 
 // Pane Sync Utilities (used by PaneWatcher in desktop)
 export {
-  AUMX_PANE_ID_OPTION,
-  AUMX_PANE_INCARNATION_OPTION,
+  MUXBASE_PANE_ID_OPTION,
+  MUXBASE_PANE_INCARNATION_OPTION,
   ensureTmuxPaneIncarnationOption,
   rebindPaneByTitle,
   stampTmuxPaneIdOption,
   stampTmuxPaneIncarnationOption,
 } from './utils/paneRebinding.js';
-export { getUntrackedPanes, createShellPane, detectShellType, getNextAumxId } from './utils/shellPaneDetection.js';
+export { getUntrackedPanes, createShellPane, detectShellType, getNextMuxBaseId } from './utils/shellPaneDetection.js';
 export { buildWorktreePaneTitle, getPaneTmuxTitle } from './utils/paneTitle.js';
 export { destroyWelcomePaneCoordinated, createWelcomePaneCoordinated, ensureWelcomePane } from './utils/welcomePaneManager.js';
 

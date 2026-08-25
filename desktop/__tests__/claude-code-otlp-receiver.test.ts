@@ -138,7 +138,7 @@ describe('ClaudeCodeOtlpReceiver', () => {
     await receiver.stop();
     expect(receiver.getPort()).toBeNull();
 
-    // A fresh receiver instance simulates AumxBridge.bootServices replacing it
+    // A fresh receiver instance simulates MuxBaseBridge.bootServices replacing it
     // on project switch. The previous server is gone, so the new one binds cleanly.
     const second = new ClaudeCodeOtlpReceiver();
     try {

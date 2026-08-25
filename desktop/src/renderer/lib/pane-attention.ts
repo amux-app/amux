@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { NormalizedSession } from '../../shared/agent-session-types';
 import type { AgentTurnStateSnapshot } from '../../shared/agent-turn-state';
 import type { PaneActivity, PaneActivityState } from '../../shared/pane-activity';
@@ -36,7 +36,7 @@ function isSessionAwaitingUser(session: PaneAttentionSession): boolean {
 }
 
 export function getEffectivePaneStatus(
-  pane: AumxPane,
+  pane: MuxBasePane,
   session: PaneAttentionSession,
   activity?: PaneActivity,
 ): PaneActivityState {
@@ -55,7 +55,7 @@ export function getEffectivePaneStatus(
 }
 
 export function isPaneWaitingForUser(
-  pane: AumxPane,
+  pane: MuxBasePane,
   session: PaneAttentionSession,
   effectiveStatus: PaneActivityState | undefined,
 ): boolean {
@@ -69,7 +69,7 @@ function resolveWaitingReason(session: PaneAttentionSession): PaneAttentionReaso
 }
 
 export function getPaneAttention(
-  pane: AumxPane,
+  pane: MuxBasePane,
   session: PaneAttentionSession,
   justFinishedPaneIds: ReadonlySet<string>,
   activity?: PaneActivity,

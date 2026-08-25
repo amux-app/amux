@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AumxPane } from '../../src/types.js';
+import type { MuxBasePane } from '../../src/types.js';
 import {
   CLAUDE_TERMINAL_COLS,
   hasValidPaneTerminalProfile,
@@ -51,8 +51,8 @@ describe('pane terminal profile', () => {
   });
 
   it('round-trips terminal policy through the persisted pane JSON', () => {
-    const pane: AumxPane = {
-      id: 'aumx-1',
+    const pane: MuxBasePane = {
+      id: 'muxbase-1',
       slug: 'task',
       prompt: 'task',
       paneId: '%1',

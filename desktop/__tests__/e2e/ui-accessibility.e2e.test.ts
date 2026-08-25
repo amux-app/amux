@@ -30,7 +30,7 @@ const OVERLAY_CLOSE_TIMEOUT_MS = 5_000;
 const TAB_WALK_LIMIT = 80;
 
 const FLEET_SIZE = 4;
-const PROJECT = { projectName: 'aumx', projectRoot: resolve(ROOT, '..') };
+const PROJECT = { projectName: 'muxbase', projectRoot: resolve(ROOT, '..') };
 
 const APP_SHELL_TEST_ID = 'app-shell';
 const ATTENTION_STAT_TEST_ID = 'resource-attention-stat';
@@ -72,8 +72,8 @@ interface UiStoreState {
 }
 
 interface A11yWindow {
-  __aumxFocusProbe?: Element | null;
-  __aumxStores?: { pane?: StoreApi<PaneStoreState>; ui?: StoreApi<UiStoreState> };
+  __muxbaseFocusProbe?: Element | null;
+  __muxbaseStores?: { pane?: StoreApi<PaneStoreState>; ui?: StoreApi<UiStoreState> };
 }
 
 interface FocusInfo {
@@ -146,7 +146,7 @@ async function dismissOverlays(page: Page): Promise<void> {
 async function resetUi(page: Page): Promise<void> {
   await dismissOverlays(page);
   await page.evaluate(() => {
-    (window as unknown as A11yWindow).__aumxStores?.ui?.setState({
+    (window as unknown as A11yWindow).__muxbaseStores?.ui?.setState({
       activeView: 'dashboard',
       focusPaneId: null,
       helpOverlayOpen: false,
@@ -187,13 +187,13 @@ async function focusInfo(page: Page): Promise<FocusInfo> {
 
 async function markFocusProbe(page: Page): Promise<void> {
   await page.evaluate(() => {
-    (window as unknown as A11yWindow).__aumxFocusProbe = document.activeElement;
+    (window as unknown as A11yWindow).__muxbaseFocusProbe = document.activeElement;
   });
 }
 
 async function focusProbeState(page: Page): Promise<ProbeState> {
   return page.evaluate(() => {
-    const probe = (window as unknown as A11yWindow).__aumxFocusProbe ?? null;
+    const probe = (window as unknown as A11yWindow).__muxbaseFocusProbe ?? null;
     const paneOf = (element: Element | null): string | null =>
       element?.closest('[data-pane-id]')?.getAttribute('data-pane-id') ?? null;
     const active = document.activeElement;
@@ -204,7 +204,7 @@ async function focusProbeState(page: Page): Promise<ProbeState> {
       probeConnected: probe?.isConnected ?? false,
       probePane: paneOf(probe),
       restored: probe !== null && active === probe,
-      storePanes: (window as unknown as A11yWindow).__aumxStores?.pane?.getState().panes.length ?? -1,
+      storePanes: (window as unknown as A11yWindow).__muxbaseStores?.pane?.getState().panes.length ?? -1,
     };
   });
 }
@@ -229,13 +229,13 @@ async function settledFocusInfo(page: Page, settled: (info: FocusInfo) => boolea
 
 async function selectedPaneId(page: Page): Promise<string | null> {
   return page.evaluate(() => (
-    (window as unknown as A11yWindow).__aumxStores?.pane?.getState().selectedPaneId ?? null
+    (window as unknown as A11yWindow).__muxbaseStores?.pane?.getState().selectedPaneId ?? null
   ));
 }
 
 async function zenMode(page: Page): Promise<boolean> {
   return page.evaluate(() => (
-    (window as unknown as A11yWindow).__aumxStores?.ui?.getState().zenMode === true
+    (window as unknown as A11yWindow).__muxbaseStores?.ui?.getState().zenMode === true
   ));
 }
 
@@ -363,7 +363,7 @@ async function boxOf(page: Page, selector: string): Promise<Rect> {
   };
 }
 
-describe.runIf(process.env.AUMX_E2E === '1')('Keyboard and accessibility release stories', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('Keyboard and accessibility release stories', () => {
   let app: ElectronApplication;
   let page: Page;
 
@@ -372,7 +372,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Keyboard and accessibility release
 
     app = await electron.launch({
       args: [MAIN_ENTRY],
-      env: { ...process.env, AUMX_DEV: 'true', NODE_ENV: 'test' },
+      env: { ...process.env, MUXBASE_DEV: 'true', NODE_ENV: 'test' },
     });
     page = await getAppWindow(app);
     await disableBackgroundThrottling(app);

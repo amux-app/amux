@@ -25,7 +25,7 @@ describe('viewAction', () => {
 
   it('should successfully jump to pane and return navigation result', async () => {
     const mockPane = createMockPane({
-      id: 'aumx-1',
+      id: 'muxbase-1',
       slug: 'test-pane',
       paneId: '%42',
     });
@@ -44,7 +44,7 @@ describe('viewAction', () => {
     );
 
     // Verify result
-    expectNavigation(result, 'aumx-1');
+    expectNavigation(result, 'muxbase-1');
     expect(result.message).toContain('test-pane');
     expect(result.dismissable).toBe(true);
   });
@@ -93,13 +93,13 @@ describe('viewAction', () => {
   });
 
   it('should set correct target pane ID for navigation', async () => {
-    const mockPane = createMockPane({ id: 'aumx-42' });
+    const mockPane = createMockPane({ id: 'muxbase-42' });
     const mockContext = createMockContext([mockPane]);
 
     vi.mocked(execFileSync).mockReturnValue(Buffer.from(''));
 
     const result = await viewPane(mockPane, mockContext);
 
-    expect(result.targetPaneId).toBe('aumx-42');
+    expect(result.targetPaneId).toBe('muxbase-42');
   });
 });

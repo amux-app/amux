@@ -6,7 +6,7 @@ import {
   loadSystemRequirements,
   selectAndFreezeTmuxProvider,
   validateRequiredSystemRequirements,
-} from 'aumx/core';
+} from 'muxbase/core';
 import { app, BrowserWindow, crashReporter, dialog, Menu, nativeImage, nativeTheme, powerMonitor, session, shell } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -27,7 +27,7 @@ import { registerAllHandlers } from './ipc/index.js';
 import { setMainWindowResolver } from './ipc/ipc-security.js';
 import { getAppThemeMode, syncWindowBackgroundColors } from './services/app-theme.js';
 import { AppBootService } from './services/AppBootService.js';
-import { AumxBridge } from './services/AumxBridge.js';
+import { MuxBaseBridge } from './services/MuxBaseBridge.js';
 import { ElectronSettingsService } from './services/ElectronSettingsService.js';
 import { createE2EUpdateHarness } from './services/E2EUpdateClient.js';
 import { createElectronUpdateService } from './services/ElectronUpdateService.js';
@@ -61,7 +61,7 @@ import { isAllowedAppNavigationUrl } from './utils/navigation.js';
 import { configureWindowStatePersistence } from './window-state.js';
 
 let mainWindow: BrowserWindow | null = null;
-let bridge: AumxBridge | null = null;
+let bridge: MuxBaseBridge | null = null;
 let ownedTestUserDataPath: string | null = null;
 let updateService: UpdateService | null = null;
 
@@ -78,7 +78,7 @@ const DISCARD_BUTTON_INDEX = 1;
 const appBootService = new AppBootService(() => mainWindow);
 const rendererFileFlushCoordinator = new RendererFileFlushCoordinator();
 
-app.name = 'Amux';
+app.name = 'MuxBase';
 
 const e2eActivationPolicy = resolveE2EActivationPolicy(process.env, process.platform);
 if (e2eActivationPolicy) {
@@ -87,19 +87,19 @@ if (e2eActivationPolicy) {
   app.setActivationPolicy(e2eActivationPolicy);
 }
 
-if (process.env.NODE_ENV === 'test' && process.env.AUMX_E2E === '1') {
+if (process.env.NODE_ENV === 'test' && process.env.MUXBASE_E2E === '1') {
   // Only a directory this process created is ours to delete on quit; a
   // caller-supplied one belongs to the caller and is left untouched.
-  if (process.env.AUMX_E2E_USER_DATA_DIR) {
-    app.setPath('userData', resolve(process.env.AUMX_E2E_USER_DATA_DIR));
+  if (process.env.MUXBASE_E2E_USER_DATA_DIR) {
+    app.setPath('userData', resolve(process.env.MUXBASE_E2E_USER_DATA_DIR));
   } else {
-    ownedTestUserDataPath = mkdtempSync(join(tmpdir(), 'aumx-e2e-'));
+    ownedTestUserDataPath = mkdtempSync(join(tmpdir(), 'muxbase-e2e-'));
     app.setPath('userData', ownedTestUserDataPath);
   }
-} else if (process.env.AUMX_USER_DATA_DIR) {
+} else if (process.env.MUXBASE_USER_DATA_DIR) {
   // Worktree-scoped dev: each worktree gets its own user-data dir so parallel
   // dev instances don't share electron-store / cookies / window state.
-  app.setPath('userData', process.env.AUMX_USER_DATA_DIR);
+  app.setPath('userData', process.env.MUXBASE_USER_DATA_DIR);
 }
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
@@ -114,16 +114,16 @@ app.on('second-instance', () => {
   mainWindow.focus();
 });
 
-const crashUploadUrl = process.env.AUMX_CRASH_REPORT_URL?.trim();
+const crashUploadUrl = process.env.MUXBASE_CRASH_REPORT_URL?.trim();
 crashReporter.start({
-  productName: 'Amux',
-  companyName: 'Amux',
-  submitURL: crashUploadUrl || 'https://example.invalid/amux-crash-report-disabled',
+  productName: 'MuxBase',
+  companyName: 'MuxBase',
+  submitURL: crashUploadUrl || 'https://example.invalid/muxbase-crash-report-disabled',
   uploadToServer: Boolean(crashUploadUrl),
   compress: true,
   ignoreSystemCrashHandler: false,
   extra: {
-    releaseChannel: process.env.AUMX_RELEASE_CHANNEL ?? (is.dev ? 'dev' : 'stable'),
+    releaseChannel: process.env.MUXBASE_RELEASE_CHANNEL ?? (is.dev ? 'dev' : 'stable'),
   },
 });
 
@@ -221,7 +221,7 @@ function createWindow(): BrowserWindow {
       buttons: ['Quit', 'Cancel'],
       defaultId: 0,
       cancelId: 1,
-      title: 'Quit Amux',
+      title: 'Quit MuxBase',
       message: 'Are you sure you want to quit?',
       detail: 'Any running agents will continue in the background.',
     }).then(({ response }) => {
@@ -370,7 +370,7 @@ async function prepareConflictMergesForShutdown(action: 'quit' | 'reload' | 'upd
     buttons: ['Cancel', 'Abort merges and continue'],
     cancelId: 0,
     defaultId: 0,
-    detail: `Amux found ${transactionCount} active conflict merge${transactionCount === 1 ? '' : 's'} before it can ${actionLabel}. Aborting restores each worktree to a clean state.`,
+    detail: `MuxBase found ${transactionCount} active conflict merge${transactionCount === 1 ? '' : 's'} before it can ${actionLabel}. Aborting restores each worktree to a clean state.`,
     message: 'Active conflict resolutions need a decision.',
     noLink: true,
     title: 'Abort Conflict Merges?',
@@ -394,7 +394,7 @@ async function prepareConflictMergesForShutdown(action: 'quit' | 'reload' | 'upd
   const failureOptions = {
       buttons: ['OK'],
       detail: aborted.failures.map((failure) => `${failure.repoPath}: ${failure.error}`).join('\n'),
-      message: 'Amux could not safely abort every active conflict merge.',
+      message: 'MuxBase could not safely abort every active conflict merge.',
       noLink: true,
       title: 'Conflict Merge Cleanup Failed',
       type: 'error' as const,
@@ -547,7 +547,7 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     PerformanceMonitorService.getInstance().start();
   }
 
-  bridge = AumxBridge.getInstance();
+  bridge = MuxBaseBridge.getInstance();
   bridge.setWindow(mainWindow);
   setMainWindowResolver(() => bridge?.getWindow()?.webContents ?? null);
 
@@ -565,7 +565,7 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     platform: process.platform,
     prepareInstall: prepareUpdateInstallation,
     subscribeToWakeEvents: subscribeToUpdateWakeEvents,
-    updateChecksDisabled: process.env.AUMX_DISABLE_UPDATE_CHECKS,
+    updateChecksDisabled: process.env.MUXBASE_DISABLE_UPDATE_CHECKS,
     updater: e2eUpdateHarness?.updater,
   });
   updateService = activeUpdateService;
@@ -646,7 +646,7 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     appBootService.setReady();
     void cleanupDetachedPtyViewSessions('startup');
     startupTimeline.mark('ready');
-    log.info('app', 'AumxBridge initialized successfully', {
+    log.info('app', 'MuxBaseBridge initialized successfully', {
       timingsMs: startupTimeline.snapshot(),
     });
   } catch (error) {
@@ -656,9 +656,9 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
       log.info('app', 'Startup cancelled during application shutdown');
       return;
     }
-    log.error('app', 'Failed to initialize AumxBridge', error);
+    log.error('app', 'Failed to initialize MuxBaseBridge', error);
     appBootService.setFailed(
-      error instanceof Error ? error.message : 'Amux could not finish starting.',
+      error instanceof Error ? error.message : 'MuxBase could not finish starting.',
     );
     log.info('app', 'Startup failed', { timingsMs: startupTimeline.snapshot() });
   }

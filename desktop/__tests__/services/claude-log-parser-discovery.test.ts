@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mkdirSync, mkdtempSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { ClaudeLogParser } from '../../src/main/services/parsing/ClaudeLogParser';
 import {
   listSessionFilesByMtime,
@@ -22,9 +22,9 @@ function createTempDir(prefix: string): string {
   return dir;
 }
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
-    id: 'aumx-1',
+    id: 'muxbase-1',
     paneId: '%1',
     prompt: 'test prompt',
     slug: 'claude-pane',
@@ -33,7 +33,7 @@ function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
 }
 
 function createTempHome(): string {
-  const dir = createTempDir('aumx-claude-home-');
+  const dir = createTempDir('muxbase-claude-home-');
   homeDirState.value = dir;
   return dir;
 }
@@ -86,7 +86,7 @@ function findByPaneTitle(paneTitle: string): Promise<string | null> {
   return new ClaudeLogParser().findSessionFile(
     makePane({
       agent: 'claude',
-      id: 'aumx-1600000000000',
+      id: 'muxbase-1600000000000',
       projectRoot: '/Users/user/my-repo',
       terminalTranscriptPath: writePaneTranscript(paneTitle),
     }),
@@ -95,7 +95,7 @@ function findByPaneTitle(paneTitle: string): Promise<string | null> {
 }
 
 function writePaneTranscript(title: string): string {
-  const transcriptPath = join(createTempDir('aumx-claude-transcript-'), 'pane.ansi');
+  const transcriptPath = join(createTempDir('muxbase-claude-transcript-'), 'pane.ansi');
   writeFileSync(transcriptPath, `\u001b]0;\u2733 ${title}\u0007`);
   return transcriptPath;
 }
@@ -124,7 +124,7 @@ function mtimeMatcher(): MtimeMatcher {
 describe('ClaudeLogParser session discovery', () => {
   it('does not bind a new pane to an old Claude session whose file was only touched during startup', async () => {
     const parser = mtimeMatcher();
-    const projectDir = createTempDir('aumx-claude-session-');
+    const projectDir = createTempDir('muxbase-claude-session-');
     const filePath = join(projectDir, 'session.jsonl');
 
     writeFileSync(filePath, `{"type":"assistant","timestamp":"${new Date(Date.now() - 60_000).toISOString()}","message":{"role":"assistant","content":"ok"}}\n`);
@@ -138,7 +138,7 @@ describe('ClaudeLogParser session discovery', () => {
 
   it('matches an mtime candidate only when the session contains fresh pane activity', async () => {
     const parser = mtimeMatcher();
-    const projectDir = createTempDir('aumx-claude-session-');
+    const projectDir = createTempDir('muxbase-claude-session-');
     const filePath = join(projectDir, 'session.jsonl');
     const paneCreatedAt = Date.now();
 
@@ -162,7 +162,7 @@ describe('ClaudeLogParser session discovery', () => {
       makePane({
         agent: 'claude',
         agentSessionId: 'session-123',
-        id: `aumx-${Date.now()}`,
+        id: `muxbase-${Date.now()}`,
         projectRoot: '/Users/user/my-repo',
       }),
       '/Users/user/my-repo',
@@ -183,7 +183,7 @@ describe('ClaudeLogParser session discovery', () => {
       makePane({
         agent: 'claude',
         agentSessionId: 'claimed-session',
-        id: `aumx-${Date.now()}`,
+        id: `muxbase-${Date.now()}`,
         projectRoot: '/Users/user/my-repo',
       }),
       '/Users/user/my-repo',
@@ -206,7 +206,7 @@ describe('ClaudeLogParser session discovery', () => {
       makePane({
         agent: 'claude',
         agentSessionId: 'old-session',
-        id: `aumx-${Date.now()}`,
+        id: `muxbase-${Date.now()}`,
         projectRoot: '/Users/user/my-repo',
         terminalTranscriptPath: writePaneTranscript('Introduce Claude Code capabilities'),
       }),
@@ -228,7 +228,7 @@ describe('ClaudeLogParser session discovery', () => {
       makePane({
         agent: 'claude',
         agentSessionId: 'persisted-session',
-        id: `aumx-${Date.now()}`,
+        id: `muxbase-${Date.now()}`,
         projectRoot: '/Users/user/my-repo',
         terminalTranscriptPath: writePaneTranscript('Claude Code'),
       }),
@@ -283,7 +283,7 @@ describe('ClaudeLogParser session discovery', () => {
 
   it('harvests Claude ai-titles into the parsed session', async () => {
     // Arrange
-    const projectDir = createTempDir('aumx-claude-aititle-');
+    const projectDir = createTempDir('muxbase-claude-aititle-');
     const filePath = writeClaudeSession(projectDir, 'titled-session', '✳ Introduce Claude Code Capabilities');
 
     // Act
@@ -303,9 +303,9 @@ describe('ClaudeLogParser session discovery', () => {
       makePane({
         agent: 'claude',
         projectRoot: '/Users/user/my-repo',
-        worktreePath: '/Users/user/my-repo/.aumx/worktrees/fix-123',
+        worktreePath: '/Users/user/my-repo/.muxbase/worktrees/fix-123',
       }),
-      '/Users/user/my-repo/.aumx/worktrees/fix-123',
+      '/Users/user/my-repo/.muxbase/worktrees/fix-123',
     );
 
     expect(sessionDir).toBe(parentProjectDir);
@@ -320,19 +320,19 @@ describe('ClaudeLogParser session discovery', () => {
 describe('ClaudeLogParser session ownership', () => {
   const OWNERSHIP_SKEW_MS = 60_000;
 
-  function paneBornAfterFixtures(overrides: Partial<AumxPane> = {}): AumxPane {
+  function paneBornAfterFixtures(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
     return makePane({
       agent: 'claude',
-      id: `aumx-${Date.now() + OWNERSHIP_SKEW_MS}`,
+      id: `muxbase-${Date.now() + OWNERSHIP_SKEW_MS}`,
       projectRoot: '/Users/user/my-repo',
       ...overrides,
     });
   }
 
-  function paneBornBeforeFixtures(overrides: Partial<AumxPane> = {}): AumxPane {
+  function paneBornBeforeFixtures(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
     return makePane({
       agent: 'claude',
-      id: `aumx-${Date.now() - OWNERSHIP_SKEW_MS}`,
+      id: `muxbase-${Date.now() - OWNERSHIP_SKEW_MS}`,
       projectRoot: '/Users/user/my-repo',
       ...overrides,
     });
@@ -420,7 +420,7 @@ describe('ClaudeLogParser session ownership', () => {
   });
 
   it('trusts a persisted session id when the pane id carries no creation time', async () => {
-    // Arrange: reopened worktree panes use `aumx-<uuid>`, so ownership must fail open.
+    // Arrange: reopened worktree panes use `muxbase-<uuid>`, so ownership must fail open.
     const sessionDir = createSessionDir();
     const persistedPath = writeClaudeSession(sessionDir, 'legacy-session', 'Legacy');
 
@@ -429,7 +429,7 @@ describe('ClaudeLogParser session ownership', () => {
       makePane({
         agent: 'claude',
         agentSessionId: 'legacy-session',
-        id: 'aumx-2f1c7d64-7b0a-4a15-9a2e-1d1f0f0a1b2c',
+        id: 'muxbase-2f1c7d64-7b0a-4a15-9a2e-1d1f0f0a1b2c',
         projectRoot: '/Users/user/my-repo',
       }),
       '/Users/user/my-repo',

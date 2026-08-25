@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const execFileAsync = vi.hoisted(() => vi.fn<(...args: unknown[]) => Promise<string>>());
 
-vi.mock('aumx/core', () => ({ execFileAsync }));
+vi.mock('muxbase/core', () => ({ execFileAsync }));
 
 vi.mock('../../src/main/services/Logger.js', () => ({
   log: { debug: vi.fn() },
@@ -15,9 +15,9 @@ import {
   type ProcessMemoryInput,
 } from '../../src/main/services/process-memory.js';
 
-/** Real `footprint --noCategories -f bytes` output for five live Amux processes. */
+/** Real `footprint --noCategories -f bytes` output for five live MuxBase processes. */
 const BYTES_FIXTURE = `======================================================================
-Amux Helper [14756]: 64-bit    Footprint: 188613808 B (16384 bytes per page)
+MuxBase Helper [14756]: 64-bit    Footprint: 188613808 B (16384 bytes per page)
 ======================================================================
 
 Auxiliary data:
@@ -25,7 +25,7 @@ Auxiliary data:
     phys_footprint_peak: 425788640 B
 
 ======================================================================
-Amux Helper (Renderer) [14768]: 64-bit    Footprint: 96454216 B (16384 bytes per page)
+MuxBase Helper (Renderer) [14768]: 64-bit    Footprint: 96454216 B (16384 bytes per page)
 ======================================================================
 
 Auxiliary data:
@@ -33,7 +33,7 @@ Auxiliary data:
     phys_footprint_peak: 155911776 B
 
 ======================================================================
-Amux [14694]: 64-bit    Footprint: 69273472 B (16384 bytes per page)
+MuxBase [14694]: 64-bit    Footprint: 69273472 B (16384 bytes per page)
 ======================================================================
 
 Auxiliary data:
@@ -41,7 +41,7 @@ Auxiliary data:
     phys_footprint_peak: 82921320 B
 
 ======================================================================
-Amux Helper [17302]: 64-bit    Footprint: 8012736 B (16384 bytes per page)
+MuxBase Helper [17302]: 64-bit    Footprint: 8012736 B (16384 bytes per page)
 ======================================================================
 
 Auxiliary data:
@@ -49,7 +49,7 @@ Auxiliary data:
     phys_footprint_peak: 8537024 B
 
 ======================================================================
-Amux Helper [14757]: 64-bit    Footprint: 6980448 B (16384 bytes per page)
+MuxBase Helper [14757]: 64-bit    Footprint: 6980448 B (16384 bytes per page)
 ======================================================================
 
 Auxiliary data:
@@ -62,7 +62,7 @@ Summary Footprint: 368056728 B
 
 /** Real `footprint --noCategories` output, which mixes MB and KB units. */
 const FORMATTED_FIXTURE = `======================================================================
-Amux [14694]: 64-bit    Footprint: 67 MB (16384 bytes per page)
+MuxBase [14694]: 64-bit    Footprint: 67 MB (16384 bytes per page)
 ======================================================================
 
 Auxiliary data:
@@ -70,7 +70,7 @@ Auxiliary data:
     phys_footprint_peak: 79 MB
 
 ======================================================================
-Amux Helper [14757]: 64-bit    Footprint: 6817 KB (16384 bytes per page)
+MuxBase Helper [14757]: 64-bit    Footprint: 6817 KB (16384 bytes per page)
 ======================================================================
 
 Auxiliary data:

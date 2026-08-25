@@ -1,5 +1,5 @@
 import { type CSSProperties, useCallback, useEffect, useMemo, useRef } from 'react';
-import type { AgentName } from 'aumx/core';
+import type { AgentName } from 'muxbase/core';
 import { AgentBrandIcon } from '../shared/agent-brand-icons';
 import { cn } from '../../lib/cn';
 import { nextRovingIndex } from '../../lib/roving-tabindex';

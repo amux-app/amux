@@ -1,5 +1,5 @@
-import { AGENT_CAPABILITIES, AGENT_IDS } from 'aumx/core';
-import { validatePaneName } from 'aumx/pane-name';
+import { AGENT_CAPABILITIES, AGENT_IDS } from 'muxbase/core';
+import { validatePaneName } from 'muxbase/pane-name';
 import { z } from 'zod';
 import { IPC } from '../../shared/ipc-channels.js';
 import { SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH } from '../../shared/sidebar-metrics.js';

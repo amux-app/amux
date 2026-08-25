@@ -104,7 +104,7 @@ export function buildPromptReadAndDeleteSnippet(
   command?: string
 ): string {
   const quotedPromptPath = shQuote(promptPath);
-  const snippet = `AUMX_PROMPT_FILE=${quotedPromptPath}; AUMX_PROMPT_CONTENT="$(cat "$AUMX_PROMPT_FILE" 2>/dev/null || true)"; rm -f "$AUMX_PROMPT_FILE"`;
+  const snippet = `MUXBASE_PROMPT_FILE=${quotedPromptPath}; MUXBASE_PROMPT_CONTENT="$(cat "$MUXBASE_PROMPT_FILE" 2>/dev/null || true)"; rm -f "$MUXBASE_PROMPT_FILE"`;
   if (!command) {
     return snippet;
   }

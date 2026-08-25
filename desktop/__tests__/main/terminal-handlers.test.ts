@@ -73,7 +73,7 @@ describe('terminal IPC handlers', () => {
         terminalFixedCols: 100,
         terminalTranscriptPath: '/project/.log/terminal/tmux-9-shell-1.ansi',
       }],
-      getSessionName: () => 'aumx-current-project',
+      getSessionName: () => 'muxbase-current-project',
       getWindow: () => ({ id: 1 }),
     };
     registerTerminalHandlers(bridge as never);
@@ -84,7 +84,7 @@ describe('terminal IPC handlers', () => {
       fixedCols: 80,
       paneId: 'pane-1',
       rows: 24,
-      sessionName: 'aumx-stale-renderer-project',
+      sessionName: 'muxbase-stale-renderer-project',
       skipScrollbackReplay: true,
       streamId: 77,
       transcriptPath: '/project/.log/terminal/tmux-9-shell-1.ansi',
@@ -101,7 +101,7 @@ describe('terminal IPC handlers', () => {
     expect(setWindowMock).toHaveBeenCalledWith({ id: 1 });
     expect(attachMock).toHaveBeenCalledWith(
       'pane-1',
-      'aumx-current-project',
+      'muxbase-current-project',
       '%9',
       '/project/.log/terminal/tmux-9-shell-1.ansi',
       { cols: 80, rows: 24 },
@@ -120,7 +120,7 @@ describe('terminal IPC handlers', () => {
         id: 'pane-1',
         paneId: '%9',
       }],
-      getSessionName: () => 'aumx-current-project',
+      getSessionName: () => 'muxbase-current-project',
       getWindow: () => ({ id: 1 }),
     };
     registerTerminalHandlers(bridge as never);
@@ -143,7 +143,7 @@ describe('terminal IPC handlers', () => {
         paneId: '%9',
         terminalFixedCols: 100,
       }],
-      getSessionName: () => 'aumx-current-project',
+      getSessionName: () => 'muxbase-current-project',
       getWindow: () => ({ id: 1 }),
     };
     registerTerminalHandlers(bridge as never);
@@ -165,7 +165,7 @@ describe('terminal IPC handlers', () => {
   ])('does not apply fullscreen mouse policy to %s', async (_label, paneFields) => {
     const bridge = {
       getPanes: () => [{ ...paneFields, id: 'pane-1', paneId: '%9' }],
-      getSessionName: () => 'aumx-current-project',
+      getSessionName: () => 'muxbase-current-project',
       getWindow: () => ({ id: 1 }),
     };
     registerTerminalHandlers(bridge as never);
@@ -183,7 +183,7 @@ describe('terminal IPC handlers', () => {
         paneId: '%9',
         terminalTranscriptPath: '/project/.log/terminal/tmux-9-shell-1.ansi',
       }],
-      getSessionName: () => 'aumx-current-project',
+      getSessionName: () => 'muxbase-current-project',
       getWindow: () => ({ id: 1 }),
     };
     registerTerminalHandlers(bridge as never);
@@ -191,7 +191,7 @@ describe('terminal IPC handlers', () => {
     // Act
     await getHandler(IPC.TERMINAL_ATTACH)(undefined, {
       paneId: 'pane-1',
-      sessionName: 'aumx-current-project',
+      sessionName: 'muxbase-current-project',
       transcriptPath: '/etc/hosts',
     });
 
@@ -203,7 +203,7 @@ describe('terminal IPC handlers', () => {
     // Arrange
     const bridge = {
       getPanes: () => [{ id: 'pane-1', paneId: '%9' }],
-      getSessionName: () => 'aumx-current-project',
+      getSessionName: () => 'muxbase-current-project',
       getWindow: () => ({ id: 1 }),
     };
     registerTerminalHandlers(bridge as never);
@@ -211,12 +211,12 @@ describe('terminal IPC handlers', () => {
     // Act
     await getHandler(IPC.TERMINAL_ATTACH)(undefined, {
       paneId: 'pane-1',
-      sessionName: 'aumx-current-project',
+      sessionName: 'muxbase-current-project',
       transcriptPath: '/project/.log/terminal/tmux-9-shell-1.ansi',
     });
     await getHandler(IPC.TERMINAL_ATTACH)(undefined, {
       paneId: 'pane-1',
-      sessionName: 'aumx-current-project',
+      sessionName: 'muxbase-current-project',
       transcriptPath: '/project/.log/terminal/../../../etc/hosts',
     });
 
@@ -229,7 +229,7 @@ describe('terminal IPC handlers', () => {
     // Arrange
     const bridge = {
       getPanes: () => [{ id: 'pane-1', paneId: '%12' }],
-      getSessionName: () => 'aumx-current-project',
+      getSessionName: () => 'muxbase-current-project',
       getWindow: () => ({ id: 1 }),
     };
     registerTerminalHandlers(bridge as never);
@@ -237,7 +237,7 @@ describe('terminal IPC handlers', () => {
     // Act
     const result = await getHandler(IPC.TERMINAL_ATTACH)(undefined, {
       paneId: 'pane-1',
-      sessionName: 'aumx-current-project',
+      sessionName: 'muxbase-current-project',
       tmuxPaneId: '%3',
     });
 
@@ -250,7 +250,7 @@ describe('terminal IPC handlers', () => {
     // Arrange
     const bridge = {
       getPanes: () => [{ id: 'pane-1', paneId: '%1' }],
-      getSessionName: () => 'aumx-current-project',
+      getSessionName: () => 'muxbase-current-project',
       getWindow: () => ({ id: 1 }),
     };
     registerTerminalHandlers(bridge as never);
@@ -258,7 +258,7 @@ describe('terminal IPC handlers', () => {
     // Act
     const result = await getHandler(IPC.TERMINAL_ATTACH)(undefined, {
       paneId: 'pane-9',
-      sessionName: 'aumx-current-project',
+      sessionName: 'muxbase-current-project',
     });
 
     // Assert
@@ -270,7 +270,7 @@ describe('terminal IPC handlers', () => {
     // Arrange
     const bridge = {
       getPanes: () => [{ id: 'pane-1', paneId: '%9', terminalTranscriptPath: '/etc/hosts' }],
-      getSessionName: () => 'aumx-current-project',
+      getSessionName: () => 'muxbase-current-project',
       getWindow: () => ({ id: 1 }),
     };
     registerTerminalHandlers(bridge as never);
@@ -278,7 +278,7 @@ describe('terminal IPC handlers', () => {
     // Act
     await getHandler(IPC.TERMINAL_ATTACH)(undefined, {
       paneId: 'pane-1',
-      sessionName: 'aumx-current-project',
+      sessionName: 'muxbase-current-project',
       transcriptPath: '/etc/hosts',
     });
 
@@ -289,7 +289,7 @@ describe('terminal IPC handlers', () => {
   it('reports PTY resize failures instead of acknowledging mismatched geometry', async () => {
     const bridge = {
       getPanes: () => [],
-      getSessionName: () => 'aumx-current-project',
+      getSessionName: () => 'muxbase-current-project',
       getWindow: () => ({ id: 1 }),
     };
     resizeMock.mockRejectedValue(new Error('tmux geometry mismatch'));

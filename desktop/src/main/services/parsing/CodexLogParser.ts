@@ -3,7 +3,7 @@ import { createInterface } from 'readline';
 import { basename, join } from 'path';
 import { homedir } from 'os';
 import type { AgentLogParser, SessionDiscoveryMode } from './AgentLogParser.js';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { NormalizedSession } from '../../../shared/agent-session-types.js';
 import { BoundedCache } from '../boundedCache.js';
 import {
@@ -46,12 +46,12 @@ export class CodexLogParser implements AgentLogParser {
   // One `rollout-<timestamp>-<uuid>.jsonl` per session, in a shared date tree.
   readonly boundFileIsExclusive = true;
 
-  getSessionDirectory(_pane: AumxPane, _projectRoot: string): string | null {
+  getSessionDirectory(_pane: MuxBasePane, _projectRoot: string): string | null {
     return null; // Codex uses a shared sessions tree
   }
 
   async findSessionFile(
-    pane: AumxPane,
+    pane: MuxBasePane,
     projectRoot: string,
     excludePaths?: Set<string>,
     mode: SessionDiscoveryMode = 'initial',

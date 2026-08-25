@@ -9,7 +9,7 @@ describe('slug generation', () => {
   });
 
   it('returns kebab-ish slug for prompt (or fallback)', async () => {
-    const slug = await generateSlug('Refactor Aumx App');
+    const slug = await generateSlug('Refactor MuxBase App');
     expect(typeof slug).toBe('string');
     expect(slug.length).toBeGreaterThan(0);
   }, 10000);
@@ -17,14 +17,14 @@ describe('slug generation', () => {
 
 describe('sanitizeSlug', () => {
   it('replaces spaces with hyphens', () => {
-    expect(sanitizeSlug('amux worktree idea')).toBe('amux-worktree-idea');
+    expect(sanitizeSlug('muxbase worktree idea')).toBe('muxbase-worktree-idea');
   });
 
   it('handles the review-prefix concatenation that caused the worktree bug', () => {
     // Regression: source pane slug contained spaces (paneName was passed
     // through unsanitised), then `review-${slug}` produced an invalid branch
-    // name like 'review-amux worktree idea' when git worktree add ran.
-    expect(sanitizeSlug('review-amux worktree idea')).toBe('review-amux-worktree-idea');
+    // name like 'review-muxbase worktree idea' when git worktree add ran.
+    expect(sanitizeSlug('review-muxbase worktree idea')).toBe('review-muxbase-worktree-idea');
   });
 
   it('lowercases mixed case', () => {

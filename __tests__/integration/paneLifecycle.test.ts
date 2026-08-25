@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { AumxPane } from '../../src/types.js';
+import type { MuxBasePane } from '../../src/types.js';
 import type { ActionContext } from '../../src/actions/types.js';
 import { assertClaudeFullscreenSupported } from '../../src/utils/claudeVersion.js';
 import {
@@ -41,8 +41,8 @@ const mockTmuxInstance = {
   splitPane: vi.fn(() => '%1'),
   getCurrentPaneIdSync: vi.fn(() => '%0'),
   setGlobalOptionSync: vi.fn(),
-  getPaneSessionName: vi.fn(async () => 'aumx-test'),
-  getPaneSessionNameSync: vi.fn(() => 'aumx-test'),
+  getPaneSessionName: vi.fn(async () => 'muxbase-test'),
+  getPaneSessionNameSync: vi.fn(() => 'muxbase-test'),
   newWindowPane: vi.fn(async () => '%1'),
   newWindowPaneSync: vi.fn(() => '%1'),
   respawnPane: vi.fn(async () => {}),
@@ -232,7 +232,7 @@ describe('Pane Lifecycle Integration Tests', () => {
     mockSettingsState.claudeFullscreenRendering = false;
 
     // Create fresh test environment
-    createMockTmuxSession('aumx-test', 1);
+    createMockTmuxSession('muxbase-test', 1);
     gitRepo = createMockGitRepo('main');
 
     // Configure mock execSync with test data
@@ -261,7 +261,7 @@ describe('Pane Lifecycle Integration Tests', () => {
         return returnValue('%0\n%1');
       }
       if (cmd.includes('list-panes')) {
-        return returnValue('%0:aumx-control:80x24\n%1:test:80x24');
+        return returnValue('%0:muxbase-control:80x24\n%1:test:80x24');
       }
 
       // Tmux split-window
@@ -271,13 +271,13 @@ describe('Pane Lifecycle Integration Tests', () => {
 
       // Git worktree add
       if (cmd.includes('worktree add')) {
-        gitRepo = addWorktree(gitRepo, '/test/.aumx/worktrees/test-slug', 'test-slug');
+        gitRepo = addWorktree(gitRepo, '/test/.muxbase/worktrees/test-slug', 'test-slug');
         return returnValue('');
       }
 
       // Git worktree list
       if (cmd.includes('worktree list')) {
-        return returnValue('/test/.aumx/worktrees/test-slug abc123 [test-slug]');
+        return returnValue('/test/.muxbase/worktrees/test-slug abc123 [test-slug]');
       }
 
       // Git symbolic-ref (main branch)
@@ -403,12 +403,12 @@ describe('Pane Lifecycle Integration Tests', () => {
           projectName: 'test-project',
           existingPanes: [
             {
-              id: 'aumx-1',
+              id: 'muxbase-1',
               slug: 'existing',
               prompt: 'existing pane',
               paneId: '%5',
               projectRoot: '/primary/repo',
-              worktreePath: '/primary/repo/.aumx/worktrees/existing',
+              worktreePath: '/primary/repo/.muxbase/worktrees/existing',
             },
           ],
           projectRoot: '/target/repo',
@@ -420,7 +420,7 @@ describe('Pane Lifecycle Integration Tests', () => {
       // Worktree add command should reference the target project root
       expect(tmuxService.sendShellCommand).toHaveBeenCalledWith(
         expect.any(String),
-        expect.stringContaining("cd '/target/repo' && git worktree add -- '/target/repo/.amux/worktrees/target-slug' 'target-slug'")
+        expect.stringContaining("cd '/target/repo' && git worktree add -- '/target/repo/.muxbase/worktrees/target-slug' 'target-slug'")
       );
     });
 
@@ -462,7 +462,7 @@ describe('Pane Lifecycle Integration Tests', () => {
           existingPanes: [],
           initialTerminalSize: { cols: 132, rows: 38 },
           layoutMode: 'window',
-          sessionName: 'aumx-test',
+          sessionName: 'muxbase-test',
           useWorktree: false,
         },
         ['claude'],
@@ -503,7 +503,7 @@ describe('Pane Lifecycle Integration Tests', () => {
           projectName: 'test-project',
           existingPanes: [],
           layoutMode: 'window',
-          sessionName: 'aumx-test',
+          sessionName: 'muxbase-test',
           useWorktree: false,
         },
         ['claude'],
@@ -593,12 +593,12 @@ describe('Pane Lifecycle Integration Tests', () => {
     it('should present choice dialog for worktree panes', async () => {
       const { closePane } = await import('../../src/actions/implementations/closeAction.js');
 
-      const testPane: AumxPane = {
-        id: 'aumx-1',
+      const testPane: MuxBasePane = {
+        id: 'muxbase-1',
         slug: 'test-branch',
         prompt: 'test',
         paneId: '%1',
-        worktreePath: '/test/.aumx/worktrees/test-branch',
+        worktreePath: '/test/.muxbase/worktrees/test-branch',
       };
 
       const mockContext: ActionContext = {
@@ -624,12 +624,12 @@ describe('Pane Lifecycle Integration Tests', () => {
     it('should kill tmux pane when closing', async () => {
       const { closePane } = await import('../../src/actions/implementations/closeAction.js');
 
-      const testPane: AumxPane = {
-        id: 'aumx-1',
+      const testPane: MuxBasePane = {
+        id: 'muxbase-1',
         slug: 'test-branch',
         prompt: 'test',
         paneId: '%1',
-        worktreePath: '/test/.aumx/worktrees/test-branch',
+        worktreePath: '/test/.muxbase/worktrees/test-branch',
       };
 
       const mockContext: ActionContext = {
@@ -657,12 +657,12 @@ describe('Pane Lifecycle Integration Tests', () => {
     it('should queue worktree cleanup with kill_and_clean option', async () => {
       const { closePane } = await import('../../src/actions/implementations/closeAction.js');
 
-      const testPane: AumxPane = {
-        id: 'aumx-1',
+      const testPane: MuxBasePane = {
+        id: 'muxbase-1',
         slug: 'test-branch',
         prompt: 'test',
         paneId: '%1',
-        worktreePath: '/test/.aumx/worktrees/test-branch',
+        worktreePath: '/test/.muxbase/worktrees/test-branch',
       };
 
       const mockContext: ActionContext = {
@@ -694,12 +694,12 @@ describe('Pane Lifecycle Integration Tests', () => {
         throw new Error('enqueue failed');
       });
 
-      const testPane: AumxPane = {
-        id: 'aumx-1',
+      const testPane: MuxBasePane = {
+        id: 'muxbase-1',
         slug: 'test-branch',
         prompt: 'test',
         paneId: '%1',
-        worktreePath: '/test/.aumx/worktrees/test-branch',
+        worktreePath: '/test/.muxbase/worktrees/test-branch',
       };
 
       const mockContext: ActionContext = {
@@ -725,12 +725,12 @@ describe('Pane Lifecycle Integration Tests', () => {
       const { closePane } = await import('../../src/actions/implementations/closeAction.js');
       const { triggerHook } = await import('../../src/utils/hooks.js');
 
-      const testPane: AumxPane = {
-        id: 'aumx-1',
+      const testPane: MuxBasePane = {
+        id: 'muxbase-1',
         slug: 'test-branch',
         prompt: 'test',
         paneId: '%1',
-        worktreePath: '/test/.aumx/worktrees/test-branch',
+        worktreePath: '/test/.muxbase/worktrees/test-branch',
       };
 
       const mockContext: ActionContext = {
@@ -794,12 +794,12 @@ describe('Pane Lifecycle Integration Tests', () => {
 
     it('should preserve worktree and slug during rebind', async () => {
       // Test that rebinding doesn't recreate worktree
-      const testPane: AumxPane = {
-        id: 'aumx-1',
+      const testPane: MuxBasePane = {
+        id: 'muxbase-1',
         slug: 'existing-branch',
         prompt: 'original prompt',
         paneId: '%1', // Old, dead pane
-        worktreePath: '/test/.aumx/worktrees/existing-branch',
+        worktreePath: '/test/.muxbase/worktrees/existing-branch',
       };
 
       // Rebinding would update paneId but keep slug and worktreePath

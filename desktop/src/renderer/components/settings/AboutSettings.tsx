@@ -46,18 +46,18 @@ export function AboutSettings() {
   const wrongLocation = snapshot?.phase === 'disabled'
     && snapshot.disabledReason === 'not-in-applications';
   const status = wrongLocation
-    ? 'Automatic updates unavailable — move Amux to Applications'
+    ? 'Automatic updates unavailable — move MuxBase to Applications'
     : snapshot?.phase === 'checking'
       ? 'Checking for updates…'
       : snapshot?.phase === 'downloading'
         ? `Downloading ${snapshot.availableVersion} — ${Math.round(snapshot.progress?.percent ?? 0)}%`
         : snapshot?.phase === 'ready'
-          ? `Amux ${snapshot.availableVersion} is ready to install`
+          ? `MuxBase ${snapshot.availableVersion} is ready to install`
           : snapshot?.phase === 'error' && snapshot.manualCheck
             ? `Update check failed (${snapshot.error.kind})`
             : snapshot?.phase === 'disabled' && snapshot.disabledReason === 'development'
               ? 'Automatic updates are unavailable in development builds'
-              : 'Amux checks for stable updates automatically';
+              : 'MuxBase checks for stable updates automatically';
 
   return (
     <div>
@@ -65,7 +65,7 @@ export function AboutSettings() {
         About
       </h3>
       <div className="mb-4">
-        <div className="text-lg font-semibold text-[var(--text)]">Amux</div>
+        <div className="text-lg font-semibold text-[var(--text)]">MuxBase</div>
         <div className="text-xs text-[var(--text-muted)]">
           Manage multiple AI coding agents in parallel.
         </div>
@@ -96,7 +96,7 @@ export function AboutSettings() {
           </div>
           {wrongLocation && (
             <p className="mt-2 max-w-2xl text-xs leading-relaxed text-[var(--text-muted)]">
-              Quit Amux, drag it to Applications using the DMG shortcut, eject the DMG, and relaunch Amux.
+              Quit MuxBase, drag it to Applications using the DMG shortcut, eject the DMG, and relaunch MuxBase.
             </p>
           )}
         </div>

@@ -9,14 +9,14 @@ import {
 
 describe('TypeScript LSP support policy', () => {
   it('accepts trusted JS/TS roots with no declared TypeScript or TypeScript 7', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'aumx-ts7-policy-'));
+    const root = await mkdtemp(join(tmpdir(), 'muxbase-ts7-policy-'));
     expect(await assessTypeScriptLspSupport(root, 'src/index.ts', true)).toEqual({ supported: true });
     await writeFile(join(root, 'package.json'), JSON.stringify({ devDependencies: { typescript: '^7.0.2' } }));
     expect(await assessTypeScriptLspSupport(root, 'src/index.ts', true)).toEqual({ supported: true });
   });
 
   it('keeps untrusted, classic TypeScript, plugin, and unsupported-language roots syntax-only', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'aumx-ts7-policy-'));
+    const root = await mkdtemp(join(tmpdir(), 'muxbase-ts7-policy-'));
     await mkdir(join(root, 'src'));
     expect(await assessTypeScriptLspSupport(root, 'src/index.ts', false)).toMatchObject({ supported: false });
     expect(await assessTypeScriptLspSupport(root, 'src/App.vue', true)).toMatchObject({ supported: false });

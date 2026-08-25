@@ -1,5 +1,5 @@
-import { execAsync } from 'aumx/core';
-import type { AumxPane } from 'aumx/core';
+import { execAsync } from 'muxbase/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { NormalizedSession } from '../../shared/agent-session-types.js';
 import { IPC_EVENT } from '../../shared/ipc-channels.js';
 import type { ActivitySnapshot } from '../../shared/pane-activity.js';
@@ -21,7 +21,7 @@ const MAX_MESSAGES_FOR_RECAP = 40;
 interface PaneSummaryBridgePort {
   getAgentSession(paneId: string): NormalizedSession | null;
   getPaneActivitySnapshot(): ActivitySnapshot;
-  getPanes(): AumxPane[];
+  getPanes(): MuxBasePane[];
 }
 
 interface PaneSummaryServiceOpts {
@@ -164,7 +164,7 @@ export class PaneSummaryService {
 
   // --- helpers ---
 
-  private findPane(paneId: string): AumxPane | undefined {
+  private findPane(paneId: string): MuxBasePane | undefined {
     return this.opts.bridge.getPanes().find((p) => p.id === paneId);
   }
 
@@ -177,7 +177,7 @@ export class PaneSummaryService {
   }
 
   /** Fast fields only — no LLM call. Preserves prior recap state if any. */
-  private async buildBaseSummary(pane: AumxPane, prior: PaneSummary | undefined): Promise<PaneSummary> {
+  private async buildBaseSummary(pane: MuxBasePane, prior: PaneSummary | undefined): Promise<PaneSummary> {
     const branch = pane.branchName ?? '';
     const gitActivity = pane.worktreePath ? await this.readGitActivity(pane.worktreePath) : null;
 
@@ -200,7 +200,7 @@ export class PaneSummaryService {
     };
   }
 
-  private async computeRecap(pane: AumxPane): Promise<{
+  private async computeRecap(pane: MuxBasePane): Promise<{
     text: string;
     recapStatus: PaneSummaryRecapStatus;
     errorMessage?: string;
@@ -250,7 +250,7 @@ export class PaneSummaryService {
     }
   }
 
-  private errorSummary(pane: AumxPane, message: string): PaneSummary {
+  private errorSummary(pane: MuxBasePane, message: string): PaneSummary {
     return {
       paneId: pane.id,
       paneName: pane.title ?? pane.slug,

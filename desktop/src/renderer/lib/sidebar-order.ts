@@ -1,4 +1,4 @@
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { SidebarOrganize, SidebarSort } from '../../shared/ipc-types';
 import type { PaneActivity, PaneActivityState } from '../../shared/pane-activity';
 import { type ActiveProjectSource, resolvePaneProjectDisplay } from './pane-project-display';
@@ -14,7 +14,7 @@ export type SidebarActivityLookup = Readonly<Record<string, Pick<PaneActivity, '
 export interface SidebarGroup {
   key: string;
   label: string | null;
-  panes: AumxPane[];
+  panes: MuxBasePane[];
 }
 
 const FLAT_GROUP_KEY = 'all';
@@ -36,32 +36,32 @@ const RANK_BY_STATUS: Record<string, number> = {
   analyzing: ACTIVE_RANK,
 };
 
-function priorityRank(pane: AumxPane, statusOf: SidebarStatusLookup): number {
+function priorityRank(pane: MuxBasePane, statusOf: SidebarStatusLookup): number {
   const entry = statusOf.get(pane.id);
   if (entry?.waiting === true) return WAITING_RANK;
   if (entry?.status === undefined) return IDLE_RANK;
   return RANK_BY_STATUS[entry.status];
 }
 
-function isActiveNow(pane: AumxPane, statusOf: SidebarStatusLookup): boolean {
+function isActiveNow(pane: MuxBasePane, statusOf: SidebarStatusLookup): boolean {
   const status = statusOf.get(pane.id)?.status;
   return status !== undefined && RANK_BY_STATUS[status] === ACTIVE_RANK;
 }
 
-function sinceWallMsOf(pane: AumxPane, activityOf: SidebarActivityLookup): number {
+function sinceWallMsOf(pane: MuxBasePane, activityOf: SidebarActivityLookup): number {
   return activityOf[pane.id]?.sinceWallMs ?? 0;
 }
 
-function effectiveUpdatedAt(pane: AumxPane, statusOf: SidebarStatusLookup, activityOf: SidebarActivityLookup): number {
+function effectiveUpdatedAt(pane: MuxBasePane, statusOf: SidebarStatusLookup, activityOf: SidebarActivityLookup): number {
   return isActiveNow(pane, statusOf) ? Number.MAX_SAFE_INTEGER : sinceWallMsOf(pane, activityOf);
 }
 
 function sortPanes(
-  panes: AumxPane[],
+  panes: MuxBasePane[],
   sort: SidebarSort,
   statusOf: SidebarStatusLookup,
   activityOf: SidebarActivityLookup,
-): AumxPane[] {
+): MuxBasePane[] {
   if (sort === 'manual') return panes;
 
   return panes
@@ -81,7 +81,7 @@ function sortPanes(
 }
 
 function groupByProject(
-  panes: readonly AumxPane[],
+  panes: readonly MuxBasePane[],
   activeProject: ActiveProjectSource | null | undefined,
 ): SidebarGroup[] {
   const groups = new Map<string, SidebarGroup>();
@@ -137,7 +137,7 @@ function orderGroups(
 }
 
 export function orderSidebarPanes(
-  panes: readonly AumxPane[],
+  panes: readonly MuxBasePane[],
   organize: SidebarOrganize,
   sort: SidebarSort,
   statusOf: SidebarStatusLookup,

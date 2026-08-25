@@ -17,7 +17,7 @@ describe('CI workflow contracts', () => {
     const startIndex = workflow.indexOf('- name: Start isolated tmux server');
     const checkIndex = workflow.indexOf('- name: Enforce minimum tmux version');
     const buildIndex = workflow.indexOf('- name: Build desktop application');
-    const smokeIndex = workflow.indexOf('run: pnpm --filter aumx-desktop test:smoke');
+    const smokeIndex = workflow.indexOf('run: pnpm --filter muxbase-desktop test:smoke');
     const cleanupIndex = workflow.indexOf('- name: Tear down isolated tmux server');
 
     expect(qualitySteps.map((step) => step.name)).toEqual([
@@ -33,7 +33,7 @@ describe('CI workflow contracts', () => {
     ]);
     expect(qualitySteps.filter((step) => step.run === 'pnpm test:coverage')).toHaveLength(1);
     expect(
-      qualitySteps.filter((step) => step.run?.includes('aumx-desktop test:coverage')),
+      qualitySteps.filter((step) => step.run?.includes('muxbase-desktop test:coverage')),
     ).toHaveLength(1);
     expect(qualitySteps.some((step) => step.uses?.startsWith('actions/upload-artifact@'))).toBe(false);
     expect(macSteps.some((step) => step.run?.includes('release:verify'))).toBe(false);
@@ -44,7 +44,7 @@ describe('CI workflow contracts', () => {
     expect(smokeIndex).toBeGreaterThan(buildIndex);
     expect(cleanupIndex).toBeGreaterThan(smokeIndex);
     expect(workflow.slice(cleanupIndex)).toContain('if: always()');
-    expect(workflow).not.toMatch(/new-session[^\n]*-s aumx-/);
+    expect(workflow).not.toMatch(/new-session[^\n]*-s muxbase-/);
   });
 
   it('runs only the exact-floor compatibility matrix weekly and for relevant pull requests', () => {
@@ -60,9 +60,9 @@ describe('CI workflow contracts', () => {
     );
     expect(provisioner).toContain('TMUX_TMPDIR=${socketDir}');
     expect(provisioner).toContain('tmux-version=${version}');
-    expect(exactJob).toContain('AUMX_E2E_EXPECT_TMUX_VERSION: ${{ steps.floor.outputs.tmux-version }}');
+    expect(exactJob).toContain('MUXBASE_E2E_EXPECT_TMUX_VERSION: ${{ steps.floor.outputs.tmux-version }}');
     expect(exactJob).toContain('SHELL: /bin/sh');
-    expect(workflow).not.toMatch(/new-session[^\n]*-s aumx-/);
+    expect(workflow).not.toMatch(/new-session[^\n]*-s muxbase-/);
   });
 
   it('uses current CodeQL actions and avoids redundant scheduled security workflows', () => {
@@ -104,7 +104,7 @@ describe('CI workflow contracts', () => {
     expect(workflowPermissions).toContain('contents: read');
     expect(e2eJob).toContain('permissions:\n      contents: read');
     expect(e2eJob).toContain('run: pnpm release:verify');
-    expect(e2eJob).not.toContain('pnpm --filter aumx-desktop release:verify');
+    expect(e2eJob).not.toContain('pnpm --filter muxbase-desktop release:verify');
     expect(workflow).not.toContain('API_KEY');
     expect(workflow).not.toContain('secrets.');
     expect(workflow).not.toContain('agent-compatibility');

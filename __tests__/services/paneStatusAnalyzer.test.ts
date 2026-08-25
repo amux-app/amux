@@ -6,8 +6,8 @@ const WORKING_FRAME = '· Germinating… (esc to interrupt · 42s)';
 const CODEX_WORKING_FRAME = 'Esc to interrupt';
 const OPENCODE_WORKING_FRAME = '■⬝⬝⬝⬝⬝⬝⬝  esc interrupt';
 const PI_WORKING_FRAME = '⠋ Working...\nescape interrupt · ctrl+c/ctrl+d clear/exit';
-const OPENCODE_IDLE_FRAME = '┃  Ask anything... "Fix broken tests"\n~/projects/dmux:main  1.18.15';
-const PI_IDLE_FRAME = '~/projects/dmux (main)\n0.0%/1.0M (auto)  anthropic--claude-4.8-opus • high';
+const OPENCODE_IDLE_FRAME = '┃  Ask anything... "Fix broken tests"\n~/projects/muxbase:main  1.18.15';
+const PI_IDLE_FRAME = '~/projects/muxbase (main)\n0.0%/1.0M (auto)  anthropic--claude-4.8-opus • high';
 const IDLE_FRAME = [
   '⏺ Done.',
   '│ > ',

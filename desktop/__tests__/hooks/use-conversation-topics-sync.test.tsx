@@ -40,11 +40,11 @@ describe('useConversationTopicsSync', () => {
     });
     useProjectStore.setState({
       activeProject: {
-        configPath: '/repo/.aumx/aumx.config.json',
+        configPath: '/repo/.muxbase/muxbase.config.json',
         name: 'repo',
         paneCount: 1,
         root: '/repo',
-        sessionName: 'aumx-repo',
+        sessionName: 'muxbase-repo',
       },
     });
     useTopicsStore.getState().setAll([topic]);
@@ -107,11 +107,11 @@ describe('useConversationTopicsSync', () => {
 
     act(() => useProjectStore.setState({
       activeProject: {
-        configPath: '/other/.aumx/aumx.config.json',
+        configPath: '/other/.muxbase/muxbase.config.json',
         name: 'other',
         paneCount: 0,
         root: '/other',
-        sessionName: 'aumx-other',
+        sessionName: 'muxbase-other',
       },
     }));
 

@@ -1,6 +1,6 @@
 import { LogService } from '../services/LogService.js';
 import { TmuxService } from '../services/TmuxService.js';
-import type { AumxPane, AumxSettings } from '../types.js';
+import type { MuxBasePane, MuxBaseSettings } from '../types.js';
 import { assertNever, type AgentName } from '../agents/agent-contract.js';
 import { buildPiResumeCommand } from '../agents/pi-runtime.js';
 import { isShellCommand } from './agentCommandDetection.js';
@@ -32,11 +32,11 @@ export async function isAgentRunningInPane(
 export async function resumeAgentInPane(
   paneId: string,
   agent: AgentName,
-  settings: Pick<AumxSettings, 'opencodeScrollbackMode' | 'permissionMode'>,
+  settings: Pick<MuxBaseSettings, 'opencodeScrollbackMode' | 'permissionMode'>,
   agentSessionId?: string,
-  claudeRenderer?: AumxPane['claudeRenderer'],
+  claudeRenderer?: MuxBasePane['claudeRenderer'],
   options: {
-    aumxPaneId?: string;
+    muxbasePaneId?: string;
     activityJournal?: string;
     activityIncarnationId?: string;
     enableActivityAdapters?: boolean;
@@ -104,12 +104,12 @@ export async function resumeAgentInPane(
     : null;
   const activityIncarnationId = options.activityIncarnationId ?? await ensureTmuxPaneIncarnationOption(paneId);
   const paneEnv: Record<string, string> = {
-    AUMX_ACTIVITY_JOURNAL: options.activityJournal ?? getPaneActivityJournalPath(activityIncarnationId),
-    AUMX_PANE_ID: options.aumxPaneId ?? paneId,
-    AUMX_PANE_INCARNATION_ID: activityIncarnationId,
-    AUMX_ACTIVITY_ADAPTER_SUPPORT: activityAdapter.support,
-    AUMX_ACTIVITY_ADAPTER_VERSION: activityAdapter.version ?? 'unknown',
-    AUMX_ACTIVITY_ADAPTER_CAPABILITIES: JSON.stringify(activityAdapter.capabilities),
+    MUXBASE_ACTIVITY_JOURNAL: options.activityJournal ?? getPaneActivityJournalPath(activityIncarnationId),
+    MUXBASE_PANE_ID: options.muxbasePaneId ?? paneId,
+    MUXBASE_PANE_INCARNATION_ID: activityIncarnationId,
+    MUXBASE_ACTIVITY_ADAPTER_SUPPORT: activityAdapter.support,
+    MUXBASE_ACTIVITY_ADAPTER_VERSION: activityAdapter.version ?? 'unknown',
+    MUXBASE_ACTIVITY_ADAPTER_CAPABILITIES: JSON.stringify(activityAdapter.capabilities),
     ...rendererEnvironment?.set,
   };
   const claudeEnvUnsets = rendererEnvironment

@@ -1,10 +1,10 @@
 import { create } from 'zustand';
-import type { AumxSettings, SettingDefinition, SettingsScope } from 'aumx/core';
+import type { MuxBaseSettings, SettingDefinition, SettingsScope } from 'muxbase/core';
 import * as settingsApi from '../api/settings.api';
 
 interface SettingsState {
   definitions: SettingDefinition[];
-  settings: AumxSettings;
+  settings: MuxBaseSettings;
   isLoading: boolean;
 }
 

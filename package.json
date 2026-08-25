@@ -1,19 +1,19 @@
 {
-  "name": "aumx",
+  "name": "muxbase",
   "version": "0.1.0",
   "private": true,
-  "description": "Core library for Amux — the agentic IDE and mission control for a fleet of AI coding agents (Claude Code, Codex, OpenCode, Pi), each isolated in its own tmux pane and git worktree.",
+  "description": "Core library for MuxBase — the agentic IDE and mission control for a fleet of AI coding agents (Claude Code, Codex, OpenCode, Pi), each isolated in its own tmux pane and git worktree.",
   "type": "module",
   "author": "shimi.tal1@gmail.com",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/amux-app/amux.git"
+    "url": "git+https://github.com/muxbase-app/muxbase.git"
   },
   "bugs": {
-    "url": "https://github.com/amux-app/amux/issues"
+    "url": "https://github.com/muxbase-app/muxbase/issues"
   },
-  "homepage": "https://github.com/amux-app/amux#readme",
+  "homepage": "https://github.com/muxbase-app/muxbase#readme",
   "keywords": [
     "agent",
     "agentic",
@@ -70,7 +70,8 @@
   "scripts": {
     "build": "pnpm run generate:hooks-docs && tsc",
     "check:versions": "node scripts/check-package-versions.mjs",
-    "desktop:release:verify": "pnpm --filter aumx-desktop release:verify",
+    "check:brand": "node scripts/check-brand-namespace.mjs",
+    "desktop:release:verify": "pnpm --filter muxbase-desktop release:verify",
     "generate:hooks-docs": "node scripts/generate-hooks-docs.js",
     "clean": "rm -rf dist src/utils/generated-agents-doc.ts",
     "lint": "eslint --config eslint.config.js .",
@@ -81,9 +82,9 @@
     "audit:all": "pnpm audit --audit-level moderate",
     "verify": "pnpm run verify:static && pnpm run test && pnpm run desktop:release:verify",
     "verify:ci": "pnpm run verify:static && pnpm run test",
-    "verify:static": "pnpm run internal-refs-gate && pnpm run check:versions && pnpm run typecheck && pnpm run lint:ci && pnpm run knip",
+    "verify:static": "pnpm run check:brand && pnpm run internal-refs-gate && pnpm run check:versions && pnpm run typecheck && pnpm run lint:ci && pnpm run knip",
     "release:verify": "pnpm run audit:all && pnpm run verify",
-    "release:verify:live": "pnpm run release:verify && pnpm --filter aumx-desktop test:e2e:live",
+    "release:verify:live": "pnpm run release:verify && pnpm --filter muxbase-desktop test:e2e:live",
     "typecheck": "pnpm run generate:hooks-docs && tsc --noEmit",
     "test": "vitest --run",
     "pretest": "pnpm run generate:hooks-docs",

@@ -3,7 +3,7 @@ import { _electron as electron } from 'playwright';
 import type { ElectronApplication, Page } from 'playwright';
 import { resolve } from 'path';
 import { existsSync, readFileSync, rmSync, readdirSync, writeFileSync } from 'fs';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { closePaneBestEffort, getAppWindow, getPanes, pollUntil } from './e2e-helpers';
 
 const ROOT = resolve(__dirname, '..', '..');
@@ -14,20 +14,20 @@ const RUN_TOKEN = `e2e-${Date.now().toString(36)}`;
 const AGENT_IDLE_TIMEOUT = 180_000;
 const PROMPT_TIMEOUT = 60_000;
 const TOTAL_TIMEOUT = (() => {
-  const parsed = Number(process.env.AUMX_E2E_MAX_MS ?? '900000');
+  const parsed = Number(process.env.MUXBASE_E2E_MAX_MS ?? '900000');
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 900_000;
 })();
 
 const REPOS = {
-  claude: 'https://github.com/amux-app/amux-e2e-fixtures-claude-fmt.git',
-  codex: 'https://github.com/amux-app/amux-e2e-fixtures-codex-fmt.git',
-  opencode: 'https://github.com/amux-app/amux-e2e-fixtures-opencode-fmt.git',
+  claude: 'https://github.com/muxbase-app/muxbase-e2e-fixtures-claude-fmt.git',
+  codex: 'https://github.com/muxbase-app/muxbase-e2e-fixtures-codex-fmt.git',
+  opencode: 'https://github.com/muxbase-app/muxbase-e2e-fixtures-opencode-fmt.git',
 } as const;
 
 const HOOK_MARKER_FILES = {
-  claude: `/tmp/amux-e2e-hook-claude-fmt-${RUN_TOKEN}`,
-  codex: `/tmp/amux-e2e-hook-codex-fmt-${RUN_TOKEN}`,
-  opencode: `/tmp/amux-e2e-hook-opencode-fmt-${RUN_TOKEN}`,
+  claude: `/tmp/muxbase-e2e-hook-claude-fmt-${RUN_TOKEN}`,
+  codex: `/tmp/muxbase-e2e-hook-codex-fmt-${RUN_TOKEN}`,
+  opencode: `/tmp/muxbase-e2e-hook-opencode-fmt-${RUN_TOKEN}`,
 } as const;
 
 const SKILL_MARKERS = {
@@ -69,7 +69,7 @@ function restoreOpencodeConfig(): void {
 
 function cleanMarkerFiles(): void {
   try {
-    const tmpFiles = readdirSync('/tmp').filter((f) => f.startsWith('amux-e2e-hook-'));
+    const tmpFiles = readdirSync('/tmp').filter((f) => f.startsWith('muxbase-e2e-hook-'));
     for (const f of tmpFiles) {
       rmSync(`/tmp/${f}`, { force: true });
     }
@@ -79,37 +79,37 @@ function cleanMarkerFiles(): void {
 async function initPaneStatusTracker(page: Page): Promise<void> {
   await page.evaluate(() => {
     const w = window as any;
-    if (w.__aumxPaneStatusTrackerInitialized) return;
-    w.__aumxPaneStatusById = {};
-    w.aumx.on(
+    if (w.__muxbasePaneStatusTrackerInitialized) return;
+    w.__muxbasePaneStatusById = {};
+    w.muxbase.on(
       'event:pane-status-changed',
       (payload: { paneId?: string; status?: string }) => {
         const paneId = payload?.paneId;
         const status = payload?.status;
         if (!paneId || !status) return;
-        w.__aumxPaneStatusById[paneId] = status;
+        w.__muxbasePaneStatusById[paneId] = status;
       },
     );
-    w.aumx.on(
+    w.muxbase.on(
       'event:agent-session-updated',
       (payload: { paneId?: string; session?: { turnCompleted?: boolean; awaitingUserInput?: boolean } }) => {
         const paneId = payload?.paneId;
         const session = payload?.session;
         if (!paneId || !session) return;
         if (session.awaitingUserInput) {
-          w.__aumxPaneStatusById[paneId] = 'waiting';
+          w.__muxbasePaneStatusById[paneId] = 'waiting';
         } else if (session.turnCompleted === true) {
-          w.__aumxPaneStatusById[paneId] = 'idle';
+          w.__muxbasePaneStatusById[paneId] = 'idle';
         }
       },
     );
-    w.__aumxPaneStatusTrackerInitialized = true;
+    w.__muxbasePaneStatusTrackerInitialized = true;
   });
 }
 
 async function getTranscriptForPane(page: Page, paneId: string): Promise<string> {
   const panes = await getPanes(page);
-  const pane = panes.find((p: AumxPane) => p.id === paneId);
+  const pane = panes.find((p: MuxBasePane) => p.id === paneId);
   if (!pane?.terminalTranscriptPath) return '';
   try {
     return readFileSync(pane.terminalTranscriptPath, 'utf-8');
@@ -122,7 +122,7 @@ async function waitForPaneIdle(page: Page, paneId: string, timeout = AGENT_IDLE_
   await pollUntil(
     async () => {
       const status: string | undefined = await page.evaluate(
-        (id) => (window as any).__aumxPaneStatusById?.[id],
+        (id) => (window as any).__muxbasePaneStatusById?.[id],
         paneId,
       );
       if (status && !ACTIVE_AGENT_STATES.has(status)) return true;
@@ -132,20 +132,20 @@ async function waitForPaneIdle(page: Page, paneId: string, timeout = AGENT_IDLE_
   );
 }
 
-async function sendPromptAndWaitIdle(page: Page, pane: AumxPane, prompt: string, timeout = AGENT_IDLE_TIMEOUT): Promise<void> {
+async function sendPromptAndWaitIdle(page: Page, pane: MuxBasePane, prompt: string, timeout = AGENT_IDLE_TIMEOUT): Promise<void> {
   // Reset status tracker for this pane so we wait for a fresh idle signal
   await page.evaluate(
-    (id) => { (window as any).__aumxPaneStatusById[id] = 'working'; },
+    (id) => { (window as any).__muxbasePaneStatusById[id] = 'working'; },
     pane.id,
   );
   await page.evaluate(
-    (payload) => (window as any).aumx.invoke('pane:send-keys', payload),
+    (payload) => (window as any).muxbase.invoke('pane:send-keys', payload),
     { paneId: pane.id, command: prompt },
   );
   await waitForPaneIdle(page, pane.id, timeout);
 }
 
-describe.runIf(process.env.AUMX_E2E === '1' && process.env.AUMX_E2E_FIXTURES_READY === '1')('Marketplace E2E', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1' && process.env.MUXBASE_E2E_FIXTURES_READY === '1')('Marketplace E2E', () => {
   let app: ElectronApplication;
   let page: Page;
 
@@ -176,7 +176,7 @@ describe.runIf(process.env.AUMX_E2E === '1' && process.env.AUMX_E2E_FIXTURES_REA
     it('adds all 3 marketplace sources', async () => {
       for (const [key, url] of Object.entries(REPOS)) {
         const result = await page.evaluate(
-          (u) => (window as any).aumx.invoke('marketplace:source-add', { url: u }),
+          (u) => (window as any).muxbase.invoke('marketplace:source-add', { url: u }),
           url,
         );
         expect(result.success, `source-add failed for ${key}: ${result.error}`).toBe(true);
@@ -186,19 +186,19 @@ describe.runIf(process.env.AUMX_E2E === '1' && process.env.AUMX_E2E_FIXTURES_REA
     it('browses and installs plugins from all 3 sources', async () => {
       for (const [key, url] of Object.entries(REPOS)) {
         const browseResult = await page.evaluate(
-          (u) => (window as any).aumx.invoke('marketplace:browse', { sourceUrl: u }),
+          (u) => (window as any).muxbase.invoke('marketplace:browse', { sourceUrl: u }),
           url,
         );
         expect(browseResult.plugins.length, `no plugins found in ${key} repo`).toBeGreaterThan(0);
 
         const pluginId = browseResult.plugins[0].id;
         const previewResult = await page.evaluate(
-          (payload) => (window as any).aumx.invoke('marketplace:preview', payload),
+          (payload) => (window as any).muxbase.invoke('marketplace:preview', payload),
           { pluginId, sourceUrl: url },
         );
         expect(previewResult.success, `preview failed for ${key}: ${previewResult.error}`).toBe(true);
         const installResult = await page.evaluate(
-          (payload) => (window as any).aumx.invoke('marketplace:install', payload),
+          (payload) => (window as any).muxbase.invoke('marketplace:install', payload),
           { pluginId, sourceUrl: url, previewDigest: previewResult.preview.digest },
         );
         expect(installResult.success, `install failed for ${key}: ${installResult.error}`).toBe(true);
@@ -219,13 +219,13 @@ describe.runIf(process.env.AUMX_E2E === '1' && process.env.AUMX_E2E_FIXTURES_REA
 
   // Phase 2: Verify plugins work
   describe('Phase 2: Verify plugins fire in all agents', () => {
-    const createdPanes: Record<string, AumxPane> = {};
+    const createdPanes: Record<string, MuxBasePane> = {};
 
     it('creates one pane per agent and waits for ready', async () => {
       const agents = ['claude', 'codex', 'opencode'] as const;
       for (const agent of agents) {
         const response = await page.evaluate(
-          (payload) => (window as any).aumx.invoke('pane:create', payload),
+          (payload) => (window as any).muxbase.invoke('pane:create', payload),
           {
             prompt: 'wait for my instructions',
             agent,
@@ -365,14 +365,14 @@ describe.runIf(process.env.AUMX_E2E === '1' && process.env.AUMX_E2E_FIXTURES_REA
     it('uninstalls all 3 plugins', async () => {
       for (const [key, url] of Object.entries(REPOS)) {
         const browseResult = await page.evaluate(
-          (u) => (window as any).aumx.invoke('marketplace:browse', { sourceUrl: u }),
+          (u) => (window as any).muxbase.invoke('marketplace:browse', { sourceUrl: u }),
           url,
         );
         const pluginId = browseResult.plugins[0]?.id;
         if (!pluginId) continue;
 
         const result = await page.evaluate(
-          (payload) => (window as any).aumx.invoke('marketplace:uninstall', payload),
+          (payload) => (window as any).muxbase.invoke('marketplace:uninstall', payload),
           { pluginId, sourceUrl: url },
         );
         expect(result.success, `uninstall failed for ${key}: ${result.error}`).toBe(true);
@@ -402,8 +402,8 @@ describe.runIf(process.env.AUMX_E2E === '1' && process.env.AUMX_E2E_FIXTURES_REA
             const content = JSON.parse(readFileSync(claudeSettings, 'utf-8'));
             const enabledPlugins = content.enabledPlugins || {};
             const marketplaces = content.extraKnownMarketplaces || {};
-            const hasPlugin = Object.keys(enabledPlugins).some((k) => k.includes('amux-e2e-plugin'));
-            const hasMarketplace = Object.keys(marketplaces).some((k) => k.includes('amux-e2e-plugin'));
+            const hasPlugin = Object.keys(enabledPlugins).some((k) => k.includes('muxbase-e2e-plugin'));
+            const hasMarketplace = Object.keys(marketplaces).some((k) => k.includes('muxbase-e2e-plugin'));
             if (!hasPlugin && !hasMarketplace) return true;
             return null;
           },
@@ -415,7 +415,7 @@ describe.runIf(process.env.AUMX_E2E === '1' && process.env.AUMX_E2E_FIXTURES_REA
       const codexConfig = resolve(home, '.codex', 'config.toml');
       if (existsSync(codexConfig)) {
         const content = readFileSync(codexConfig, 'utf-8');
-        expect(content.includes('amux-e2e-plugin'), 'codex still has e2e plugin sections').toBe(false);
+        expect(content.includes('muxbase-e2e-plugin'), 'codex still has e2e plugin sections').toBe(false);
       }
 
       // OpenCode: MCP entries removed
@@ -443,13 +443,13 @@ describe.runIf(process.env.AUMX_E2E === '1' && process.env.AUMX_E2E_FIXTURES_REA
 
   // Phase 5: Verify uninstall
   describe('Phase 5: Verify plugins no longer work', () => {
-    const verifyPanes: Record<string, AumxPane> = {};
+    const verifyPanes: Record<string, MuxBasePane> = {};
 
     it('creates new panes after uninstall and waits for ready', async () => {
       const agents = ['claude', 'codex', 'opencode'] as const;
       for (const agent of agents) {
         const response = await page.evaluate(
-          (payload) => (window as any).aumx.invoke('pane:create', payload),
+          (payload) => (window as any).muxbase.invoke('pane:create', payload),
           {
             prompt: 'wait for my instructions',
             agent,

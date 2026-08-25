@@ -118,7 +118,7 @@ describe('closeAction', () => {
 
   describe('shell panes', () => {
     it('should close shell pane immediately without presenting options', async () => {
-      const mockPane = createShellPane({ id: 'aumx-1', paneId: '%42' });
+      const mockPane = createShellPane({ id: 'muxbase-1', paneId: '%42' });
       const mockContext = createMockContext([mockPane]);
 
       const result = await closePane(mockPane, mockContext);
@@ -315,8 +315,8 @@ describe('closeAction', () => {
 
   describe('close execution - kill_only', () => {
     it('should remove pane from tracking when kill_only selected', async () => {
-      const pane1 = createWorktreePane({ id: 'aumx-1' });
-      const pane2 = createWorktreePane({ id: 'aumx-2' });
+      const pane1 = createWorktreePane({ id: 'muxbase-1' });
+      const pane2 = createWorktreePane({ id: 'muxbase-2' });
       const mockContext = createMockContext([pane1, pane2]);
       const savePanesSpy = vi.spyOn(mockContext, 'savePanes');
 
@@ -331,7 +331,7 @@ describe('closeAction', () => {
       expect(savePanesSpy).toHaveBeenCalledWith([pane2]);
     });
 
-    it('should call onPaneRemove callback with aumx pane ID', async () => {
+    it('should call onPaneRemove callback with muxbase pane ID', async () => {
       const mockPane = createWorktreePane({ paneId: '%42' });
       const mockContext = createMockContext([mockPane]);
       const onPaneRemoveSpy = vi.fn();
@@ -344,7 +344,7 @@ describe('closeAction', () => {
       const result = await closePane(mockPane, mockContext);
       await result.onSelect!('kill_only');
 
-      expect(onPaneRemoveSpy).toHaveBeenCalledWith('aumx-1');
+      expect(onPaneRemoveSpy).toHaveBeenCalledWith('muxbase-1');
     });
 
     it('should trigger before_pane_close and pane_closed hooks', async () => {
@@ -381,7 +381,7 @@ describe('closeAction', () => {
   describe('close execution - kill_and_clean', () => {
     it('should queue worktree cleanup when kill_and_clean selected', async () => {
       const mockPane = createWorktreePane({
-        worktreePath: '/test/project/.aumx/worktrees/my-feature',
+        worktreePath: '/test/project/.muxbase/worktrees/my-feature',
       });
       const mockContext = createMockContext([mockPane]);
 
@@ -525,7 +525,7 @@ describe('closeAction', () => {
 
   describe('layout recalculation', () => {
     it('should NOT recalculate layout when no panes remain', async () => {
-      const mockPane = createWorktreePane({ id: 'aumx-1' });
+      const mockPane = createWorktreePane({ id: 'muxbase-1' });
       const mockContext = createMockContext([mockPane]);
 
       vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({

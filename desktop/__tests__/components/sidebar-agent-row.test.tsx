@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { cleanup, render, within } from '@testing-library/react';
-import type { AgentStatus, AumxPane } from 'aumx/core';
+import type { AgentStatus, MuxBasePane } from 'muxbase/core';
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getEffectivePaneStatus } from '../../src/renderer/lib/pane-attention';
@@ -9,7 +9,7 @@ import type { SidebarPaneStatus } from '../../src/renderer/lib/sidebar-order';
 import { useWorktreeStatusStore } from '../../src/renderer/stores/worktree-status.store';
 import { usePaneActivityStore } from '../../src/renderer/stores/pane-activity.store';
 
-function pane(overrides: Partial<AumxPane> = {}): AumxPane {
+function pane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'claude',
     id: 'p1',
@@ -48,7 +48,7 @@ function bootStatusFor(persistedStatus: AgentStatus): SidebarPaneStatus {
   return { status, waiting: false };
 }
 
-function renderPaneRow(paneOverrides: Partial<AumxPane>) {
+function renderPaneRow(paneOverrides: Partial<MuxBasePane>) {
   const { container } = render(
     <ul>
       <SidebarAgentRow

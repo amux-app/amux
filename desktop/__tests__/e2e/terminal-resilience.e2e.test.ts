@@ -2,9 +2,9 @@ import {
   atomicWriteJsonSync,
   getProjectConfigPath,
   type AgentStatus,
-  type AumxConfig,
-  type AumxPane,
-} from 'aumx/core';
+  type MuxBaseConfig,
+  type MuxBasePane,
+} from 'muxbase/core';
 import { execFileSync, spawnSync } from 'child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync } from 'fs';
 import { tmpdir } from 'os';
@@ -37,16 +37,16 @@ import {
 const ROOT = resolve(__dirname, '..', '..');
 const MAIN_ENTRY = resolve(ROOT, 'out', 'main', 'index.js');
 const MOUSE_REPORTING_TUI_FIXTURE = resolve(__dirname, 'fixtures', 'mouse-reporting-tui.cjs');
-const APP_EXECUTABLE_PATH = process.env.AUMX_E2E_EXECUTABLE_PATH;
+const APP_EXECUTABLE_PATH = process.env.MUXBASE_E2E_EXECUTABLE_PATH;
 const SCREENSHOTS_DIR = resolve(ROOT, 'out', 'e2e-terminal-resilience');
 const APP_STARTUP_TIMEOUT_MS = 30_000;
 const APP_SHUTDOWN_TIMEOUT_MS = 30_000;
 const TERMINAL_TIMEOUT_MS = 15_000;
 const TERMINAL_GEOMETRY_TIMEOUT_MS = 30_000;
-const SCROLLBACK_DONE_MARKER = 'AUMX-SCROLLBACK-DONE';
-const SCROLLBACK_FIRST_LINE = 'AUMX-SCROLLBACK-LINE-001';
-const OLD_PROJECT_BOTTOM_MARKER = 'AUMX-OLD-PROJECT-BOTTOM';
-const OLD_PROJECT_LAUNCH_MARKER = 'AUMX_PROMPT_CONTENT=dirty-startup-command';
+const SCROLLBACK_DONE_MARKER = 'MUXBASE-SCROLLBACK-DONE';
+const SCROLLBACK_FIRST_LINE = 'MUXBASE-SCROLLBACK-LINE-001';
+const OLD_PROJECT_BOTTOM_MARKER = 'MUXBASE-OLD-PROJECT-BOTTOM';
+const OLD_PROJECT_LAUNCH_MARKER = 'MUXBASE_PROMPT_CONTENT=dirty-startup-command';
 const ATTENTION_STAT = '[data-testid="resource-attention-stat"]';
 const ATTENTION_PEEK = '[role="menu"][aria-label="Waiting agents"]';
 const COMMAND_PALETTE = '[role="dialog"][aria-label="Command palette"]';
@@ -58,19 +58,19 @@ const MIN_DUEL_DRAG_TRAVEL_PX = 200;
 // Panel widths are committed through rounded pixels, so travel lands a hair off.
 const RESIZE_TRAVEL_TOLERANCE_PX = 2;
 
-interface AumxStoreApi<TState> {
+interface MuxBaseStoreApi<TState> {
   getState: () => TState;
 }
 
-interface WritableAumxStoreApi<TState> extends AumxStoreApi<TState> {
+interface WritableMuxBaseStoreApi<TState> extends MuxBaseStoreApi<TState> {
   setState: (partial: Partial<TState>) => void;
 }
 
 interface PaneStoreState {
-  panes: AumxPane[];
+  panes: MuxBasePane[];
   selectedPaneId: string | null;
   selectPane: (paneId: string | null) => void;
-  setPanes: (panes: AumxPane[]) => void;
+  setPanes: (panes: MuxBasePane[]) => void;
   updatePaneStatus: (paneId: string, status: AgentStatus) => void;
 }
 
@@ -86,9 +86,9 @@ interface PaneActivityStoreState {
 }
 
 interface E2EStores {
-  pane?: AumxStoreApi<PaneStoreState>;
-  paneActivity?: WritableAumxStoreApi<PaneActivityStoreState>;
-  ui?: AumxStoreApi<UiStoreState>;
+  pane?: MuxBaseStoreApi<PaneStoreState>;
+  paneActivity?: WritableMuxBaseStoreApi<PaneActivityStoreState>;
+  ui?: MuxBaseStoreApi<UiStoreState>;
 }
 
 interface TerminalDebugInfo {
@@ -123,10 +123,10 @@ interface TerminalDebugApi {
 }
 
 interface E2EWindow {
-  __AUMX_E2E?: boolean;
-  __aumxStores?: E2EStores;
-  __aumxTerminalDebug?: TerminalDebugApi;
-  aumx: {
+  __MUXBASE_E2E?: boolean;
+  __muxbaseStores?: E2EStores;
+  __muxbaseTerminalDebug?: TerminalDebugApi;
+  muxbase: {
     invoke: (channel: string, ...args: unknown[]) => Promise<unknown>;
   };
 }
@@ -182,8 +182,8 @@ interface TmuxPaneSize {
 }
 
 interface DeterministicTerminalProfile {
-  agent?: AumxPane['agent'];
-  claudeRenderer?: AumxPane['claudeRenderer'];
+  agent?: MuxBasePane['agent'];
+  claudeRenderer?: MuxBasePane['claudeRenderer'];
   fixedCols?: number;
 }
 
@@ -217,21 +217,21 @@ async function invoke<T>(page: Page, channel: string, request?: unknown): Promis
   return page.evaluate(
     async ({ ipcChannel, ipcArgs }) => {
       const e2eWindow = window as unknown as E2EWindow;
-      return e2eWindow.aumx.invoke(ipcChannel, ...ipcArgs);
+      return e2eWindow.muxbase.invoke(ipcChannel, ...ipcArgs);
     },
     { ipcArgs: args, ipcChannel: channel },
   ) as Promise<T>;
 }
 
-async function getPanes(page: Page): Promise<AumxPane[]> {
-  return invoke<AumxPane[]>(page, IPC.PANE_LIST);
+async function getPanes(page: Page): Promise<MuxBasePane[]> {
+  return invoke<MuxBasePane[]>(page, IPC.PANE_LIST);
 }
 
-async function syncRendererPanes(page: Page): Promise<AumxPane[]> {
+async function syncRendererPanes(page: Page): Promise<MuxBasePane[]> {
   const panes = await getPanes(page);
   await page.evaluate((nextPanes) => {
     const e2eWindow = window as unknown as E2EWindow;
-    e2eWindow.__aumxStores?.pane?.getState().setPanes(nextPanes);
+    e2eWindow.__muxbaseStores?.pane?.getState().setPanes(nextPanes);
   }, panes);
   return panes;
 }
@@ -251,7 +251,7 @@ async function measureElementWidth(page: Page, elementId: string): Promise<numbe
 // column animates to zero, so the collapse is only settled once it measures 0.
 async function collapseSidebar(page: Page): Promise<void> {
   await page.evaluate(() => {
-    const ui = (window as unknown as E2EWindow).__aumxStores?.ui;
+    const ui = (window as unknown as E2EWindow).__muxbaseStores?.ui;
     if (!ui) throw new Error('renderer exposed no ui store, so the sidebar cannot be collapsed');
     ui.getState().setSidebarCollapsed(true);
   });
@@ -284,9 +284,9 @@ async function setTerminalTransport(
 
 async function createShellPane(
   page: Page,
-  createdPanes: AumxPane[],
+  createdPanes: MuxBasePane[],
   options: { waitForCommandReady?: boolean } = {},
-): Promise<AumxPane> {
+): Promise<MuxBasePane> {
   const response = await invoke<PaneCreateResponse>(page, IPC.PANE_CREATE, {
     prompt: '',
     type: 'shell',
@@ -303,7 +303,7 @@ async function createShellPane(
   await pollUntil(
     async () => {
       const attached = await page.evaluate((paneId) => {
-        const info = (window as unknown as E2EWindow).__aumxTerminalDebug?.getViewportInfo(paneId);
+        const info = (window as unknown as E2EWindow).__muxbaseTerminalDebug?.getViewportInfo(paneId);
         return info?.attachHistory.some((event) => event.action === 'attach-success') ?? false;
       }, pane.id);
       return attached ? true : null;
@@ -331,7 +331,7 @@ async function collectFailureDiagnostics(
   sessionName: string,
   baselinePaneIds: readonly string[],
   baselineTmuxPaneIds: readonly string[],
-  ownedPanes: readonly AumxPane[],
+  ownedPanes: readonly MuxBasePane[],
 ): Promise<Record<string, unknown>> {
   let tmuxSessions = '';
   let tmuxPanes = '';
@@ -339,7 +339,7 @@ async function collectFailureDiagnostics(
     tmuxSessions = runTmux([
       'list-sessions',
       '-F',
-      '#{session_name}|attached=#{session_attached}|windows=#{session_windows}|view=#{@aumx_view_session}',
+      '#{session_name}|attached=#{session_attached}|windows=#{session_windows}|view=#{@muxbase_view_session}',
     ]);
     tmuxPanes = runTmux([
       'list-panes',
@@ -355,14 +355,14 @@ async function collectFailureDiagnostics(
   if (!page.isClosed()) {
     rendererState = await page.evaluate(() => {
       const e2eWindow = window as unknown as E2EWindow;
-      const paneState = e2eWindow.__aumxStores?.pane?.getState();
+      const paneState = e2eWindow.__muxbaseStores?.pane?.getState();
       const paneIds = paneState?.panes.map((pane) => pane.id) ?? [];
       return {
         paneIds,
         selectedPaneId: paneState?.selectedPaneId ?? null,
         terminalStreams: paneIds.map((paneId) => ({
           paneId,
-          viewport: e2eWindow.__aumxTerminalDebug?.getViewportInfo(paneId) ?? null,
+          viewport: e2eWindow.__muxbaseTerminalDebug?.getViewportInfo(paneId) ?? null,
         })),
       };
     });
@@ -379,7 +379,7 @@ async function collectFailureDiagnostics(
   };
 }
 
-async function closePaneBestEffort(page: Page, pane: AumxPane): Promise<void> {
+async function closePaneBestEffort(page: Page, pane: MuxBasePane): Promise<void> {
   if (!pane.id) return;
   try {
     await invoke(page, IPC.PANE_CLOSE, { paneId: pane.id });
@@ -404,7 +404,7 @@ async function waitForConfigQuiescence(
       const stats = statSync(configPath);
       if (Date.now() - stats.mtimeMs < 250) return null;
 
-      const persisted = JSON.parse(readFileSync(configPath, 'utf8')) as AumxConfig;
+      const persisted = JSON.parse(readFileSync(configPath, 'utf8')) as MuxBaseConfig;
       const persistedIds = persisted.panes.map((pane) => pane.id).sort();
       const backendIds = (await getPanes(page)).map((pane) => pane.id).sort();
       return JSON.stringify(persistedIds) === JSON.stringify(expectedIds)
@@ -419,7 +419,7 @@ async function waitForConfigQuiescence(
 async function focusPane(page: Page, paneId: string): Promise<void> {
   await syncRendererPanes(page);
   await page.evaluate((id) => {
-    const stores = (window as unknown as E2EWindow).__aumxStores;
+    const stores = (window as unknown as E2EWindow).__muxbaseStores;
     stores?.ui?.getState().setActiveView('dashboard');
     stores?.pane?.getState().selectPane(id);
     stores?.ui?.getState().focusPane(id);
@@ -436,7 +436,7 @@ async function setRendererPaneStatus(
   status: AgentStatus,
 ): Promise<void> {
   await page.evaluate(({ ids, nextStatus }) => {
-    const paneStore = (window as unknown as E2EWindow).__aumxStores?.pane?.getState();
+    const paneStore = (window as unknown as E2EWindow).__muxbaseStores?.pane?.getState();
     for (const id of ids) paneStore?.updatePaneStatus(id, nextStatus);
   }, { ids: [...paneIds], nextStatus: status });
 }
@@ -464,7 +464,7 @@ async function cycleOverlay(page: Page, open: () => Promise<void>, selector: str
 
 async function showDashboardMode(page: Page, mode: 'fleet' | 'settings'): Promise<void> {
   await page.evaluate((nextMode) => {
-    const ui = (window as unknown as E2EWindow).__aumxStores?.ui?.getState();
+    const ui = (window as unknown as E2EWindow).__muxbaseStores?.ui?.getState();
     if (nextMode === 'settings') {
       ui?.setActiveView('settings');
       return;
@@ -527,7 +527,7 @@ function readTmuxPaneSize(tmuxPaneId: string): TmuxPaneSize {
 
 async function getTerminalSnapshot(page: Page, paneId: string): Promise<TerminalSnapshot | null> {
   return page.evaluate((id) => {
-    const debug = (window as unknown as E2EWindow).__aumxTerminalDebug;
+    const debug = (window as unknown as E2EWindow).__muxbaseTerminalDebug;
     const info = debug?.getViewportInfo(id);
     if (!debug || !info) return null;
     const lines = debug.getLines(id, 0, Math.min(info.length, 260));
@@ -538,7 +538,7 @@ async function getTerminalSnapshot(page: Page, paneId: string): Promise<Terminal
 
 async function getTerminalFontSize(page: Page, paneId: string): Promise<number | null> {
   return page.evaluate(
-    (id) => (window as unknown as E2EWindow).__aumxTerminalDebug?.getFontSize(id) ?? null,
+    (id) => (window as unknown as E2EWindow).__muxbaseTerminalDebug?.getFontSize(id) ?? null,
     paneId,
   );
 }
@@ -930,7 +930,7 @@ async function widenFleetPane(page: Page, paneId: string): Promise<void> {
 
 async function waitForTerminalGeometry(
   page: Page,
-  pane: AumxPane,
+  pane: MuxBasePane,
   minCols: number,
 ): Promise<{ metrics: TerminalLayoutMetrics; snapshot: TerminalSnapshot; tmuxSize: TmuxPaneSize }> {
   return pollUntil(
@@ -959,7 +959,7 @@ async function waitForTerminalGeometry(
 
 async function waitForStableTerminalGeometry(
   page: Page,
-  pane: AumxPane,
+  pane: MuxBasePane,
   minCols: number,
 ): Promise<{ metrics: TerminalLayoutMetrics; snapshot: TerminalSnapshot; tmuxSize: TmuxPaneSize }> {
   let previous = await waitForTerminalGeometry(page, pane, minCols);
@@ -981,7 +981,7 @@ async function waitForStableTerminalGeometry(
 
 async function waitForStableTerminalSize(
   page: Page,
-  pane: AumxPane,
+  pane: MuxBasePane,
 ): Promise<{ snapshot: TerminalSnapshot; tmuxSize: TmuxPaneSize }> {
   let previousSize = '';
   let consecutiveMatches = 0;
@@ -1066,7 +1066,7 @@ async function scrollTerminalUp(page: Page, paneId: string): Promise<TerminalSna
   throw new Error(`terminal-scroll-up: oldest scrollback line was not visible (${info}) ${sample}`);
 }
 
-async function scrollPtyTerminalUp(page: Page, pane: AumxPane): Promise<TerminalSnapshot> {
+async function scrollPtyTerminalUp(page: Page, pane: MuxBasePane): Promise<TerminalSnapshot> {
   const screen = page.locator(`${terminalSelector(pane.id)} .xterm-screen`);
   await screen.waitFor({ state: 'visible', timeout: TERMINAL_TIMEOUT_MS });
   const box = await screen.boundingBox();
@@ -1097,7 +1097,7 @@ async function scrollPtyTerminalUp(page: Page, pane: AumxPane): Promise<Terminal
 
 async function scrollPtyTerminalDown(
   page: Page,
-  pane: AumxPane,
+  pane: MuxBasePane,
   bottomMarker: string,
 ): Promise<TerminalSnapshot> {
   const screen = page.locator(`${terminalSelector(pane.id)} .xterm-screen`);
@@ -1130,12 +1130,12 @@ async function scrollPtyTerminalDown(
 
 async function showProfiledDuelPair(
   page: Page,
-  sourcePane: AumxPane,
-  siblingSourcePane: AumxPane,
+  sourcePane: MuxBasePane,
+  siblingSourcePane: MuxBasePane,
   groupId: string,
   profile: DeterministicTerminalProfile,
-): Promise<{ pane: AumxPane; siblingPane: AumxPane }> {
-  const pane: AumxPane = {
+): Promise<{ pane: MuxBasePane; siblingPane: MuxBasePane }> {
+  const pane: MuxBasePane = {
     ...sourcePane,
     ...(profile.agent
       ? {
@@ -1154,7 +1154,7 @@ async function showProfiledDuelPair(
       siblingPaneId: siblingSourcePane.id,
     },
   };
-  const siblingPane: AumxPane = {
+  const siblingPane: MuxBasePane = {
     ...siblingSourcePane,
     duel: {
       groupId,
@@ -1169,7 +1169,7 @@ async function showProfiledDuelPair(
     : undefined;
 
   await page.evaluate(({ idleActivity: activity, panes }) => {
-    const stores = (window as unknown as E2EWindow).__aumxStores;
+    const stores = (window as unknown as E2EWindow).__muxbaseStores;
     if (activity) {
       const currentActivities = stores?.paneActivity?.getState().activityByPaneId ?? {};
       stores?.paneActivity?.setState({
@@ -1191,7 +1191,7 @@ async function showProfiledDuelPair(
   return { pane, siblingPane };
 }
 
-async function expectIsolatedPtyViewSession(page: Page, pane: AumxPane): Promise<void> {
+async function expectIsolatedPtyViewSession(page: Page, pane: MuxBasePane): Promise<void> {
   const session = await invoke<SessionInfoResult>(page, IPC.SESSION_INFO);
   const viewSessionBase = makeTerminalPtyViewSessionName(session.sessionName, pane.id);
   const sourceWindowId = runTmux(['display-message', '-p', '-t', pane.paneId, '#{window_id}']).trim();
@@ -1202,7 +1202,7 @@ async function expectIsolatedPtyViewSession(page: Page, pane: AumxPane): Promise
   while (Date.now() < deadline) {
     try {
       // '|' separator: tmux sanitizes tabs to '_' in list-sessions output.
-      const candidates = runTmux(['list-sessions', '-F', '#{session_name}|#{session_attached}|#{session_windows}|#{@aumx_view_session}'])
+      const candidates = runTmux(['list-sessions', '-F', '#{session_name}|#{session_attached}|#{session_windows}|#{@muxbase_view_session}'])
         .split('\n')
         .map((line) => line.trim())
         .filter(Boolean)
@@ -1231,23 +1231,23 @@ async function expectIsolatedPtyViewSession(page: Page, pane: AumxPane): Promise
     await page.waitForTimeout(100);
   }
 
-  const sessions = runTmux(['list-sessions', '-F', '#{session_name}|#{session_attached}|#{session_windows}|#{@aumx_view_session}'])
+  const sessions = runTmux(['list-sessions', '-F', '#{session_name}|#{session_attached}|#{session_windows}|#{@muxbase_view_session}'])
     .split('\n')
     .filter((line) => line.includes('--view-') || line.includes(session.sessionName))
     .join(' ; ');
   throw new Error(`isolated PTY view session ${viewSessionBase}* was not ready: ${lastError}; candidates=${JSON.stringify(lastCandidates)}; sessions: ${sessions}`);
 }
 
-describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
+describe.runIf(process.env.MUXBASE_E2E === '1')('Terminal resilience E2E', () => {
   let app: ElectronApplication;
   let page: Page;
   let projectRoot: string;
   let sessionName: string;
-  const createdPanes: AumxPane[] = [];
+  const createdPanes: MuxBasePane[] = [];
   let scenarioBaselinePaneIds: string[] = [];
   let scenarioBaselineBackendPaneIds: string[] = [];
   let scenarioBaselineTmuxPaneIds: string[] = [];
-  let scenarioOwnedPanes: AumxPane[] = [];
+  let scenarioOwnedPanes: MuxBasePane[] = [];
 
   beforeAll(async () => {
     const launchTarget = APP_EXECUTABLE_PATH
@@ -1255,9 +1255,9 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
       : { args: [MAIN_ENTRY] };
     expect(existsSync(APP_EXECUTABLE_PATH ?? MAIN_ENTRY), 'Electron launch target is missing').toBe(true);
     mkdirSync(SCREENSHOTS_DIR, { recursive: true });
-    projectRoot = realpathSync(mkdtempSync(join(tmpdir(), 'aumx-terminal-e2e-')));
+    projectRoot = realpathSync(mkdtempSync(join(tmpdir(), 'muxbase-terminal-e2e-')));
     execFileSync('git', ['init'], { cwd: projectRoot, stdio: 'ignore' });
-    sessionName = `aumx-${basename(projectRoot)}`;
+    sessionName = `muxbase-${basename(projectRoot)}`;
     killTmuxSession(sessionName);
 
     app = await electron.launch({
@@ -1265,22 +1265,22 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
       cwd: projectRoot,
       env: {
         ...process.env,
-        AUMX_E2E: '1',
-        AUMX_DEV: 'true',
+        MUXBASE_E2E: '1',
+        MUXBASE_DEV: 'true',
         NODE_ENV: 'test',
       },
     });
 
     page = await getAppWindow(app);
     await app.context().addInitScript(() => {
-      (window as unknown as E2EWindow).__AUMX_E2E = true;
+      (window as unknown as E2EWindow).__MUXBASE_E2E = true;
     });
     await page.reload();
     await ensureAppWindowVisible(app);
     await page.setViewportSize({ height: 980, width: 1440 });
     await page.locator('[data-testid="app-shell"]').waitFor({ state: 'visible', timeout: 15_000 });
     await waitForAppReady(page);
-    const expectedTmuxVersion = process.env.AUMX_E2E_EXPECT_TMUX_VERSION;
+    const expectedTmuxVersion = process.env.MUXBASE_E2E_EXPECT_TMUX_VERSION;
     if (expectedTmuxVersion) {
       const effectivePath = await app.evaluate(() => process.env.PATH ?? '');
       const effectiveVersion = execFileSync('tmux', ['-V'], {
@@ -1394,7 +1394,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     );
 
     const replacement = await createShellPane(page, createdPanes);
-    const replacementMarker = 'AUMX-STALE-PANE-REPLACEMENT-READY';
+    const replacementMarker = 'MUXBASE-STALE-PANE-REPLACEMENT-READY';
     const markerResponse = await invoke<{ error?: string; success: boolean }>(page, IPC.PANE_SEND_KEYS, {
       command: `printf '${replacementMarker}\\n'`,
       paneId: replacement.id,
@@ -1412,7 +1412,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     const outputCommand = [
       'node',
       '-e',
-      '\'for (let i = 1; i <= 140; i += 1) console.log(`AUMX-SCROLLBACK-LINE-${String(i).padStart(3, "0")}`); console.log("AUMX-SCROLLBACK-DONE");\'',
+      '\'for (let i = 1; i <= 140; i += 1) console.log(`MUXBASE-SCROLLBACK-LINE-${String(i).padStart(3, "0")}`); console.log("MUXBASE-SCROLLBACK-DONE");\'',
     ].join(' ');
 
     await invoke(page, IPC.PANE_SEND_KEYS, {
@@ -1452,13 +1452,13 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
 
   it('keeps existing transcript panes painted after adding another pane to the fleet grid', async () => {
     await showDashboardMode(page, 'fleet');
-    const panes: AumxPane[] = [];
+    const panes: MuxBasePane[] = [];
 
     for (let index = 0; index < 6; index += 1) {
       panes.push(await createShellPane(page, createdPanes));
     }
 
-    const markers = panes.map((_, index) => `AUMX-RESIZE-KEEP-${String(index + 1).padStart(2, '0')}`);
+    const markers = panes.map((_, index) => `MUXBASE-RESIZE-KEEP-${String(index + 1).padStart(2, '0')}`);
 
     for (let index = 0; index < panes.length; index += 1) {
       await invoke(page, IPC.PANE_SEND_KEYS, {
@@ -1489,7 +1489,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     await page.locator(terminalSelector(pane.id)).waitFor({ state: 'visible', timeout: TERMINAL_TIMEOUT_MS });
     await waitForStableTerminalGeometry(page, pane, 1);
 
-    const beforeMarker = 'AUMX-WIDTH-BEFORE';
+    const beforeMarker = 'MUXBASE-WIDTH-BEFORE';
     await invoke(page, IPC.PANE_SEND_KEYS, {
       command: widthProbeCommand(beforeMarker),
       paneId: pane.id,
@@ -1502,7 +1502,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     await widenFleetPane(page, pane.id);
     const geometry = await waitForStableTerminalGeometry(page, pane, beforeCols + 20);
 
-    const afterMarker = 'AUMX-WIDTH-AFTER';
+    const afterMarker = 'MUXBASE-WIDTH-AFTER';
     await invoke(page, IPC.PANE_SEND_KEYS, {
       command: widthProbeCommand(afterMarker),
       paneId: pane.id,
@@ -1563,7 +1563,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     // terminal profiles. The gated live-agent suite separately launches the
     // real Claude and OpenCode CLIs.
     const duelGroupId = `e2e-atlas-resize-${stationaryAgent}-${Date.now()}`;
-    const resizingPane: AumxPane = {
+    const resizingPane: MuxBasePane = {
       ...resizingSource,
       agent: 'claude',
       agentStatus: 'idle',
@@ -1578,7 +1578,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
       terminalFixedCols: 100,
       type: undefined,
     };
-    const spacerPane: AumxPane = {
+    const spacerPane: MuxBasePane = {
       ...spacerSource,
       duel: {
         groupId: duelGroupId,
@@ -1587,7 +1587,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
         siblingPaneId: resizingPane.id,
       },
     };
-    const stationaryPane: AumxPane = {
+    const stationaryPane: MuxBasePane = {
       ...stationarySource,
       agent: stationaryAgent,
       agentStatus: 'idle',
@@ -1596,8 +1596,8 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
       terminalFixedCols: stationaryFixedCols,
       type: undefined,
     };
-    const resizerMarker = 'AUMX-CLAUDE-RESIZER';
-    const stationaryMarker = `AUMX-${stationaryAgent.toUpperCase()}-STATIONARY`;
+    const resizerMarker = 'MUXBASE-CLAUDE-RESIZER';
+    const stationaryMarker = `MUXBASE-${stationaryAgent.toUpperCase()}-STATIONARY`;
     const resizerFrame = [
       '\x1b[2J\x1b[H\x1b[38;2;215;119;87m',
       `${resizerMarker} ASCII FRAME 0123456789`,
@@ -1638,7 +1638,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     await waitForTmuxContent(resizingPane.paneId, resizerMarker);
     await waitForTmuxContent(stationaryPane.paneId, stationaryMarker);
     await page.evaluate((panes) => {
-      const stores = (window as unknown as E2EWindow).__aumxStores;
+      const stores = (window as unknown as E2EWindow).__muxbaseStores;
       stores?.pane?.getState().setPanes(panes);
       stores?.ui?.getState().setActiveView('dashboard');
       stores?.ui?.getState().setViewMode('fleet');
@@ -1790,7 +1790,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
   it('keeps a terminal mounted and painted after switching pane tabs away and back', async () => {
     await showDashboardMode(page, 'fleet');
     const pane = await createShellPane(page, createdPanes);
-    const marker = 'AUMX-TAB-REMOUNT-CLEAN';
+    const marker = 'MUXBASE-TAB-REMOUNT-CLEAN';
 
     await invoke(page, IPC.PANE_SEND_KEYS, {
       command: `printf '${marker}\\n'`,
@@ -1819,8 +1819,8 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     await setTerminalTransport(app, page, 'pty');
     await showDashboardMode(page, 'fleet');
     const pane = await createShellPane(page, createdPanes);
-    const beforeMarker = 'AUMX-WINDOW-HIDE-BEFORE';
-    const hiddenMarker = 'AUMX-WINDOW-HIDE-DURING';
+    const beforeMarker = 'MUXBASE-WINDOW-HIDE-BEFORE';
+    const hiddenMarker = 'MUXBASE-WINDOW-HIDE-DURING';
     const browserWindow = await app.browserWindow(page);
 
     onTestFinished(async () => {
@@ -1865,7 +1865,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
       OLD_PROJECT_LAUNCH_MARKER,
       'Claude Code v2.1.150',
       'Claude Code v2.1.150',
-      ...Array.from({ length: 120 }, (_, index) => `AUMX-OLD-PROJECT-HISTORY-${String(index + 1).padStart(3, '0')}`),
+      ...Array.from({ length: 120 }, (_, index) => `MUXBASE-OLD-PROJECT-HISTORY-${String(index + 1).padStart(3, '0')}`),
       OLD_PROJECT_BOTTOM_MARKER,
     ];
     const outputCommand = `node -e ${JSON.stringify(`const lines = ${JSON.stringify(lines)}; for (const line of lines) console.log(line);`)}`;
@@ -1910,7 +1910,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
       profileKey: 'opencode',
     },
   ])('scrolls a $label pane cleanly after repeated splitter resizing', async ({ profile, profileKey }) => {
-    const ownedPanes: AumxPane[] = [];
+    const ownedPanes: MuxBasePane[] = [];
     onTestFinished(async () => {
       for (const ownedPane of [...ownedPanes].reverse()) {
         await closePaneBestEffort(page, ownedPane);
@@ -1932,7 +1932,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     const outputCommand = [
       'node',
       '-e',
-      '\'for (let i = 1; i <= 220; i += 1) console.log(`AUMX-SCROLLBACK-LINE-${String(i).padStart(3, "0")}`); console.log("AUMX-SCROLLBACK-DONE");\'',
+      '\'for (let i = 1; i <= 220; i += 1) console.log(`MUXBASE-SCROLLBACK-LINE-${String(i).padStart(3, "0")}`); console.log("MUXBASE-SCROLLBACK-DONE");\'',
     ].join(' ');
     // Seed while these are still ordinary, unattached shell panes. Renderer-
     // only agent profiles intentionally keep stdin locked until a real agent
@@ -1990,14 +1990,14 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
         const snapshot = await getTerminalSnapshot(page, pane.id);
         const visibleText = snapshot?.visibleLines.join('\n') ?? '';
         return snapshot
-          && visibleText.includes('AUMX-SCROLLBACK-LINE-')
+          && visibleText.includes('MUXBASE-SCROLLBACK-LINE-')
           && !visibleText.includes(SCROLLBACK_DONE_MARKER)
           ? snapshot
           : null;
       },
       { interval: 100, label: 'copy-mode-history-after-resize', timeout: TERMINAL_TIMEOUT_MS },
     );
-    expect(afterCopyModeResize?.visibleLines.join('\n')).toContain('AUMX-SCROLLBACK-LINE-');
+    expect(afterCopyModeResize?.visibleLines.join('\n')).toContain('MUXBASE-SCROLLBACK-LINE-');
     expect(runTmux(['display-message', '-p', '-t', pane.paneId, '#{pane_in_mode}']).trim()).toBe('1');
     const rescrolledAfterResize = await scrollPtyTerminalUp(page, pane);
     expect(rescrolledAfterResize.visibleLines.join('\n')).toContain(SCROLLBACK_FIRST_LINE);
@@ -2017,7 +2017,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     await page.evaluate(({ channel, paneId }) => {
       const e2eWindow = window as unknown as E2EWindow;
       for (let index = 0; index < 24; index += 1) {
-        void e2eWindow.aumx.invoke(channel, {
+        void e2eWindow.muxbase.invoke(channel, {
           direction: index % 2 === 0 ? 'up' : 'down',
           lines: 3,
           paneId,
@@ -2025,7 +2025,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
       }
     }, { channel: IPC.TERMINAL_SCROLL, paneId: pane.id });
 
-    const inputAfterScrollMarker = `AUMX-INPUT-AFTER-SCROLL-${profileKey.toUpperCase()}`;
+    const inputAfterScrollMarker = `MUXBASE-INPUT-AFTER-SCROLL-${profileKey.toUpperCase()}`;
     await page.keyboard.type(`printf '${inputAfterScrollMarker}\\n'`);
     await page.keyboard.press('Enter');
     await waitForTmuxContent(pane.paneId, inputAfterScrollMarker);
@@ -2035,7 +2035,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
   }, 90_000);
 
   it('preserves native text-input Copy through the application menu', async () => {
-    const expectedText = 'AUMX-NATIVE-COPY-FALLBACK';
+    const expectedText = 'MUXBASE-NATIVE-COPY-FALLBACK';
     await invoke(page, IPC.SYSTEM_CLIPBOARD_WRITE, { text: '' });
     await page.evaluate((text) => {
       const input = document.createElement('textarea');
@@ -2060,7 +2060,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     await setTerminalTransport(app, page, 'pty');
     await showDashboardMode(page, 'fleet');
     const pane = await createShellPane(page, createdPanes);
-    const marker = 'AUMX-ONE-VIEW-COPY';
+    const marker = 'MUXBASE-ONE-VIEW-COPY';
     await invoke(page, IPC.PANE_SEND_KEYS, {
       command: `printf '\\n${marker}\\n'`,
       paneId: pane.id,
@@ -2098,7 +2098,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     const outputCommand = [
       'node',
       '-e',
-      '\'for (let i = 1; i <= 220; i += 1) console.log(`AUMX-COPY-LINE-${String(i).padStart(3, "0")}-${"x".repeat(140)}`); console.log("AUMX-COPY-"+"DONE");\'',
+      '\'for (let i = 1; i <= 220; i += 1) console.log(`MUXBASE-COPY-LINE-${String(i).padStart(3, "0")}-${"x".repeat(140)}`); console.log("MUXBASE-COPY-"+"DONE");\'',
     ].join(' ');
 
     const seedResponse = await invoke<{ error?: string; success: boolean }>(page, IPC.PANE_SEND_KEYS, {
@@ -2106,15 +2106,15 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
       paneId: pane.id,
     });
     expect(seedResponse.success, seedResponse.error).toBe(true);
-    await waitForTmuxContent(pane.paneId, 'AUMX-COPY-DONE');
-    await waitForVisibleTerminalText(page, pane.id, 'AUMX-COPY-DONE');
+    await waitForTmuxContent(pane.paneId, 'MUXBASE-COPY-DONE');
+    await waitForVisibleTerminalText(page, pane.id, 'MUXBASE-COPY-DONE');
 
     const screen = page.locator(`${terminalSelector(pane.id)} .xterm-screen`);
     await screen.click();
     await page.mouse.wheel(0, -16_000);
     await page.waitForTimeout(200);
     await page.mouse.wheel(0, -16_000);
-    await waitForVisibleTerminalText(page, pane.id, 'AUMX-COPY-LINE-001');
+    await waitForVisibleTerminalText(page, pane.id, 'MUXBASE-COPY-LINE-001');
 
     const box = await screen.boundingBox();
     expect(box).not.toBeNull();
@@ -2126,12 +2126,12 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     // and prove the application continuously scrolls while the button remains
     // pressed.
     await page.mouse.move(box.x + box.width - 8, box.y + box.height + 25, { steps: 8 });
-    await waitForVisibleTerminalText(page, pane.id, 'AUMX-COPY-DONE');
+    await waitForVisibleTerminalText(page, pane.id, 'MUXBASE-COPY-DONE');
     const selectedAtBottom = await getTerminalSnapshot(page, pane.id);
     expect(selectedAtBottom?.info.selectionPosition?.start.y).toBe(
       selectedAtBottom?.info.viewportY,
     );
-    expect(selectedAtBottom?.visibleLines.join('\n')).not.toContain('AUMX-COPY-LINE-001');
+    expect(selectedAtBottom?.visibleLines.join('\n')).not.toContain('MUXBASE-COPY-LINE-001');
     await screenshot(page, '08a-pty-selection-visual-continuity');
     await page.mouse.move(box.x + box.width - 8, box.y + box.height - 8);
     await page.mouse.up();
@@ -2139,8 +2139,8 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     await page.waitForTimeout(500);
 
     const clipboardText = await invoke<{ text: string }>(page, IPC.SYSTEM_CLIPBOARD_READ);
-    expect(clipboardText.text).toContain('AUMX-COPY-LINE-001');
-    expect(clipboardText.text).toContain('AUMX-COPY-DONE');
+    expect(clipboardText.text).toContain('MUXBASE-COPY-LINE-001');
+    expect(clipboardText.text).toContain('MUXBASE-COPY-DONE');
 
     // Match the reported UX exactly: after copying, scroll back through the
     // selected range and verify the repainted viewport remains highlighted.
@@ -2151,7 +2151,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     const selectedAfterScrollingBack = await pollUntil(
       async () => {
         const snapshot = await getTerminalSnapshot(page, pane.id);
-        if (!snapshot || snapshot.visibleLines.join('\n').includes('AUMX-COPY-DONE')) return null;
+        if (!snapshot || snapshot.visibleLines.join('\n').includes('MUXBASE-COPY-DONE')) return null;
         return snapshot;
       },
       { interval: 100, label: 'selection-highlight-after-scroll-back', timeout: TERMINAL_TIMEOUT_MS },
@@ -2178,7 +2178,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     const siblingSourcePane = await createShellPane(page, createdPanes, { waitForCommandReady: false });
     const expectedMarkers = Array.from(
       { length: 90 },
-      (_, index) => `AUMX-MOUSE-TUI-LINE-${String(index + 1).padStart(3, '0')}`,
+      (_, index) => `MUXBASE-MOUSE-TUI-LINE-${String(index + 1).padStart(3, '0')}`,
     );
     const oldestMarker = expectedMarkers[0];
     const newestMarker = expectedMarkers.at(-1)!;
@@ -2213,7 +2213,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     await pollUntil(
       async () => {
         const info = await page.evaluate((paneId) => (
-          (window as unknown as E2EWindow).__aumxTerminalDebug?.getViewportInfo(paneId)
+          (window as unknown as E2EWindow).__muxbaseTerminalDebug?.getViewportInfo(paneId)
             ?.selectionPosition ?? null
         ), pane.id);
         return info ? true : null;
@@ -2244,9 +2244,9 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     await page.keyboard.press(process.platform === 'darwin' ? 'Meta+C' : 'Control+C');
 
     const expectedClipboard = [
-      'AUMX-MOUSE-TUI-HEADER',
+      'MUXBASE-MOUSE-TUI-HEADER',
       ...expectedMarkers,
-      'AUMX-MOUSE-TUI-FOOTER',
+      'MUXBASE-MOUSE-TUI-FOOTER',
     ].join('\n');
     const clipboard = await pollUntil(
       async () => {
@@ -2300,7 +2300,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     await showDashboardMode(page, 'settings');
     const sourcePane = await createShellPane(page, createdPanes, { waitForCommandReady: false });
     const siblingSourcePane = await createShellPane(page, createdPanes, { waitForCommandReady: false });
-    const oldestMarker = 'AUMX-MOUSE-TUI-LINE-001';
+    const oldestMarker = 'MUXBASE-MOUSE-TUI-LINE-001';
     const eventLogPath = join(projectRoot, `mouse-tui-silent-events-${Date.now()}.log`);
     onTestFinished(() => rmSync(eventLogPath, { force: true }));
     const launchResponse = await invoke<{ error?: string; success: boolean }>(page, IPC.PANE_SEND_KEYS, {
@@ -2403,7 +2403,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
   }, 60_000);
 
   it('scrolls an OpenCode-profiled alternate-screen TUI after repeated splitter resizing', async () => {
-    const ownedPanes: AumxPane[] = [];
+    const ownedPanes: MuxBasePane[] = [];
     onTestFinished(async () => {
       for (const ownedPane of [...ownedPanes].reverse()) {
         await closePaneBestEffort(page, ownedPane);
@@ -2423,14 +2423,14 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     const siblingSourcePane = await createShellPane(page, createdPanes, { waitForCommandReady: false });
     ownedPanes.push(siblingSourcePane);
 
-    const oldestMarker = 'AUMX-OPENCODE-MESSAGE-001';
-    const newestMarker = 'AUMX-OPENCODE-MESSAGE-080';
+    const oldestMarker = 'MUXBASE-OPENCODE-MESSAGE-001';
+    const newestMarker = 'MUXBASE-OPENCODE-MESSAGE-080';
     const expectedMarkers = Array.from(
       { length: 80 },
-      (_, index) => `AUMX-OPENCODE-MESSAGE-${String(index + 1).padStart(3, '0')}`,
+      (_, index) => `MUXBASE-OPENCODE-MESSAGE-${String(index + 1).padStart(3, '0')}`,
     );
     const expectCompleteMarkerSequence = (text: string): void => {
-      expect(text.match(/AUMX-OPENCODE-MESSAGE-\d{3}/g) ?? []).toEqual(expectedMarkers);
+      expect(text.match(/MUXBASE-OPENCODE-MESSAGE-\d{3}/g) ?? []).toEqual(expectedMarkers);
     };
     // The fixture sizes its frame from the live pane height and repaints on
     // SIGWINCH, exactly like a real alternate-screen TUI. A fixed frame height
@@ -2438,7 +2438,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     // rows than the fixture assumed.
     const tuiScript = [
       'const { execFileSync } = require("node:child_process");',
-      'const lines = Array.from({ length: 80 }, (_, index) => "AUMX-OPENCODE-MESSAGE-" + String(index + 1).padStart(3, "0"));',
+      'const lines = Array.from({ length: 80 }, (_, index) => "MUXBASE-OPENCODE-MESSAGE-" + String(index + 1).padStart(3, "0"));',
       'let top = lines.length;',
       'let exiting = false;',
       'let renderedRows = 0;',
@@ -2649,9 +2649,9 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
   it('scrolls an alternate-screen TUI with arrow keys instead of freezing it in copy-mode', async () => {
     await setTerminalTransport(app, page, 'pty');
     const pane = await createShellPane(page, createdPanes);
-    const altScrollPath = `/tmp/aumx-e2e-alt-scroll-${pane.id.replace(/[^a-zA-Z0-9]/g, '')}.txt`;
+    const altScrollPath = `/tmp/muxbase-e2e-alt-scroll-${pane.id.replace(/[^a-zA-Z0-9]/g, '')}.txt`;
     onTestFinished(() => rmSync(altScrollPath, { force: true }));
-    const generateScript = 'const fs = require("fs"); const lines = Array.from({ length: 200 }, (_, i) => "AUMX-ALT-LINE-" + String(i + 1).padStart(3, "0")); fs.writeFileSync(process.argv[1], lines.join(String.fromCharCode(10)));';
+    const generateScript = 'const fs = require("fs"); const lines = Array.from({ length: 200 }, (_, i) => "MUXBASE-ALT-LINE-" + String(i + 1).padStart(3, "0")); fs.writeFileSync(process.argv[1], lines.join(String.fromCharCode(10)));';
     const generateAndLaunchCommand = [
       'node',
       '-e',
@@ -2665,9 +2665,9 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
       command: generateAndLaunchCommand,
       paneId: pane.id,
     });
-    await waitForTmuxContent(pane.paneId, 'AUMX-ALT-LINE-200');
+    await waitForTmuxContent(pane.paneId, 'MUXBASE-ALT-LINE-200');
     await focusPane(page, pane.id);
-    await waitForVisibleTerminalText(page, pane.id, 'AUMX-ALT-LINE-200');
+    await waitForVisibleTerminalText(page, pane.id, 'MUXBASE-ALT-LINE-200');
     expect(runTmux(['display-message', '-p', '-t', pane.paneId, '#{alternate_on}']).trim()).toBe('1');
 
     const screen = page.locator(`${terminalSelector(pane.id)} .xterm-screen`);
@@ -2682,7 +2682,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
       await page.mouse.wheel(0, -16_000);
       await page.waitForTimeout(200);
       const snapshot = await getTerminalSnapshot(page, pane.id);
-      sawEarlyLines = snapshot?.visibleLines.join('\n').includes('AUMX-ALT-LINE-0') ?? false;
+      sawEarlyLines = snapshot?.visibleLines.join('\n').includes('MUXBASE-ALT-LINE-0') ?? false;
     }
 
     expect(sawEarlyLines).toBe(true);
@@ -2694,7 +2694,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
       await page.mouse.wheel(0, 16_000);
       await page.waitForTimeout(200);
       const snapshot = await getTerminalSnapshot(page, pane.id);
-      backAtEnd = snapshot?.visibleLines.join('\n').includes('AUMX-ALT-LINE-200') ?? false;
+      backAtEnd = snapshot?.visibleLines.join('\n').includes('MUXBASE-ALT-LINE-200') ?? false;
     }
     expect(backAtEnd).toBe(true);
 
@@ -2708,13 +2708,13 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
     const siblingPane = await createShellPane(page, createdPanes, { waitForCommandReady: false });
     const configPath = getProjectConfigPath(projectRoot);
     await waitForConfigQuiescence(page, configPath, [sourcePane.id, siblingPane.id]);
-    const config = JSON.parse(readFileSync(configPath, 'utf-8')) as AumxConfig;
+    const config = JSON.parse(readFileSync(configPath, 'utf-8')) as MuxBaseConfig;
     const persistedSourcePane = config.panes.find((pane) => pane.id === sourcePane.id);
     const persistedSiblingPane = config.panes.find((pane) => pane.id === siblingPane.id);
     if (!persistedSourcePane || !persistedSiblingPane) {
       throw new Error('Newly created E2E panes were not persisted before profile setup');
     }
-    const profiledSourcePane: AumxPane = {
+    const profiledSourcePane: MuxBasePane = {
       ...persistedSourcePane,
       agent: 'claude',
       agentStatus: 'idle',
@@ -2738,7 +2738,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
       },
       { interval: 100, label: 'persisted-fixed-terminal-profile', timeout: TERMINAL_TIMEOUT_MS },
     );
-    const fixedGridReadyMarker = 'AUMX-FIXED-GRID-READY';
+    const fixedGridReadyMarker = 'MUXBASE-FIXED-GRID-READY';
     await invoke(page, IPC.PANE_SEND_KEYS, {
       command: `printf '▐▛███▜▌ ${fixedGridReadyMarker}\\n▝▜█████▛▘  ⏵⏵  ←  ❯\\n'`,
       paneId: fixedPane.id,
@@ -2747,7 +2747,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
 
     await page.setViewportSize({ height: 760, width: 820 });
     await page.evaluate(({ panes }) => {
-      const stores = (window as unknown as E2EWindow).__aumxStores;
+      const stores = (window as unknown as E2EWindow).__muxbaseStores;
       stores?.pane?.getState().setPanes(panes);
       stores?.ui?.getState().setActiveView('dashboard');
       stores?.ui?.getState().setViewMode('fleet');
@@ -2834,7 +2834,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
       await secondScreen.waitFor({ state: 'visible', timeout: TERMINAL_TIMEOUT_MS });
       await pollUntil(
         async () => page.evaluate((paneId) => (
-          (window as unknown as E2EWindow).__aumxTerminalDebug?.getViewportInfo(paneId)?.attachHistory
+          (window as unknown as E2EWindow).__muxbaseTerminalDebug?.getViewportInfo(paneId)?.attachHistory
             .some((event) => event.action === 'attach-success') ?? false
         ), firstPane.id),
         { interval: 50, label: 'first-terminal-attached', timeout: TERMINAL_TIMEOUT_MS },
@@ -2857,7 +2857,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
         { interval: 50, label: 'selected-terminal-focused', timeout: TERMINAL_TIMEOUT_MS },
       );
 
-      const marker = 'AUMX-SELECTED-PANE-INPUT';
+      const marker = 'MUXBASE-SELECTED-PANE-INPUT';
       await page.keyboard.type(`printf '${marker}\\n'`);
       await page.keyboard.press('Enter');
       await waitForTmuxContent(firstPane.paneId, marker);
@@ -2898,7 +2898,7 @@ describe.runIf(process.env.AUMX_E2E === '1')('Terminal resilience E2E', () => {
 
       // The overlays borrowed focus; the terminal must still own its own PTY.
       await clickTerminalAndWaitForFocus(page, firstPane.id);
-      const marker = 'AUMX-OVERLAY-CYCLE-INPUT';
+      const marker = 'MUXBASE-OVERLAY-CYCLE-INPUT';
       await page.keyboard.type(`printf '${marker}\\n'`);
       await page.keyboard.press('Enter');
 

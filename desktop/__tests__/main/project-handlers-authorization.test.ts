@@ -76,11 +76,11 @@ describe('project switch authorization', () => {
     discoverProjectsMock.mockReset().mockResolvedValue([{ name: 'discovered-app', root: DISCOVERED_ROOT }]);
 
     registerProjectHandlers({
-      getConfigPath: () => `${ACTIVE_ROOT}/.aumx/aumx.config.json`,
+      getConfigPath: () => `${ACTIVE_ROOT}/.muxbase/muxbase.config.json`,
       getPanes: () => [],
       getProjectName: () => 'active-app',
       getProjectRoot: () => ACTIVE_ROOT,
-      getSessionName: () => 'aumx-active-app',
+      getSessionName: () => 'muxbase-active-app',
       switchProject: switchProjectMock,
     } as never);
     registerWorkspaceHandlers();

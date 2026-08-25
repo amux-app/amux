@@ -7,8 +7,8 @@ type Environment = Readonly<Record<string, string | undefined>>;
  */
 export function isHeadlessE2E(environment: Environment): boolean {
   return environment.NODE_ENV === 'test'
-    && environment.AUMX_E2E === '1'
-    && environment.AUMX_E2E_HEADED !== '1';
+    && environment.MUXBASE_E2E === '1'
+    && environment.MUXBASE_E2E_HEADED !== '1';
 }
 
 /**

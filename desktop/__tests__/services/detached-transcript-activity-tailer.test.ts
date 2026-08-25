@@ -11,7 +11,7 @@ afterEach(() => {
 
 describe('DetachedTranscriptActivityTailer', () => {
   it('starts at EOF and emits only appended transcript bytes', async () => {
-    const directory = mkdtempSync(join(tmpdir(), 'aumx-detached-tail-'));
+    const directory = mkdtempSync(join(tmpdir(), 'muxbase-detached-tail-'));
     directories.push(directory);
     const path = join(directory, 'pane.ansi');
     writeFileSync(path, 'old Esc to interrupt\n');
@@ -25,7 +25,7 @@ describe('DetachedTranscriptActivityTailer', () => {
   });
 
   it('handles truncation and atomic path replacement without replaying old bytes', async () => {
-    const directory = mkdtempSync(join(tmpdir(), 'aumx-detached-tail-'));
+    const directory = mkdtempSync(join(tmpdir(), 'muxbase-detached-tail-'));
     directories.push(directory);
     const path = join(directory, 'pane.ansi');
     writeFileSync(path, 'initial');

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { KanbanCard, KanbanCardPreview } from '../../src/renderer/components/kanban/KanbanCard';
@@ -9,7 +9,7 @@ import { usePaneActivityStore } from '../../src/renderer/stores/pane-activity.st
 import { useWorktreeStatusStore } from '../../src/renderer/stores/worktree-status.store';
 import { makeActivity as activity } from '../helpers/pane-activity-fixtures';
 
-function pane(overrides: Partial<AumxPane> = {}): AumxPane {
+function pane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     id: 'p1',
     paneId: '%1',
@@ -19,7 +19,7 @@ function pane(overrides: Partial<AumxPane> = {}): AumxPane {
   };
 }
 
-function paneItem(data: AumxPane): KanbanColumnItem {
+function paneItem(data: MuxBasePane): KanbanColumnItem {
   return { type: 'pane', data };
 }
 

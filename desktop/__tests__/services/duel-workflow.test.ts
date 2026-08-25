@@ -1,12 +1,12 @@
-import type { ActionResult, AgentName, AumxPane } from 'aumx/core';
+import type { ActionResult, AgentName, MuxBasePane } from 'muxbase/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const core = vi.hoisted(() => ({
   assertClaudeFullscreenSupported: vi.fn(),
 }));
 
-vi.mock('aumx/core', async () => {
-  const actual = await vi.importActual<typeof import('aumx/core')>('aumx/core');
+vi.mock('muxbase/core', async () => {
+  const actual = await vi.importActual<typeof import('muxbase/core')>('muxbase/core');
   return {
     ...actual,
     assertClaudeFullscreenSupported: core.assertClaudeFullscreenSupported,
@@ -15,7 +15,7 @@ vi.mock('aumx/core', async () => {
 
 import { DuelWorkflow } from '../../src/main/services/bridge/DuelWorkflow';
 
-function pane(id: string, overrides: Partial<AumxPane> = {}): AumxPane {
+function pane(id: string, overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'claude',
     id,
@@ -27,12 +27,12 @@ function pane(id: string, overrides: Partial<AumxPane> = {}): AumxPane {
 }
 
 function makeHarness() {
-  let panes: AumxPane[] = [];
-  const closePane = vi.fn(async (target: AumxPane): Promise<ActionResult> => {
+  let panes: MuxBasePane[] = [];
+  const closePane = vi.fn(async (target: MuxBasePane): Promise<ActionResult> => {
     panes = panes.filter((candidate) => candidate.id !== target.id);
     return { message: 'closed', type: 'success' };
   });
-  const createPane = vi.fn(async (prompt: string, agent: AgentName, options: { duel: NonNullable<AumxPane['duel']> }) => {
+  const createPane = vi.fn(async (prompt: string, agent: AgentName, options: { duel: NonNullable<MuxBasePane['duel']> }) => {
     const created = pane(`pane-${options.duel.role}`, {
       agent,
       duel: options.duel,
@@ -50,13 +50,13 @@ function makeHarness() {
     getProjectRoot: () => '/project',
     hasActiveProjectContext: () => true,
     reapOrphanedTranscripts: vi.fn().mockResolvedValue(undefined),
-    replacePanesBestEffort: vi.fn((nextPanes: AumxPane[]) => { panes = nextPanes; }),
+    replacePanesBestEffort: vi.fn((nextPanes: MuxBasePane[]) => { panes = nextPanes; }),
     setProgress: vi.fn(),
   };
   return {
     dependencies,
     getPanes: () => panes,
-    setPanes: (nextPanes: AumxPane[]) => { panes = nextPanes; },
+    setPanes: (nextPanes: MuxBasePane[]) => { panes = nextPanes; },
     workflow: new DuelWorkflow(dependencies),
   };
 }

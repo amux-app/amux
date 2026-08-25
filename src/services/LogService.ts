@@ -1,5 +1,5 @@
 /**
- * Centralized Logging Service for aumx
+ * Centralized Logging Service for muxbase
  *
  * Replaces scattered console.log/error calls with a unified logging system
  * that can be viewed in a dedicated UI without messing up pane formatting.
@@ -107,7 +107,7 @@ class CircularBuffer<T> {
 }
 
 /**
- * LogService singleton - central logging hub for aumx
+ * LogService singleton - central logging hub for muxbase
  *
  * Performance optimizations:
  * - Uses circular buffer for O(1) log insertion
@@ -164,7 +164,7 @@ export class LogService extends EventEmitter {
 
     // Also log to console for development (can be disabled in production)
     if (!this.suppressConsole && (process.env.NODE_ENV !== 'production' || level === 'error')) {
-      const prefix = `[${source || 'aumx'}]`;
+      const prefix = `[${source || 'muxbase'}]`;
       switch (level) {
         case 'error':
           console.error(prefix, message, stack || '');

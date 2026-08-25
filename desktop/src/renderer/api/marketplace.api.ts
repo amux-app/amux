@@ -1,4 +1,4 @@
-import type { InstalledPlugin, MarketplaceInstallMode, MarketplaceSource } from 'aumx/core';
+import type { InstalledPlugin, MarketplaceInstallMode, MarketplaceSource } from 'muxbase/core';
 import { IPC } from '../../shared/ipc-channels';
 import type {
   MarketplaceBrowseResponse,

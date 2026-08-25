@@ -1,17 +1,17 @@
 import { BrowserWindow } from 'electron';
 import {
-  AUMX_PANE_ID_OPTION,
+  MUXBASE_PANE_ID_OPTION,
   PaneEventService,
   StateManager,
   execFileAsync,
   stampTmuxPaneIdOption,
   stampTmuxPaneIncarnationOption,
-  type AumxPane,
-} from 'aumx/core';
+  type MuxBasePane,
+} from 'muxbase/core';
 import { IPC_EVENT } from '../../shared/ipc-channels.js';
 import { log } from './Logger.js';
 
-const PANE_INFO_FORMAT = `#{pane_id}|#{${AUMX_PANE_ID_OPTION}}|#{pane_title}`;
+const PANE_INFO_FORMAT = `#{pane_id}|#{${MUXBASE_PANE_ID_OPTION}}|#{pane_title}`;
 
 interface TmuxPaneInfo {
   boundPaneId: string;
@@ -32,7 +32,7 @@ interface PaneLookup {
 }
 
 /**
- * An Amux id reported by more than one tmux pane is ambiguous — either inherited
+ * An MuxBase id reported by more than one tmux pane is ambiguous — either inherited
  * from a wider tmux option scope or forged — so it identifies nobody.
  */
 function buildUniqueBoundIndex(paneInfo: TmuxPaneInfo[]): Map<string, string> {
@@ -71,7 +71,7 @@ function carriesForeignIdentity(lookup: PaneLookup, tmuxPaneId: string, paneId: 
  * Either match is refused when the tmux pane is already held by a live pane.
  */
 function resolveRebindMatch(
-  pane: AumxPane,
+  pane: MuxBasePane,
   lookup: PaneLookup,
   occupiedTmuxIds: Map<string, string>,
 ): RebindMatch | null {
@@ -100,14 +100,14 @@ export class PaneWatcher {
   private stopped = false;
   private syncSuspendCount = 0;
   private onPaneRemoved?: (paneId: string) => void;
-  private onPaneIdsRebound?: (panes: AumxPane[]) => void;
+  private onPaneIdsRebound?: (panes: MuxBasePane[]) => void;
 
   constructor(
     window: BrowserWindow | null,
     configPath: string,
     controlPaneId: string | null,
     onPaneRemoved?: (paneId: string) => void,
-    onPaneIdsRebound?: (panes: AumxPane[]) => void,
+    onPaneIdsRebound?: (panes: MuxBasePane[]) => void,
   ) {
     this.window = window;
     this.configPath = configPath;
@@ -234,16 +234,16 @@ export class PaneWatcher {
    * callers can persist rare tmux-restart rebinds without config churn.
    */
   private rebindPaneIds(
-    panes: AumxPane[],
+    panes: MuxBasePane[],
     lookup: PaneLookup,
-  ): { panes: AumxPane[]; rebound: boolean } {
+  ): { panes: MuxBasePane[]; rebound: boolean } {
     let rebound = false;
     const occupiedTmuxIds = new Map<string, string>();
     for (const pane of panes) {
       if (lookup.allPaneIds.includes(pane.paneId)) occupiedTmuxIds.set(pane.paneId, pane.id);
     }
 
-    const next = panes.map((pane: AumxPane) => {
+    const next = panes.map((pane: MuxBasePane) => {
       if (lookup.allPaneIds.includes(pane.paneId)) return pane;
 
       const match = resolveRebindMatch(pane, lookup, occupiedTmuxIds);
@@ -269,7 +269,7 @@ export class PaneWatcher {
    * — a value other than the pane's own id is. A pane-level stamp always beats an
    * inherited value, so this converges in one sync and is a no-op in steady state.
    */
-  private async stampMismatchedPanes(panes: AumxPane[], lookup: PaneLookup): Promise<void> {
+  private async stampMismatchedPanes(panes: MuxBasePane[], lookup: PaneLookup): Promise<void> {
     const mismatched = panes.filter((pane) => lookup.tmuxIdToBoundId.get(pane.paneId) !== pane.id);
     if (mismatched.length === 0) return;
 
@@ -298,7 +298,7 @@ export class PaneWatcher {
       });
   }
 
-  private notifyRenderer(panes: AumxPane[]): void {
+  private notifyRenderer(panes: MuxBasePane[]): void {
     if (this.window && !this.window.isDestroyed()) {
       this.window.webContents.send(IPC_EVENT.PANE_LIST_CHANGED, panes);
     }

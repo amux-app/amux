@@ -198,7 +198,7 @@ describe('Git Operations Integration Tests', () => {
     it('should create worktree from main branch', async () => {
       const { execSync } = await import('child_process');
 
-      execSync('git worktree add "/test/.aumx/worktrees/feature-branch" -b feature-branch', {
+      execSync('git worktree add "/test/.muxbase/worktrees/feature-branch" -b feature-branch', {
         encoding: 'utf-8',
         cwd: '/test',
       });
@@ -206,7 +206,7 @@ describe('Git Operations Integration Tests', () => {
       // Verify worktree was added to mock repo
       expect(gitRepo.worktrees).toHaveLength(1);
       expect(gitRepo.worktrees[0]).toMatchObject({
-        path: '/test/.aumx/worktrees/feature-branch',
+        path: '/test/.muxbase/worktrees/feature-branch',
         branch: 'feature-branch',
       });
     });
@@ -214,7 +214,7 @@ describe('Git Operations Integration Tests', () => {
     it('should create new branch for worktree', async () => {
       const { execSync } = await import('child_process');
 
-      execSync('git worktree add "/test/.aumx/worktrees/new-feature" -b new-feature', {
+      execSync('git worktree add "/test/.muxbase/worktrees/new-feature" -b new-feature', {
         cwd: '/test',
       });
 
@@ -229,7 +229,7 @@ describe('Git Operations Integration Tests', () => {
       const { execSync } = await import('child_process');
 
       execSync(
-        'git worktree add "/test/.aumx/worktrees/hotfix" -b hotfix abc123',
+        'git worktree add "/test/.muxbase/worktrees/hotfix" -b hotfix abc123',
         { cwd: '/test' }
       );
 
@@ -253,7 +253,7 @@ describe('Git Operations Integration Tests', () => {
       const { execSync } = await import('child_process');
 
       expect(() => {
-        execSync('git worktree add "/root/.aumx/worktrees/test" -b test', {
+        execSync('git worktree add "/root/.muxbase/worktrees/test" -b test', {
           cwd: '/test',
         });
       }).toThrow('Permission denied');
@@ -332,7 +332,7 @@ describe('Git Operations Integration Tests', () => {
     it('should merge main into worktree (step 1)', async () => {
       const { mergeMainIntoWorktree } = await import('../../src/utils/gitMergeOps.js');
 
-      const result = await mergeMainIntoWorktree('/test/.aumx/worktrees/feature', 'main');
+      const result = await mergeMainIntoWorktree('/test/.muxbase/worktrees/feature', 'main');
 
       expect(result.success).toBe(true);
       expect(mockExecFileSync).toHaveBeenCalledWith(
@@ -374,7 +374,7 @@ describe('Git Operations Integration Tests', () => {
 
       const { mergeMainIntoWorktree } = await import('../../src/utils/gitMergeOps.js');
 
-      const result = await mergeMainIntoWorktree('/test/.aumx/worktrees/feature', 'main');
+      const result = await mergeMainIntoWorktree('/test/.muxbase/worktrees/feature', 'main');
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -419,7 +419,7 @@ describe('Git Operations Integration Tests', () => {
 
       const { mergeMainIntoWorktree } = await import('../../src/utils/gitMergeOps.js');
 
-      const result = await mergeMainIntoWorktree('/test/.aumx/worktrees/feature', 'main');
+      const result = await mergeMainIntoWorktree('/test/.muxbase/worktrees/feature', 'main');
 
       expect(result.success).toBe(false);
       expect(result.conflictFiles).toBeDefined();
@@ -455,7 +455,7 @@ describe('Git Operations Integration Tests', () => {
 
       const result = await cleanupAfterMerge(
         '/test',
-        '/test/.aumx/worktrees/feature',
+        '/test/.muxbase/worktrees/feature',
         'feature-branch'
       );
 
@@ -464,7 +464,7 @@ describe('Git Operations Integration Tests', () => {
       // Verify worktree remove was called
       expect(mockExecFileSync).toHaveBeenCalledWith(
         'git',
-        ['worktree', 'remove', '/test/.aumx/worktrees/feature', '--force'],
+        ['worktree', 'remove', '/test/.muxbase/worktrees/feature', '--force'],
         expect.any(Object)
       );
     });
@@ -559,13 +559,13 @@ index abc123..def456 100644
 
   describe('Worktree Validation', () => {
     it('should check if path is inside worktree', async () => {
-      gitRepo = addWorktree(gitRepo, '/test/.aumx/worktrees/feature', 'feature');
+      gitRepo = addWorktree(gitRepo, '/test/.muxbase/worktrees/feature', 'feature');
 
       mockExecSync.mockImplementation((cmd: string, options?: any) => {
         if (cmd.includes('worktree list')) {
           return options?.encoding === 'utf-8'
-            ? '/test/.aumx/worktrees/feature abc123 [feature]'
-            : Buffer.from('/test/.aumx/worktrees/feature abc123 [feature]');
+            ? '/test/.muxbase/worktrees/feature abc123 [feature]'
+            : Buffer.from('/test/.muxbase/worktrees/feature abc123 [feature]');
         }
         return options?.encoding === 'utf-8' ? '' : Buffer.from('');
       });
@@ -577,13 +577,13 @@ index abc123..def456 100644
         cwd: '/test',
       });
 
-      expect(worktrees).toContain('/test/.aumx/worktrees/feature');
+      expect(worktrees).toContain('/test/.muxbase/worktrees/feature');
     });
 
     it('should handle missing worktree directory', async () => {
       mockExecSync.mockImplementation((cmd: string) => {
         if (cmd.includes('worktree remove')) {
-          throw new Error("fatal: '/test/.aumx/worktrees/missing' is not a working tree");
+          throw new Error("fatal: '/test/.muxbase/worktrees/missing' is not a working tree");
         }
         return Buffer.from('');
       });
@@ -591,7 +591,7 @@ index abc123..def456 100644
       const { execSync } = await import('child_process');
 
       expect(() => {
-        execSync('git worktree remove "/test/.aumx/worktrees/missing"', {
+        execSync('git worktree remove "/test/.muxbase/worktrees/missing"', {
           cwd: '/test',
         });
       }).toThrow('not a working tree');
@@ -609,14 +609,14 @@ index abc123..def456 100644
 
       // Without --force, should fail
       expect(() => {
-        execSync('git worktree remove "/test/.aumx/worktrees/feature"', {
+        execSync('git worktree remove "/test/.muxbase/worktrees/feature"', {
           cwd: '/test',
         });
       }).toThrow('modified or untracked files');
 
       // With --force, should succeed
       expect(() => {
-        execSync('git worktree remove "/test/.aumx/worktrees/feature" --force', {
+        execSync('git worktree remove "/test/.muxbase/worktrees/feature" --force', {
           cwd: '/test',
         });
       }).not.toThrow();

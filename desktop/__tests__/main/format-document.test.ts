@@ -12,7 +12,7 @@ describe('formatDocument', () => {
   let rootPath = '';
 
   beforeEach(async () => {
-    rootPath = await mkdtemp(join(tmpdir(), 'aumx-formatter-'));
+    rootPath = await mkdtemp(join(tmpdir(), 'muxbase-formatter-'));
     await mkdir(join(rootPath, 'src'));
     await writeFile(join(rootPath, 'src/app.ts'), 'const value={answer:42}\n', 'utf8');
   });

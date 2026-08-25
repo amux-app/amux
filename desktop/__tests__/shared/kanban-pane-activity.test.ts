@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import type { PaneActivity } from '../../src/shared/pane-activity';
 import { getPaneKanbanActivityState, getPaneKanbanNextTransitionTime } from '../../src/shared/kanban-pane-activity';
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return { id: 'pane-1', slug: 'pane-1', prompt: 'do something', paneId: '%1', ...overrides };
 }
 

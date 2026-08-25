@@ -12,7 +12,7 @@ const rootPackage = readPackageJson(resolve(rootDir, 'package.json'));
 const desktopPackage = readPackageJson(resolve(rootDir, 'desktop', 'package.json'));
 const electronBuilderConfig = readFileSync(resolve(rootDir, 'desktop', 'electron-builder.yml'), 'utf8');
 
-const CANONICAL_REPOSITORY = 'amux-app/amux';
+const CANONICAL_REPOSITORY = 'muxbase-app/muxbase';
 const expectedMetadata = {
   bugs: `https://github.com/${CANONICAL_REPOSITORY}/issues`,
   homepage: `https://github.com/${CANONICAL_REPOSITORY}#readme`,
@@ -36,14 +36,14 @@ if (rootPackage.bugs?.url !== expectedMetadata.bugs) {
 if (rootPackage.homepage !== expectedMetadata.homepage) {
   metadataErrors.push(`package.json homepage must be ${expectedMetadata.homepage}`);
 }
-if (desktopPackage.productName !== 'Amux') {
-  metadataErrors.push('desktop/package.json productName must be Amux');
+if (desktopPackage.productName !== 'MuxBase') {
+  metadataErrors.push('desktop/package.json productName must be MuxBase');
 }
-if (!/^\s*owner:\s*amux-app\s*$/m.test(electronBuilderConfig)) {
-  metadataErrors.push('desktop/electron-builder.yml publish owner must be amux-app');
+if (!/^\s*owner:\s*muxbase-app\s*$/m.test(electronBuilderConfig)) {
+  metadataErrors.push('desktop/electron-builder.yml publish owner must be muxbase-app');
 }
-if (!/^\s*repo:\s*amux\s*$/m.test(electronBuilderConfig)) {
-  metadataErrors.push('desktop/electron-builder.yml publish repo must be amux');
+if (!/^\s*repo:\s*muxbase\s*$/m.test(electronBuilderConfig)) {
+  metadataErrors.push('desktop/electron-builder.yml publish repo must be muxbase');
 }
 
 if (metadataErrors.length > 0) {

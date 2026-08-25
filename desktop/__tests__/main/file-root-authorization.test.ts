@@ -38,7 +38,7 @@ describe('file root authorization', () => {
   });
 
   it('compares authorized roots by their canonical filesystem path', () => {
-    const tempRoot = mkdtempSync(join(tmpdir(), 'aumx-file-root-'));
+    const tempRoot = mkdtempSync(join(tmpdir(), 'muxbase-file-root-'));
     roots.push(tempRoot);
     const realProjectRoot = join(tempRoot, 'real-project');
     const linkedProjectRoot = join(tempRoot, 'linked-project');
@@ -50,7 +50,7 @@ describe('file root authorization', () => {
   });
 
   it('blocks symlinks inside the root that escape outside', () => {
-    const tempRoot = realpathSync(mkdtempSync(join(tmpdir(), 'aumx-file-root-')));
+    const tempRoot = realpathSync(mkdtempSync(join(tmpdir(), 'muxbase-file-root-')));
     roots.push(tempRoot);
     const projectRoot = join(tempRoot, 'project');
     const outsideDir = join(tempRoot, 'outside');
@@ -62,7 +62,7 @@ describe('file root authorization', () => {
   });
 
   it('blocks creates whose parent chain traverses an escape symlink', () => {
-    const tempRoot = realpathSync(mkdtempSync(join(tmpdir(), 'aumx-file-root-')));
+    const tempRoot = realpathSync(mkdtempSync(join(tmpdir(), 'muxbase-file-root-')));
     roots.push(tempRoot);
     const projectRoot = join(tempRoot, 'project');
     const outsideDir = join(tempRoot, 'outside');

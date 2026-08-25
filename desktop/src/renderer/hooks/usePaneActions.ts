@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { AgentName, AumxPane } from 'aumx/core';
+import type { AgentName, MuxBasePane } from 'muxbase/core';
 import { usePaneStore, useNotificationStore, useUiStore } from '../stores';
 import { useReviewLaunchStore } from '../stores/review-launch.store';
 import { useConflictResolutionStore } from '../stores/conflict-resolution.store';
@@ -110,7 +110,7 @@ function getActionToastSeverity(
   return 'success';
 }
 
-export async function jumpToPaneRecord(pane: AumxPane): Promise<void> {
+export async function jumpToPaneRecord(pane: MuxBasePane): Promise<void> {
   try {
     await paneApi.jumpToPane({ paneId: pane.id });
   } catch (err) {
@@ -164,7 +164,7 @@ export function usePaneActions() {
   );
 
   const declareDuelWinner = useCallback(
-    async (winnerPane: AumxPane) => {
+    async (winnerPane: MuxBasePane) => {
       try {
         const result = await paneApi.resolveDuel({ winnerPaneId: winnerPane.id });
         if (!result.success) {

@@ -265,7 +265,7 @@ describe('UpdateService', () => {
     expect(service.getSnapshot()).toMatchObject({
       availableVersion: '0.2.0',
       phase: 'ready',
-      releaseNotesUrl: 'https://github.com/amux-app/amux/releases/tag/v0.2.0',
+      releaseNotesUrl: 'https://github.com/muxbase-app/muxbase/releases/tag/v0.2.0',
     });
   });
 

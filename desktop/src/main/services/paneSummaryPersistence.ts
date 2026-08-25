@@ -1,11 +1,11 @@
-import { getProjectMetadataPath } from 'aumx/core';
+import { getProjectMetadataPath } from 'muxbase/core';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import type { PaneSummary } from '../../shared/pane-summary-types.js';
 import { log } from './Logger.js';
 
 /**
- * Pane IDs we generate look like `aumx-1781535332253` (slug + millis). We
+ * Pane IDs we generate look like `muxbase-1781535332253` (slug + millis). We
  * accept that shape verbatim and reject anything containing path separators,
  * NUL, or relative-traversal markers. The renderer is the source of pane IDs
  * but they're forwarded over IPC, so a compromised/buggy caller could try to

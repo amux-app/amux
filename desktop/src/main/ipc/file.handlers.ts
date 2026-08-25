@@ -36,7 +36,7 @@ import type {
   FileRenameRequest,
   FileWatchRootRequest,
 } from '../../shared/ipc-types.js';
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { EditorRuntimeMetrics } from '../services/EditorRuntimeMetrics.js';
 import { log } from '../services/Logger.js';
 import {
@@ -235,7 +235,7 @@ class FileChangedBeforePublishError extends Error {
   }
 }
 
-export function registerFileHandlers(bridge: AumxBridge): void {
+export function registerFileHandlers(bridge: MuxBaseBridge): void {
   secureHandle(IPC.FILE_WATCH_ROOT, async (_event, request: FileWatchRootRequest) => {
     log.debug('ipc:file', 'FILE_WATCH_ROOT', { rootPath: request.rootPath });
     try {

@@ -29,10 +29,10 @@ describe('binary publish workflow', () => {
     expect(serverCleanup).toBeGreaterThan(releaseCheck);
     expect(signingStart).toBeGreaterThan(serverCleanup);
     expect(workflow.slice(serverCleanup, signingStart)).toContain('if: always()');
-    expect(workflow).not.toMatch(/new-session[^\n]*-s aumx-/);
+    expect(workflow).not.toMatch(/new-session[^\n]*-s muxbase-/);
     expect(preflight).toBeDefined();
     expect(preflight).toContain('run: pnpm release:verify');
-    expect(preflight).toContain("AUMX_REQUIRE_NOTARIZATION: '0'");
+    expect(preflight).toContain("MUXBASE_REQUIRE_NOTARIZATION: '0'");
     expect(preflight).toContain("CSC_IDENTITY_AUTO_DISCOVERY: 'false'");
     expect(preflight).toContain("CSC_NAME: ''");
     expect(preflight).toContain("APPLE_ID: ''");
@@ -63,7 +63,7 @@ describe('binary publish workflow', () => {
     expect(packageJson.scripts['verify:static']).toBeDefined();
     expect(packageJson.scripts['release:verify']).toBe('pnpm run audit:all && pnpm run verify');
     expect(packageJson.scripts['desktop:release:verify']).toBe(
-      'pnpm --filter aumx-desktop release:verify',
+      'pnpm --filter muxbase-desktop release:verify',
     );
   });
 
@@ -71,7 +71,7 @@ describe('binary publish workflow', () => {
     const workflow = readFileSync('.github/workflows/homebrew-publish.yml', 'utf8');
 
     expect(workflow).toContain('HOMEBREW_TAP_TOKEN is required for binary publication.');
-    expect(workflow).toContain("repository: amux-app/homebrew-amux");
+    expect(workflow).toContain("repository: muxbase-app/homebrew-muxbase");
     expect(workflow).not.toContain('skipping cask publish');
     expect(workflow).not.toContain('steps.gate.outputs.skip');
   });

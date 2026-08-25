@@ -9,20 +9,20 @@ const PI_READY_FRAME = [
   '────────────────────────────────────',
   '',
   '────────────────────────────────────',
-  '~/projects/dmux (main)',
+  '~/projects/muxbase (main)',
   '0.0%/1.0M (auto)  anthropic--claude-4.8-opus • high',
 ].join('\n');
 
 const PI_SUBSCRIPTION_READY_FRAME = [
   '────────────────────────────────────',
-  '~/projects/dmux (main)',
+  '~/projects/muxbase (main)',
   '$0.000 (sub) 0.0%/1.0M (auto)  anthropic--claude-4.8-opus • high',
 ].join('\n');
 
 const OPENCODE_READY_FRAME = [
   '┃  Ask anything... "Fix broken tests"',
   '┃  Build · GPT-5.5 Fast OpenAI',
-  '~/projects/dmux:main  1.18.15',
+  '~/projects/muxbase:main  1.18.15',
 ].join('\n');
 
 describe('isAgentReadyForInput', () => {

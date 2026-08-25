@@ -38,8 +38,8 @@ export const BINARY_FILE_EXTENSIONS: ReadonlySet<string> = new Set([
 ]);
 
 export const HEAVY_IGNORED_DIRS: ReadonlySet<string> = new Set([
-  '.amux',
-  '.aumx',
+  '.muxbase',
+  '.muxbase',
   '.git',
   '.next',
   '.turbo',

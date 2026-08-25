@@ -13,7 +13,7 @@ import {
   closePane,
   condenseTitleLocally,
   ensureTmuxPaneIncarnationOption,
-  ensureAumxGitignore,
+  ensureMuxBaseGitignore,
   execAsync,
   getPaneActivityJournalPath,
   getConflictMergeTransaction,
@@ -25,7 +25,7 @@ import {
   markConflictMergeResolvedAfterVerification,
   LogService,
   normalizeAutomaticPaneTitle,
-  parseAumxConfig,
+  parseMuxBaseConfig,
   reconcilePaneWorktrees,
   registerConflictMergeTransaction,
   registerManagedConflictPane,
@@ -41,14 +41,14 @@ import {
   type ActionContext,
   type AgentCapability,
   type AgentName,
-  type AumxConfig,
-  type AumxPane,
+  type MuxBaseConfig,
+  type MuxBasePane,
   type PaneAgentProbe,
   PaneStreamStatusWatcher,
   type StatusUpdateEvent,
   TmuxService,
   triggerHook,
-} from 'aumx/core';
+} from 'muxbase/core';
 import { SESSION_PARSING_AGENTS } from '../../shared/agent-session-types.js';
 import { IPC_EVENT } from '../../shared/ipc-channels.js';
 import {
@@ -130,8 +130,8 @@ interface BootServicesOptions {
 const DEFAULT_CONTROL_PANE_SIZE = 40;
 const ACTIVE_CONFLICT_PROJECT_SWITCH_MESSAGE = 'Resolve or abort active conflict merges before switching projects.';
 const PANE_CURRENT_PATH_FORMAT = '#{pane_current_path}';
-export class AumxBridge {
-  private static instance: AumxBridge;
+export class MuxBaseBridge {
+  private static instance: MuxBaseBridge;
   private window: BrowserWindow | null = null;
   private tmuxService: TmuxService;
   private stateManager: StateManager;
@@ -330,11 +330,11 @@ export class AumxBridge {
     }, this.worktreeMutationPaths);
   }
 
-  static getInstance(): AumxBridge {
-    if (!AumxBridge.instance) {
-      AumxBridge.instance = new AumxBridge();
+  static getInstance(): MuxBaseBridge {
+    if (!MuxBaseBridge.instance) {
+      MuxBaseBridge.instance = new MuxBaseBridge();
     }
-    return AumxBridge.instance;
+    return MuxBaseBridge.instance;
   }
 
   setWindow(win: BrowserWindow): void {
@@ -379,7 +379,7 @@ export class AumxBridge {
     }
   }
 
-  private initialAdapterHealth(pane: AumxPane): PaneActivity['adapterHealth'] {
+  private initialAdapterHealth(pane: MuxBasePane): PaneActivity['adapterHealth'] {
     if (pane.agent === 'claude') return 'degraded';
     if ((pane.agent === 'codex' || pane.agent === 'opencode' || pane.agent === 'pi') && this.areAgentLifecycleAdaptersEnabled()) {
       return 'degraded';
@@ -517,10 +517,10 @@ export class AumxBridge {
     this.attachCorePaneCreationLogForwarder();
 
     if (is.dev) {
-      process.env.AUMX_DEV = 'true';
+      process.env.MUXBASE_DEV = 'true';
     }
 
-    log.info('bridge', 'Initializing AumxBridge...');
+    log.info('bridge', 'Initializing MuxBaseBridge...');
 
     try {
       options.signal?.throwIfAborted();
@@ -551,7 +551,7 @@ export class AumxBridge {
       });
       options.signal?.throwIfAborted();
 
-      log.info('bridge', 'AumxBridge initialization complete');
+      log.info('bridge', 'MuxBaseBridge initialization complete');
     } catch (error) {
       try {
         await this.shutdown();
@@ -599,7 +599,7 @@ export class AumxBridge {
       // 3. Update project fields
       this.projectRoot = newProjectRoot;
       this.projectName = basename(newProjectRoot);
-      this.sessionName = `aumx-${this.projectName}`;
+      this.sessionName = `muxbase-${this.projectName}`;
       this.configPath = getProjectConfigPath(newProjectRoot);
 
       // 4. Update StateManager (bootServices reloads panes from the new config)
@@ -706,7 +706,7 @@ export class AumxBridge {
 
   private async bootServices(options: BootServicesOptions = {}): Promise<void> {
     options.signal?.throwIfAborted();
-    await ensureAumxGitignore(this.projectRoot);
+    await ensureMuxBaseGitignore(this.projectRoot);
     options.signal?.throwIfAborted();
     this.ensureConfigFile();
 
@@ -783,7 +783,7 @@ export class AumxBridge {
     options.signal?.throwIfAborted();
 
     const configPanes = cachedConfig?.panes ?? [];
-    let panes: AumxPane[];
+    let panes: MuxBasePane[];
     if (configPanes.length > 0) {
       const reconciled = await reconcilePaneWorktrees(configPanes, this.projectRoot);
       options.signal?.throwIfAborted();
@@ -893,7 +893,7 @@ export class AumxBridge {
   }
 
   /** Backfills only legacy panes with no persisted label; callers persist the batch once. */
-  private backfillMissingPaneTitles(panes: AumxPane[]): AumxPane[] {
+  private backfillMissingPaneTitles(panes: MuxBasePane[]): MuxBasePane[] {
     let backfilled = 0;
     const updated = panes.map((pane) => {
       if (pane.titleLocked || pane.title?.trim() || !pane.prompt.trim()) return pane;
@@ -941,8 +941,8 @@ export class AumxBridge {
       return;
     }
 
-    const projectName = basename(cwd) || 'aumx';
-    this.setProjectContext(cwd, projectName, `aumx-${projectName}`);
+    const projectName = basename(cwd) || 'muxbase';
+    this.setProjectContext(cwd, projectName, `muxbase-${projectName}`);
   }
 
   private setProjectContext(projectRoot: string, projectName: string, sessionName: string): void {
@@ -973,9 +973,9 @@ export class AumxBridge {
     }
   }
 
-  private readConfig(): AumxConfig | null {
+  private readConfig(): MuxBaseConfig | null {
     try {
-      return parseAumxConfig(JSON.parse(readFileSync(this.configPath, 'utf-8')));
+      return parseMuxBaseConfig(JSON.parse(readFileSync(this.configPath, 'utf-8')));
     } catch (error) {
       log.warn('bridge', 'Ignoring invalid persisted project config', {
         configPath: this.configPath,
@@ -1011,7 +1011,7 @@ export class AumxBridge {
     }
   }
 
-  private async resurrectPanes(panes: AumxPane[]): Promise<AumxPane[]> {
+  private async resurrectPanes(panes: MuxBasePane[]): Promise<MuxBasePane[]> {
     this.paneWatcher?.suspendSync();
 
     try {
@@ -1037,7 +1037,7 @@ export class AumxBridge {
         ),
       );
 
-      return results.filter((pane): pane is AumxPane => pane !== null);
+      return results.filter((pane): pane is MuxBasePane => pane !== null);
     } finally {
       this.paneWatcher?.resumeSync();
     }
@@ -1048,7 +1048,7 @@ export class AumxBridge {
    * listAllPanes fails, so a transient tmux hiccup never makes us treat live
    * panes as dead — which would delete config panes and orphan running agents.
    */
-  private async probeLivePanes(panes: AumxPane[]): Promise<Set<string>> {
+  private async probeLivePanes(panes: MuxBasePane[]): Promise<Set<string>> {
     log.warn('bridge', 'listAllPanes failed; falling back to per-pane liveness checks');
     const checks = await Promise.all(
       panes.map(async (pane) => ({
@@ -1066,7 +1066,7 @@ export class AumxBridge {
    * reported idle on the degraded path.
    */
   private async resolveRunningAgents(
-    panes: AumxPane[],
+    panes: MuxBasePane[],
     batched: Awaited<ReturnType<TmuxService['listAllPanes']>>,
     liveIds: Set<string>,
   ): Promise<Set<string>> {
@@ -1093,7 +1093,7 @@ export class AumxBridge {
     return new Set(checks.filter((c) => c.running).map((c) => c.paneId));
   }
 
-  private async resurrectLivePane(pane: AumxPane, agentRunning: boolean): Promise<AumxPane> {
+  private async resurrectLivePane(pane: MuxBasePane, agentRunning: boolean): Promise<MuxBasePane> {
     if (pane.type === 'shell') {
       const transcriptPath = await this.setupTranscriptPiping(pane.paneId, pane.terminalTranscriptPath, 'shell');
       return { ...pane, terminalTranscriptPath: transcriptPath };
@@ -1110,7 +1110,7 @@ export class AumxBridge {
     return { ...pane, terminalTranscriptPath: transcriptPath };
   }
 
-  private async resurrectDeadPane(pane: AumxPane): Promise<AumxPane | null> {
+  private async resurrectDeadPane(pane: MuxBasePane): Promise<MuxBasePane | null> {
     if (!pane.worktreePath || !existsSync(pane.worktreePath)) {
       log.info('bridge', 'Dropping dead pane (no worktree)', { id: pane.id, slug: pane.slug });
       return null;
@@ -1157,7 +1157,7 @@ export class AumxBridge {
    * full ensureTmuxSession.
    *
    * `reassertMetadata: true` forces the full ensureTmuxSession (session
-   * re-create + @aumx_project_* / window-size metadata). Boot/resume must use it
+   * re-create + @muxbase_project_* / window-size metadata). Boot/resume must use it
    * so untagged pre-existing sessions still get their metadata written; the
    * per-createPane callers rely on that having already happened and use the
    * fast path.
@@ -1224,7 +1224,7 @@ export class AumxBridge {
     return this.agentCatalog.detect(refreshIdentity);
   }
 
-  getPanes(): AumxPane[] {
+  getPanes(): MuxBasePane[] {
     return this.stateManager.getPanes();
   }
 
@@ -1265,7 +1265,7 @@ export class AumxBridge {
     }
   };
 
-  private async registerPaneActivity(panes: readonly AumxPane[], starting = false): Promise<void> {
+  private async registerPaneActivity(panes: readonly MuxBasePane[], starting = false): Promise<void> {
     const service = this.paneActivityService;
     if (!service) return;
     await Promise.all(panes.map(async (pane) => {
@@ -1551,9 +1551,9 @@ export class AumxBridge {
   }
 
   private async maybeRequestExperimentalPaneTitle(paneId: string, sourceText: string): Promise<void> {
-    if (process.env.AUMX_EXPERIMENTAL_OPENROUTER_TITLES !== '1') return;
+    if (process.env.MUXBASE_EXPERIMENTAL_OPENROUTER_TITLES !== '1') return;
     const apiKey = process.env.OPENROUTER_API_KEY?.trim() ?? '';
-    const model = process.env.AUMX_EXPERIMENTAL_OPENROUTER_TITLE_MODEL?.trim() ?? '';
+    const model = process.env.MUXBASE_EXPERIMENTAL_OPENROUTER_TITLE_MODEL?.trim() ?? '';
     if (!apiKey || !model) return;
 
     const pane = this.stateManager.getPanes().find((candidate) => candidate.id === paneId);
@@ -1653,7 +1653,7 @@ export class AumxBridge {
     return this.callbackRegistry.serializeActionResult(await this.paneActionWorkflow.merge(paneId));
   }
 
-  private addPaneToDone(pane: AumxPane): void {
+  private addPaneToDone(pane: MuxBasePane): void {
     try {
       const service = KanbanPersistenceService.getInstance();
       service.addDoneItem(pane.projectRoot ?? this.projectRoot, {
@@ -1702,7 +1702,7 @@ export class AumxBridge {
       otlpEndpoint: this.getOtlpEndpoint(),
       terminalTranscriptDir: this.getTerminalTranscriptDir(),
       skipLastPaneWelcome: true,
-      savePanes: async (panes: AumxPane[]) => {
+      savePanes: async (panes: MuxBasePane[]) => {
         // Action workflows use persistence as a transaction boundary. Write
         // first so an I/O failure cannot expose a pane in memory or notify the
         // renderer about state that will disappear on restart.
@@ -1710,7 +1710,7 @@ export class AumxBridge {
         this.stateManager.updatePanes(panes);
         this.notifyPaneListChanged();
       },
-      onPaneUpdate: (pane: AumxPane) => {
+      onPaneUpdate: (pane: MuxBasePane) => {
         const current = this.stateManager.getPanes();
         const idx = current.findIndex((p) => p.id === pane.id);
         if (idx >= 0) {
@@ -1749,7 +1749,7 @@ export class AumxBridge {
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true });
     }
-    const initialConfig: AumxConfig = {
+    const initialConfig: MuxBaseConfig = {
       projectName: this.projectName,
       projectRoot: this.projectRoot,
       panes: [],
@@ -1764,7 +1764,7 @@ export class AumxBridge {
 
   private resetConfigForFreshProject(): void {
     const previousConfig = this.readConfig();
-    const freshConfig: AumxConfig = {
+    const freshConfig: MuxBaseConfig = {
       projectName: this.projectName,
       projectRoot: this.projectRoot,
       panes: [],
@@ -1783,7 +1783,7 @@ export class AumxBridge {
     log.info('bridge', 'Reset tmux session for fresh project start', { sessionName: this.sessionName });
   }
 
-  private savePaneToConfig(pane: AumxPane): void {
+  private savePaneToConfig(pane: MuxBasePane): void {
     // Core createPane already writes the pane to the config file.
     // Read back the latest config to avoid duplicates, then ensure state is in sync.
     try {
@@ -1844,11 +1844,11 @@ export class AumxBridge {
   }
 
   private decorateCreatedPane(
-    pane: AumxPane,
+    pane: MuxBasePane,
     sourceBacklogId?: string,
     paneTitle?: string,
     localTitle?: string,
-  ): AumxPane {
+  ): MuxBasePane {
     return {
       ...pane,
       sourceBacklogId,
@@ -1859,7 +1859,7 @@ export class AumxBridge {
   }
 
   private emitEarlyPane(
-    pane: AumxPane,
+    pane: MuxBasePane,
     sourceBacklogId?: string,
     paneTitle?: string,
     localTitle?: string,
@@ -1891,7 +1891,7 @@ export class AumxBridge {
     this.notifyPaneListChanged();
   }
 
-  private serializePaneForConfig(pane: AumxPane): AumxPane {
+  private serializePaneForConfig(pane: MuxBasePane): MuxBasePane {
     const {
       agentStatus: _agentStatus,
       lastAgentCheck: _lastAgentCheck,
@@ -1902,7 +1902,7 @@ export class AumxBridge {
     return persistedPane;
   }
 
-  private hasRuntimeActivityFields(pane: AumxPane | undefined): boolean {
+  private hasRuntimeActivityFields(pane: MuxBasePane | undefined): boolean {
     // Persistence-boundary validation intentionally detects legacy runtime fields before they are
     // stripped; live application decisions must continue to use PaneActivity instead.
     return pane?.agentStatus !== undefined
@@ -1911,7 +1911,7 @@ export class AumxBridge {
       || pane?.optionsQuestion !== undefined;
   }
 
-  private saveReopenedWorktreePaneToConfig(pane: AumxPane): void {
+  private saveReopenedWorktreePaneToConfig(pane: MuxBasePane): void {
     try {
       this.ensureConfigFile();
       const config = this.readConfig()!;
@@ -1941,14 +1941,14 @@ export class AumxBridge {
     }
   }
 
-  private withoutMatchingPaneOrWorktree(panes: AumxPane[], pane: AumxPane): AumxPane[] {
+  private withoutMatchingPaneOrWorktree(panes: MuxBasePane[], pane: MuxBasePane): MuxBasePane[] {
     return panes.filter(existingPane => (
       existingPane.id !== pane.id
       && !this.sameWorktreePath(existingPane, pane)
     ));
   }
 
-  private sameWorktreePath(left: AumxPane, right: AumxPane): boolean {
+  private sameWorktreePath(left: MuxBasePane, right: MuxBasePane): boolean {
     if (!left.worktreePath || !right.worktreePath) return false;
     return resolve(left.worktreePath) === resolve(right.worktreePath);
   }
@@ -1959,7 +1959,7 @@ export class AumxBridge {
    * project identity, so the stale rebind is dropped — bootServices re-persists
    * the new project's panes anyway.
    */
-  private persistReboundPanes(panes: AumxPane[], bootConfigPath: string): void {
+  private persistReboundPanes(panes: MuxBasePane[], bootConfigPath: string): void {
     if (this.configPath !== bootConfigPath) {
       log.debug('bridge', 'Skipped pane rebind persist from a switched-away project', { bootConfigPath });
       return;
@@ -1967,7 +1967,7 @@ export class AumxBridge {
     this.persistPanesToConfig(panes);
   }
 
-  private persistPanesToConfig(panes: AumxPane[]): void {
+  private persistPanesToConfig(panes: MuxBasePane[]): void {
     try {
       this.persistPanesToConfigOrThrow(panes);
     } catch (error) {
@@ -1975,7 +1975,7 @@ export class AumxBridge {
     }
   }
 
-  private persistPanesToConfigOrThrow(panes: AumxPane[]): void {
+  private persistPanesToConfigOrThrow(panes: MuxBasePane[]): void {
     this.ensureConfigFile();
     const config = this.readConfig()!;
     config.panes = panes.map((pane) => this.serializePaneForConfig(pane));
@@ -2069,14 +2069,14 @@ export class AumxBridge {
   }
 
   async shutdown(): Promise<void> {
-    log.info('bridge', 'Shutting down AumxBridge...');
+    log.info('bridge', 'Shutting down MuxBaseBridge...');
     await this.teardownProjectServices();
     this.worktreeMutationPaths.clear();
     this.untrackablePanes.clear();
     this.inFlightHandoffIds.clear();
     this.inFlightReviewSourceIds.clear();
     this.callbackRegistry.cleanup();
-    log.info('bridge', 'AumxBridge shutdown complete');
+    log.info('bridge', 'MuxBaseBridge shutdown complete');
   }
 
   async setFileWatchRoot(

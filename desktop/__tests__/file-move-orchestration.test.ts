@@ -300,7 +300,7 @@ describe('moveEntries orchestration', () => {
     expect(state.folderColors[fileKey(ROOT, 'lib/app')]).toBe('#60a5fa');
     expect(state.folderColors[fileKey(ROOT, 'src/application')]).toBe('#fb7185');
     expect(state.folderColors[fileKey(ROOT, 'src/app')]).toBeUndefined();
-    expect(JSON.parse(localStorage.getItem('aumx-folder-colors') ?? '{}'))
+    expect(JSON.parse(localStorage.getItem('muxbase-folder-colors') ?? '{}'))
       .toHaveProperty(fileKey(ROOT, 'lib/app'), '#60a5fa');
     expect(state.trees[`${ROOT}::src/application`]).toBeDefined();
   });

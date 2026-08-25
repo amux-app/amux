@@ -1,11 +1,11 @@
-import type { AumxBridge } from '../services/AumxBridge.js';
+import type { MuxBaseBridge } from '../services/MuxBaseBridge.js';
 import { IPC } from '../../shared/ipc-channels.js';
 import type { AgentSessionGetRequest, AgentSessionSearchRequest } from '../../shared/ipc-types.js';
 import { formatError } from '../utils/formatError.js';
 import { secureHandle } from './ipc-security.js';
 import { log } from '../services/Logger.js';
 
-export function registerAgentSessionHandlers(bridge: AumxBridge): void {
+export function registerAgentSessionHandlers(bridge: MuxBaseBridge): void {
   secureHandle(IPC.AGENT_SESSION_GET, async (_event, request: AgentSessionGetRequest) => {
     log.debug('ipc:agent-session', 'GET invoked', { paneId: request.paneId });
     try {

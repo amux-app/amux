@@ -1,4 +1,4 @@
-import type { AgentName, AumxPane } from 'aumx/core';
+import type { AgentName, MuxBasePane } from 'muxbase/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const core = vi.hoisted(() => ({
@@ -12,8 +12,8 @@ const git = vi.hoisted(() => ({
   ensureGitRepository: vi.fn(),
 }));
 
-vi.mock('aumx/core', async () => {
-  const actual = await vi.importActual<typeof import('aumx/core')>('aumx/core');
+vi.mock('muxbase/core', async () => {
+  const actual = await vi.importActual<typeof import('muxbase/core')>('muxbase/core');
   return {
     ...actual,
     assertClaudeFullscreenSupported: core.assertClaudeFullscreenSupported,
@@ -32,7 +32,7 @@ vi.mock('../../src/main/services/GitRepositoryBootstrap.js', () => ({
 
 import { PaneLaunchWorkflow } from '../../src/main/services/bridge/PaneLaunchWorkflow.js';
 
-function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
+function makePane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     agent: 'codex',
     id: 'pane',
@@ -44,21 +44,21 @@ function makePane(overrides: Partial<AumxPane> = {}): AumxPane {
 }
 
 function makeHarness(active = true, availableAgents: AgentName[] = ['codex']) {
-  let panes: AumxPane[] = [];
+  let panes: MuxBasePane[] = [];
   const dependencies = {
     createPaneCoordinated: vi.fn(async () => ({ success: true, pane: makePane() })),
-    decorateCreatedPane: vi.fn((pane: AumxPane) => pane),
+    decorateCreatedPane: vi.fn((pane: MuxBasePane) => pane),
     detectAvailableAgents: vi.fn(async () => undefined),
     emitEarlyPane: vi.fn(),
     ensureValidControlPaneId: vi.fn(async () => false),
     getAvailableAgents: vi.fn(() => availableAgents),
-    getConfigPath: vi.fn(() => '/project/.amux/aumx.config.json'),
+    getConfigPath: vi.fn(() => '/project/.muxbase/muxbase.config.json'),
     getControlPaneId: vi.fn(() => '%0'),
     getInitialTerminalSize: vi.fn(() => ({ cols: 120, rows: 40 })),
     getOtlpEndpoint: vi.fn(() => undefined),
     getPanes: vi.fn(() => panes),
     getProjectRoot: vi.fn(() => '/project'),
-    getSessionName: vi.fn(() => 'aumx-project'),
+    getSessionName: vi.fn(() => 'muxbase-project'),
     getTerminalTranscriptDir: vi.fn(() => '/logs'),
     hasAvailableAgentsCache: vi.fn(() => true),
     hasActiveProjectContext: vi.fn(() => active),
@@ -69,7 +69,7 @@ function makeHarness(active = true, availableAgents: AgentName[] = ['codex']) {
     publishSessionColorHint: vi.fn(async () => undefined),
     removeEarlyPane: vi.fn(),
     resumePaneWatcher: vi.fn(),
-    savePane: vi.fn((pane: AumxPane) => { panes = [...panes, pane]; }),
+    savePane: vi.fn((pane: MuxBasePane) => { panes = [...panes, pane]; }),
     sendProgress: vi.fn(),
     sendToast: vi.fn(),
     setPaneTitleSafe: vi.fn(async () => undefined),
@@ -144,7 +144,7 @@ describe('PaneLaunchWorkflow', () => {
     await harness.workflow.create('prompt', 'codex');
     const createOptions = core.createPane.mock.calls[0]?.[0] as {
       earlyEmit: {
-        onReady(pane: AumxPane): void;
+        onReady(pane: MuxBasePane): void;
         onRollback(paneId: string): void;
       };
     };
@@ -238,7 +238,7 @@ describe('PaneLaunchWorkflow', () => {
       pane: { projectRoot: '/project', terminalTranscriptPath: '/logs/pane.log', type: 'shell' },
     });
     expect(harness.dependencies.newWindowPane)
-      .toHaveBeenCalledWith({ cwd: '/project', sessionName: 'aumx-project' });
+      .toHaveBeenCalledWith({ cwd: '/project', sessionName: 'muxbase-project' });
     expect(harness.getPanes()).toHaveLength(1);
   });
 

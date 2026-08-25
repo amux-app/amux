@@ -85,7 +85,7 @@ function markersOf(args: string[]): string[] {
   for (let index = 0; index < args.length; index++) {
     if (args[index] !== 'display-message' || args[index + 1] !== '-p') continue;
     const marker = args[index + 4];
-    if (marker?.startsWith('__AUMX_CAPTURE_')) markers.push(marker);
+    if (marker?.startsWith('__MUXBASE_CAPTURE_')) markers.push(marker);
   }
   return markers;
 }

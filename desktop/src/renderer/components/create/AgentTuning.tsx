@@ -1,4 +1,4 @@
-import type { AgentName } from 'aumx/core';
+import type { AgentName } from 'muxbase/core';
 import { Cpu, Gauge, Info } from 'lucide-react';
 import type { AgentDefaultSlice, OpencodeDefaults } from '../../../shared/ipc-types';
 import { AGENT_TUNING, isValidOption, type AgentOption } from '../../lib/agent-models';

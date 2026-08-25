@@ -40,18 +40,18 @@ describe('workspace picker store', () => {
     ];
     const activeProjects: ProjectInfo[] = [
       {
-        configPath: '/private/var/folders/T/aumx-kanban-e2e/.aumx/aumx.config.json',
-        name: 'aumx-kanban-e2e',
+        configPath: '/private/var/folders/T/muxbase-kanban-e2e/.muxbase/muxbase.config.json',
+        name: 'muxbase-kanban-e2e',
         paneCount: 0,
-        root: '/private/var/folders/T/aumx-kanban-e2e',
-        sessionName: 'aumx-aumx-kanban-e2e',
+        root: '/private/var/folders/T/muxbase-kanban-e2e',
+        sessionName: 'muxbase-muxbase-kanban-e2e',
       },
       {
-        configPath: '/Users/me/projects/example-rag/.aumx/aumx.config.json',
+        configPath: '/Users/me/projects/example-rag/.muxbase/muxbase.config.json',
         name: 'example-rag',
         paneCount: 4,
         root: '/Users/me/projects/example-rag',
-        sessionName: 'aumx-example-rag',
+        sessionName: 'muxbase-example-rag',
       },
     ];
 
@@ -67,14 +67,14 @@ describe('workspace picker store', () => {
         name: 'example-rag',
         paneCount: 4,
         root: '/Users/me/projects/example-rag',
-        sessionName: 'aumx-example-rag',
+        sessionName: 'muxbase-example-rag',
       },
     ]);
   });
 
   it('keeps deleted active projects hidden after removing them from history', async () => {
     // Arrange
-    const removedRoot = '/private/var/folders/T/aumx-file-browser-e2e';
+    const removedRoot = '/private/var/folders/T/muxbase-file-browser-e2e';
     const remainingEntry: WorkspaceHistoryEntry = {
       lastOpened: 200,
       name: 'example-rag',
@@ -84,7 +84,7 @@ describe('workspace picker store', () => {
     const historyEntries: WorkspaceHistoryEntry[] = [
       {
         lastOpened: 300,
-        name: 'aumx-file-browser-e2e',
+        name: 'muxbase-file-browser-e2e',
         paneCount: 0,
         root: removedRoot,
       },
@@ -92,11 +92,11 @@ describe('workspace picker store', () => {
     ];
     const activeProjects: ProjectInfo[] = [
       {
-        configPath: `${removedRoot}/.aumx/aumx.config.json`,
-        name: 'aumx-file-browser-e2e',
+        configPath: `${removedRoot}/.muxbase/muxbase.config.json`,
+        name: 'muxbase-file-browser-e2e',
         paneCount: 0,
         root: removedRoot,
-        sessionName: 'aumx-aumx-file-browser-e2e',
+        sessionName: 'muxbase-muxbase-file-browser-e2e',
       },
     ];
     workspaceApi.removeHistory.mockResolvedValue([remainingEntry]);

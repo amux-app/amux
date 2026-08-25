@@ -4,8 +4,8 @@ import { assertNever, type AgentName } from '../agents/agent-contract.js';
 import { findPiSessionFile } from '../agents/pi-runtime.js';
 import {
   NO_INITIAL_PROMPT,
-  type AumxConfig,
-  type AumxPane,
+  type MuxBaseConfig,
+  type MuxBasePane,
   type DuelMetadata,
   type ReviewMetadata,
 } from '../types.js';
@@ -18,7 +18,7 @@ import { SettingsManager } from './settingsManager.js';
 import { generateLocalSlug, sanitizeSlug } from './slug.js';
 import { triggerHook, initializeHooksDirectory } from './hooks.js';
 import { TMUX_LAYOUT_APPLY_DELAY } from '../constants/timing.js';
-import { upsertAumxPane } from './aumxConfigMutation.js';
+import { upsertMuxBasePane } from './muxbaseConfigMutation.js';
 import { LogService } from '../services/LogService.js';
 import { appendSlugSuffix } from './agentLaunch.js';
 import { buildWorktreePaneTitle } from './paneTitle.js';
@@ -76,9 +76,9 @@ export interface CreatePaneOptions {
   slugSuffix?: string;
   slugBase?: string;
   projectName: string;
-  existingPanes: AumxPane[];
+  existingPanes: MuxBasePane[];
   projectRoot?: string; // Target repository root for the new pane
-  sessionConfigPath?: string; // Shared aumx config file for the current session
+  sessionConfigPath?: string; // Shared muxbase config file for the current session
   sessionProjectRoot?: string; // Session root that owns sidebar/welcome pane state
   controlPaneId?: string; // Pre-resolved control pane ID (skips getCurrentPaneIdSync when provided, needed for Electron)
   sessionName?: string; // Target tmux session name (needed when creating detached windows)
@@ -87,7 +87,7 @@ export interface CreatePaneOptions {
   useWorktree?: boolean; // Override worktree setting for this pane (reads from settings when omitted)
   /**
    * Optional directory for writing a raw ANSI transcript of the tmux pane's
-   * output. When provided, aumx will start `tmux pipe-pane` before launching
+   * output. When provided, muxbase will start `tmux pipe-pane` before launching
    * the agent, so downstream viewers (Electron) can replay the exact terminal
    * stream (including mode toggles like mouse reporting).
    */
@@ -108,7 +108,7 @@ export interface CreatePaneOptions {
   review?: ReviewMetadata;
   /** Duel linkage metadata, set when this pane is one side of a comparison */
   duel?: DuelMetadata;
-  /** OTLP endpoint URL injected into Claude pane env so Claude Code reports telemetry to Amux. */
+  /** OTLP endpoint URL injected into Claude pane env so Claude Code reports telemetry to MuxBase. */
   otlpEndpoint?: string;
   /** Explicit user consent for installing lifecycle adapters that write agent configuration. */
   enableActivityAdapters?: boolean;
@@ -129,13 +129,13 @@ export interface CreatePaneOptions {
    * invariant — you can't supply one without the other.
    */
   earlyEmit?: {
-    onReady: (pane: AumxPane) => void;
+    onReady: (pane: MuxBasePane) => void;
     onRollback: (paneId: string) => void;
   };
 }
 
 export type CreatePaneResult =
-  | { pane: AumxPane; needsAgentChoice: false }
+  | { pane: MuxBasePane; needsAgentChoice: false }
   | { pane: null; needsAgentChoice: true };
 
 const MIN_INITIAL_TERMINAL_COLS = 2;
@@ -276,8 +276,8 @@ export async function createPane(
 
   if (!skipHooks) {
     await triggerHook('before_pane_create', projectRoot, undefined, {
-      AUMX_PROMPT: prompt,
-      AUMX_AGENT: agent || 'unknown',
+      MUXBASE_PROMPT: prompt,
+      MUXBASE_AGENT: agent || 'unknown',
     });
   }
 
@@ -554,23 +554,23 @@ export async function createPane(
       await tmuxService.refreshClient();
     }
 
-    const aumxPaneId = `aumx-${Date.now()}`;
-    await stampTmuxPaneIdOption(paneInfo, aumxPaneId);
+    const muxbasePaneId = `muxbase-${Date.now()}`;
+    await stampTmuxPaneIdOption(paneInfo, muxbasePaneId);
     const activityIncarnationId = await stampTmuxPaneIncarnationOption(paneInfo);
 
     if (!skipHooks) {
       await triggerHook('pane_created', projectRoot, undefined, {
-        AUMX_PANE_ID: aumxPaneId,
-        AUMX_SLUG: slug,
-        AUMX_PROMPT: prompt,
-        AUMX_AGENT: agent || 'unknown',
-        AUMX_TMUX_PANE_ID: paneInfo,
+        MUXBASE_PANE_ID: muxbasePaneId,
+        MUXBASE_SLUG: slug,
+        MUXBASE_PROMPT: prompt,
+        MUXBASE_AGENT: agent || 'unknown',
+        MUXBASE_TMUX_PANE_ID: paneInfo,
       });
     }
 
     const isHooksEditingSession = useWorktree && !!prompt && (
-      /(create|edit|modify).*(aumx|\.)?.*(hooks)/i.test(prompt)
-      || /\.(?:amux|aumx)-hooks/i.test(prompt)
+      /(create|edit|modify).*(muxbase|\.)?.*(hooks)/i.test(prompt)
+      || /\.(?:muxbase|muxbase)-hooks/i.test(prompt)
     );
 
     if (useWorktree && worktreePath && branchName && !worktreeCreatedDirectly) {
@@ -718,8 +718,8 @@ export async function createPane(
     // let the caller emit it optimistically — the renderer can mount the pane
     // and start streaming while the agent's TUI cold-boots (2-4s) instead of
     // waiting for launch to finish. If launch throws, onPaneRollback undoes it.
-    const newPane: AumxPane = {
-      id: aumxPaneId,
+    const newPane: MuxBasePane = {
+      id: muxbasePaneId,
       slug,
       branchName: branchName && branchName !== slug ? branchName : undefined,
       prompt: prompt || NO_INITIAL_PROMPT,
@@ -758,7 +758,7 @@ export async function createPane(
         {
           piSessionMode: agent === 'pi' && worktreePath ? 'fork' : 'resume',
           piSessionPath: piSessionPath ?? undefined,
-          aumxPaneId,
+          muxbasePaneId,
           activityJournal: getPaneActivityJournalPath(activityIncarnationId),
           activityIncarnationId,
           enableActivityAdapters: options.enableActivityAdapters,
@@ -768,7 +768,7 @@ export async function createPane(
       await launchAgentInPane({
         agent,
         agentPrompt,
-        aumxPaneId,
+        muxbasePaneId,
         activityJournal: getPaneActivityJournalPath(activityIncarnationId),
         activityIncarnationId,
         enableActivityAdapters: options.enableActivityAdapters,
@@ -803,7 +803,7 @@ export async function createPane(
     // CRITICAL: Save the pane to config IMMEDIATELY before destroying welcome pane
     // This is the event that triggers welcome pane destruction (event-based, no polling)
     if (isFirstContentPane) {
-      upsertAumxPane(configPath, newPane);
+      upsertMuxBasePane(configPath, newPane);
       rollback.trackConfigPane(configPath, newPane.id);
 
       try {
@@ -821,7 +821,7 @@ export async function createPane(
     if (layoutMode !== 'window') {
       await tmuxService.selectPane(originalPaneId);
       try {
-        await tmuxService.setPaneTitle(originalPaneId, `aumx-${projectName}`);
+        await tmuxService.setPaneTitle(originalPaneId, `muxbase-${projectName}`);
       } catch {
         // Ignore if setting title fails
       }
@@ -840,7 +840,7 @@ export async function createPane(
   }
 }
 
-type AgentLaunchSettings = AumxConfig['settings'] & { opencodeModel?: string };
+type AgentLaunchSettings = MuxBaseConfig['settings'] & { opencodeModel?: string };
 
 function applyPerPaneOverride(
   settings: AgentLaunchSettings,

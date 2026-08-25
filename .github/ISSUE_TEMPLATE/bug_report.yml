@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a reproducible problem in Amux.
+description: Report a reproducible problem in MuxBase.
 title: "[Bug]: "
 labels:
   - bug
@@ -17,7 +17,7 @@ body:
       label: Steps to reproduce
       description: List the exact steps needed to reproduce the issue.
       placeholder: |
-        1. Open Amux...
+        1. Open MuxBase...
         2. Create a pane...
         3. Observe...
     validations:
@@ -37,7 +37,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Amux version
+      label: MuxBase version
       placeholder: 0.1.0
   - type: input
     id: os

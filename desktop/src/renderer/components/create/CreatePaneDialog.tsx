@@ -1,4 +1,4 @@
-import type { AgentName } from 'aumx/core';
+import type { AgentName } from 'muxbase/core';
 import { Pencil, Terminal } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
@@ -335,7 +335,7 @@ export function CreatePaneDialog() {
     const capability = mode === 'duel' ? 'duel' : 'launch';
     void listAgents(capability).then(setAvailableAgents).catch(() => {});
     // Paint from the boot cache immediately, then refresh in the background so
-    // agents installed while Amux is running appear on the next dialog open.
+    // agents installed while MuxBase is running appear on the next dialog open.
     void refreshAgents(capability).then(setAvailableAgents).catch(() => {});
   }, [isCreating, mode]);
 
@@ -463,7 +463,7 @@ export function CreatePaneDialog() {
       const activatedRoot = useProjectStore.getState().sessionProjectRoot;
       if (activatedRoot !== targetRoot) {
         addToast(
-          'Amux could not open the selected workspace.',
+          'MuxBase could not open the selected workspace.',
           'error',
           {
             detail: 'Choose the folder again and make sure it still exists and is accessible.',
@@ -477,7 +477,7 @@ export function CreatePaneDialog() {
       return { projectRoot: targetRoot };
     } catch (error) {
       addToast(
-        `Amux could not open the selected workspace: ${(error as Error).message}`,
+        `MuxBase could not open the selected workspace: ${(error as Error).message}`,
         'error',
         {
           detail: 'Choose the folder again and make sure it still exists and is accessible.',
@@ -882,7 +882,7 @@ export function CreatePaneDialog() {
         cancelLabel="Update Claude"
         confirmLabel="Use classic compatibility mode"
         initialFocus="cancel"
-        message="This Claude version cannot satisfy Amux's fullscreen renderer contract. Update Claude for protected terminal history, or explicitly launch this pane in known-lossy classic compatibility mode and use Activity for conversation history."
+        message="This Claude version cannot satisfy MuxBase's fullscreen renderer contract. Update Claude for protected terminal history, or explicitly launch this pane in known-lossy classic compatibility mode and use Activity for conversation history."
         onCancel={handleUpdateClaude}
         onConfirm={handleClassicCompatibility}
         open={classicCompatibilityRequest !== null}

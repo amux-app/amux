@@ -6,8 +6,8 @@ import { ensureTmuxSession } from '../src/main/utils/tmuxSession';
 import { IPC } from '../src/shared/ipc-channels';
 import { registerWorkspaceHandlers } from '../src/main/ipc/workspace.handlers';
 
-const FOLDER_PATH = path.join(os.tmpdir(), 'amux-test', 'example-rag');
-const FOLDER_CONFIG = path.join(FOLDER_PATH, '.amux', 'aumx.config.json');
+const FOLDER_PATH = path.join(os.tmpdir(), 'muxbase-test', 'example-rag');
+const FOLDER_CONFIG = path.join(FOLDER_PATH, '.muxbase', 'muxbase.config.json');
 
 type RegisteredHandler = (event: unknown, request?: unknown) => unknown | Promise<unknown>;
 
@@ -77,7 +77,7 @@ describe('workspace create session', () => {
     ensureTmuxSessionMock.mockResolvedValue({
       created: true,
       paneId: '%3',
-      sessionName: 'aumx-example-rag_01',
+      sessionName: 'muxbase-example-rag_01',
     });
     discoverProjectsMock.mockResolvedValue([]);
     showOpenDialogMock.mockResolvedValue({ canceled: false, filePaths: [FOLDER_PATH] });
@@ -93,7 +93,7 @@ describe('workspace create session', () => {
 
     // Assert
     expect(ensureTmuxSession).toHaveBeenCalledWith(
-      'aumx-example-rag',
+      'muxbase-example-rag',
       FOLDER_PATH,
       'example-rag',
     );
@@ -103,7 +103,7 @@ describe('workspace create session', () => {
         name: 'example-rag',
         paneCount: 0,
         root: FOLDER_PATH,
-        sessionName: 'aumx-example-rag_01',
+        sessionName: 'muxbase-example-rag_01',
       },
       success: true,
     });

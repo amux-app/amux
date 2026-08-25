@@ -1,4 +1,4 @@
-import type { AgentName, AumxPane } from 'aumx/core';
+import type { AgentName, MuxBasePane } from 'muxbase/core';
 import type { PaneActivityState } from '../../../shared/pane-activity';
 import { ArrowLeft, Pencil, SendHorizontal, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
@@ -119,7 +119,7 @@ export function FocusView() {
           <Panel defaultSize={55} minSize={30}>
             <InteractiveTerminal pane={pane} />
           </Panel>
-          <Separator className="aumx-resize-handle" data-testid="focus-terminal-activity-separator" />
+          <Separator className="muxbase-resize-handle" data-testid="focus-terminal-activity-separator" />
           <Panel defaultSize={45} minSize={20}>
             <div className="flex flex-col h-full">
               <FocusTabBar
@@ -163,7 +163,7 @@ function FocusHeader({
   justFinished,
   onBack,
 }: {
-  pane: AumxPane;
+  pane: MuxBasePane;
   sidebarSelected: boolean;
   status: PaneActivityState;
   justFinished: boolean;

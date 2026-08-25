@@ -372,7 +372,7 @@ export class TmuxService extends TmuxWriteOperations {
 
       try {
         const title = await this.getPaneTitle(id);
-        if (title !== 'aumx-spacer') {
+        if (title !== 'muxbase-spacer') {
           contentPanes.push(id);
         }
       } catch {

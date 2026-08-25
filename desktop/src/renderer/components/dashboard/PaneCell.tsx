@@ -1,4 +1,4 @@
-import type { AumxPane, DuelMetadata } from 'aumx/core';
+import type { MuxBasePane, DuelMetadata } from 'muxbase/core';
 import { Maximize2, Minus, Pencil, SendHorizontal, X } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { agentHasSessionParsing } from '../../../shared/agent-session-types';
@@ -47,7 +47,7 @@ import { ReviewNavigationButton } from './ReviewNavigationButton';
 import { SendFixesConfirmDialog } from './SendFixesConfirmDialog';
 
 interface PaneCellProps {
-  pane: AumxPane;
+  pane: MuxBasePane;
   viewportVisible?: boolean;
 }
 
@@ -247,7 +247,7 @@ function PaneCellInner({ pane, viewportVisible = true }: PaneCellProps) {
 
 export const PaneCell = memo(PaneCellInner);
 
-function renderAgentBadge(agent: AumxPane['agent']) {
+function renderAgentBadge(agent: MuxBasePane['agent']) {
   if (!agent) return null;
   if (hasIcon(agent)) {
     return (
@@ -271,7 +271,7 @@ function ZenCellHeader({
   activeTab,
   onTabChange,
 }: Readonly<{
-  pane: AumxPane;
+  pane: MuxBasePane;
   status: PaneActivityState;
   activityState?: PaneActivityState;
   waiting: boolean;
@@ -426,7 +426,7 @@ function CellHeader({
   waiting,
   justFinished,
 }: {
-  pane: AumxPane;
+  pane: MuxBasePane;
   sidebarSelected: boolean;
   status: PaneActivityState;
   activityState?: PaneActivityState;
@@ -574,7 +574,7 @@ function CellHeader({
   );
 }
 
-function ProjectChip({ pane }: { pane: AumxPane }) {
+function ProjectChip({ pane }: { pane: MuxBasePane }) {
   const activeProject = useProjectStore((s) => s.activeProject);
   const project = resolvePaneProjectDisplay(pane, activeProject);
   const [peeking, setPeeking] = useState(false);

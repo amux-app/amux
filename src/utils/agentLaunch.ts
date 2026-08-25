@@ -86,7 +86,7 @@ function normalizePermissionMode(permissionMode: PermissionMode): '' | 'auto' {
 }
 
 /**
- * Resolve CLI permission flags for a given agent and aumx permissionMode.
+ * Resolve CLI permission flags for a given agent and muxbase permissionMode.
  */
 export function getPermissionFlags(
   agent: AgentName,
@@ -127,9 +127,9 @@ export function getModelFlags(agent: AgentName, model: string | undefined): stri
 
 /**
  * Resolve the `--effort` reasoning flag for an agent. Claude-only.
- * 'ultracode' is a amux harness marker (no CLI equivalent); it maps to xhigh
+ * 'ultracode' is a muxbase harness marker (no CLI equivalent); it maps to xhigh
  * — the highest valid CLI value — and the launcher additionally exports
- * AUMX_ULTRACODE=1 so the spawned session can detect it.
+ * MUXBASE_ULTRACODE=1 so the spawned session can detect it.
  */
 export function getEffortFlags(agent: AgentName, effort: string | undefined): string {
   if (agent !== 'claude' || !effort) return '';

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { agentHasSessionParsing } from '../../../shared/agent-session-types';
 import { InteractiveTerminal } from '../pane-detail/InteractiveTerminal';
 import {
@@ -31,7 +31,7 @@ const TABS: { id: SidePanelTab; label: string }[] = [
 ];
 
 interface KanbanSidePanelProps {
-  pane: AumxPane;
+  pane: MuxBasePane;
   onClose: () => void;
 }
 

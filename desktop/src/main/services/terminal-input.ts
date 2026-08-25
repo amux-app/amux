@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import { randomUUID } from 'crypto';
 
-const TERMINAL_INPUT_BUFFER_PREFIX = 'aumx-terminal-input-';
+const TERMINAL_INPUT_BUFFER_PREFIX = 'muxbase-terminal-input-';
 
 // Keystroke-sized writes go via `send-keys -l` (literal), which delivers each
 // byte to the target program as a real keypress. Longer or multi-line writes

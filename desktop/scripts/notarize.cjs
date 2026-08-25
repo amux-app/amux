@@ -7,7 +7,7 @@ exports.default = async function notarizeHook(context) {
     return;
   }
 
-  const requireNotarization = process.env.AUMX_REQUIRE_NOTARIZATION === '1';
+  const requireNotarization = process.env.MUXBASE_REQUIRE_NOTARIZATION === '1';
   const appName = context?.packager?.appInfo?.productFilename;
   const appOutDir = context?.appOutDir;
 

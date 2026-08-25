@@ -7,11 +7,11 @@ import { readAppBuildInfo } from '../../src/main/services/AppBuildInfo';
 describe('readAppBuildInfo', () => {
   it('reads local install build metadata from the packaged app package', () => {
     // Arrange
-    const appPath = mkdtempSync(join(tmpdir(), 'aumx-build-info-'));
+    const appPath = mkdtempSync(join(tmpdir(), 'muxbase-build-info-'));
     writeFileSync(
       join(appPath, 'package.json'),
       JSON.stringify({
-        aumxBuild: {
+        muxbaseBuild: {
           number: '20260517203045',
           version: '0.0.1.20260517203045',
         },
@@ -30,11 +30,11 @@ describe('readAppBuildInfo', () => {
 
   it('normalizes electron-builder CLI numeric metadata to strings', () => {
     // Arrange
-    const appPath = mkdtempSync(join(tmpdir(), 'aumx-build-info-'));
+    const appPath = mkdtempSync(join(tmpdir(), 'muxbase-build-info-'));
     writeFileSync(
       join(appPath, 'package.json'),
       JSON.stringify({
-        aumxBuild: {
+        muxbaseBuild: {
           number: 20260517203045,
           version: '0.0.1.20260517203045',
         },
@@ -53,7 +53,7 @@ describe('readAppBuildInfo', () => {
 
   it('falls back to the app version when build metadata is not stamped', () => {
     // Arrange
-    const appPath = mkdtempSync(join(tmpdir(), 'aumx-build-info-'));
+    const appPath = mkdtempSync(join(tmpdir(), 'muxbase-build-info-'));
     writeFileSync(join(appPath, 'package.json'), JSON.stringify({}));
 
     // Act

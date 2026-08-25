@@ -51,7 +51,7 @@ describe('AppUpdateControl', () => {
 
     render(<AppUpdateControl />);
 
-    const button = screen.getByRole('button', { name: 'Downloading Amux 0.2.0 — 42%' });
+    const button = screen.getByRole('button', { name: 'Downloading MuxBase 0.2.0 — 42%' });
     expect(button.className).toContain('h-8');
     expect(button.className).toContain('min-w-8');
     expect(screen.getByRole('status').textContent).toContain('42%');
@@ -65,19 +65,19 @@ describe('AppUpdateControl', () => {
         availableVersion: '0.2.0',
         currentVersion: '0.1.0',
         phase: 'ready',
-        releaseNotesUrl: 'https://github.com/amux-app/amux/releases/tag/v0.2.0',
+        releaseNotesUrl: 'https://github.com/muxbase-app/muxbase/releases/tag/v0.2.0',
         revision: 4,
       },
     });
 
     render(<AppUpdateControl />);
-    const trigger = screen.getByRole('button', { name: 'Update Amux to 0.2.0' });
+    const trigger = screen.getByRole('button', { name: 'Update MuxBase to 0.2.0' });
     fireEvent.click(trigger);
 
-    expect(screen.getByRole('dialog', { name: 'Amux update ready' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'MuxBase update ready' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'View release notes' }));
     expect(systemApi.openExternal).toHaveBeenCalledWith(
-      'https://github.com/amux-app/amux/releases/tag/v0.2.0',
+      'https://github.com/muxbase-app/muxbase/releases/tag/v0.2.0',
     );
     const install = screen.getByRole('button', { name: 'Restart and update' });
     fireEvent.click(install);
@@ -96,7 +96,7 @@ describe('AppUpdateControl', () => {
       },
     });
     render(<AppUpdateControl />);
-    const trigger = screen.getByRole('button', { name: 'Update Amux to 0.2.0' });
+    const trigger = screen.getByRole('button', { name: 'Update MuxBase to 0.2.0' });
     trigger.focus();
     fireEvent.click(trigger);
     fireEvent.click(screen.getByRole('button', { name: 'Later' }));

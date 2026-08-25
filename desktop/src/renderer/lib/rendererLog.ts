@@ -37,7 +37,7 @@ function normalizeLogData(value: unknown, depth = 0): unknown {
 }
 
 function logRenderer(level: RendererLogLevel, scope: string, message: string, data?: unknown): void {
-  if (typeof window === 'undefined' || typeof window.aumx?.invoke !== 'function') {
+  if (typeof window === 'undefined' || typeof window.muxbase?.invoke !== 'function') {
     return;
   }
 

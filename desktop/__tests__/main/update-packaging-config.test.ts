@@ -9,15 +9,15 @@ describe('macOS update packaging contract', () => {
     const packageJson = JSON.parse(readFileSync(resolve(__dirname, '../../package.json'), 'utf8'));
 
     expect(config.forceCodeSigning).toBe(true);
-    expect(packageJson.scripts['dist:release']).toContain('AUMX_REQUIRE_NOTARIZATION=1');
+    expect(packageJson.scripts['dist:release']).toContain('MUXBASE_REQUIRE_NOTARIZATION=1');
     expect(config.electronUpdaterCompatibility).toBe('>=6.8.9');
     expect(config.detectUpdateChannel).toBe(false);
     expect(config.mac.minimumSystemVersion).toBe('13.0');
     expect(config.publish).toMatchObject({
       channel: 'latest',
-      owner: 'amux-app',
+      owner: 'muxbase-app',
       provider: 'github',
-      repo: 'amux',
+      repo: 'muxbase',
     });
     expect(config.dmg.contents).toContainEqual(expect.objectContaining({
       path: '/Applications',

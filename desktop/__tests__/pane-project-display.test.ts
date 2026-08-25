@@ -3,8 +3,8 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { resolvePaneProjectDisplay } from '../src/renderer/lib/pane-project-display';
 
-const PROJECT_ROOT = path.join(os.tmpdir(), 'amux-test', 'amux');
-const OTHER_ROOT = path.join(os.tmpdir(), 'amux-test', 'Luxury-Cosmetics-Emporium');
+const PROJECT_ROOT = path.join(os.tmpdir(), 'muxbase-test', 'muxbase');
+const OTHER_ROOT = path.join(os.tmpdir(), 'muxbase-test', 'Luxury-Cosmetics-Emporium');
 
 describe('resolvePaneProjectDisplay', () => {
   it('prefers the pane project over the active project', () => {
@@ -14,7 +14,7 @@ describe('resolvePaneProjectDisplay', () => {
         projectRoot: OTHER_ROOT,
       },
       {
-        name: 'amux',
+        name: 'muxbase',
         root: PROJECT_ROOT,
       },
     );
@@ -32,7 +32,7 @@ describe('resolvePaneProjectDisplay', () => {
         projectRoot: `${OTHER_ROOT}/`,
       },
       {
-        name: 'amux',
+        name: 'muxbase',
         root: PROJECT_ROOT,
       },
     );
@@ -41,18 +41,18 @@ describe('resolvePaneProjectDisplay', () => {
     expect(display?.root).toBe(OTHER_ROOT);
   });
 
-  it('falls back to the active project for legacy panes without project metadata', () => {
+  it('falls back to the active project when pane metadata is absent', () => {
     const display = resolvePaneProjectDisplay(
       {},
       {
-        name: 'amux',
+        name: 'muxbase',
         root: PROJECT_ROOT,
       },
     );
 
     expect(display).toEqual({
-      initial: 'A',
-      name: 'amux',
+      initial: 'M',
+      name: 'muxbase',
       root: PROJECT_ROOT,
     });
   });

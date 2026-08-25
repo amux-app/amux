@@ -12,17 +12,17 @@ describe('multi-pane E2E tmux cleanup', () => {
   });
 
   it('kills only the uniquely named multi-pane test session', () => {
-    expect(killMultiPaneTestSessionBestEffort('aumx-aumx-multi-pane-e2e-abc123'))
+    expect(killMultiPaneTestSessionBestEffort('muxbase-muxbase-multi-pane-e2e-abc123'))
       .toBe(true);
     expect(execFileSync).toHaveBeenCalledWith(
       'tmux',
-      ['kill-session', '-t', 'aumx-aumx-multi-pane-e2e-abc123'],
+      ['kill-session', '-t', 'muxbase-muxbase-multi-pane-e2e-abc123'],
       { stdio: 'ignore' },
     );
   });
 
   it('refuses to kill a non-test session', () => {
-    expect(killMultiPaneTestSessionBestEffort('aumx-aumx')).toBe(false);
+    expect(killMultiPaneTestSessionBestEffort('muxbase-muxbase')).toBe(false);
     expect(execFileSync).not.toHaveBeenCalled();
   });
 });

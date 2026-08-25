@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { AumxPane } from 'aumx/core';
+import type { MuxBasePane } from 'muxbase/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useKanbanColumns } from '../../src/renderer/hooks/useKanbanColumns';
 import { usePaneStore } from '../../src/renderer/stores/pane.store';
@@ -13,7 +13,7 @@ import { makeActivity } from '../helpers/pane-activity-fixtures';
 const invokeMock = vi.hoisted(() => vi.fn());
 vi.mock('../../src/renderer/api/ipc', () => ({ invoke: invokeMock }));
 
-function pane(overrides: Partial<AumxPane> = {}): AumxPane {
+function pane(overrides: Partial<MuxBasePane> = {}): MuxBasePane {
   return {
     id: 'pane-1',
     paneId: '%1',

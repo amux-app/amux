@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import type { AgentName } from 'aumx/core';
+import type { AgentName } from 'muxbase/core';
 import { listAgents } from '../../api/agent.api';
 import { cn } from '../../lib/cn';
 import { ToggleSwitch } from '../shared/ToggleSwitch';
@@ -226,7 +226,7 @@ export function AddBacklogDialog({ isOpen, onClose, onSubmit, editItem }: AddBac
                     {useWorktree && (
                       <p className="text-[10px] text-[var(--text-muted)]">
                         {initGitIfMissing
-                          ? 'If Git is missing, aumx will run git init and create .git.'
+                          ? 'If Git is missing, muxbase will run git init and create .git.'
                           : 'Requires an existing Git repository.'}
                       </p>
                     )}
