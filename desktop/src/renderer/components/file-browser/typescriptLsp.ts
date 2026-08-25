@@ -4,13 +4,13 @@ import {
   jumpToDefinitionKeymap,
   LSPClient,
   LSPPlugin,
-  serverCompletion,
+  serverCompletionSource,
   serverDiagnostics,
   signatureHelp,
   Workspace,
 } from '@codemirror/lsp-client';
 import { setDiagnostics, type Diagnostic } from '@codemirror/lint';
-import type { Extension, Text } from '@codemirror/state';
+import { EditorState, type Extension, type Text } from '@codemirror/state';
 import { keymap, ViewPlugin, type EditorView, type ViewUpdate } from '@codemirror/view';
 import {
   acquireLsp,
@@ -319,7 +319,7 @@ async function createRootClient(rootId: string, editorSessionId: string): Promis
   };
   client = new LSPClient({
     extensions: [
-      serverCompletion(),
+      EditorState.languageData.of(() => [{ autocomplete: serverCompletionSource }]),
       hoverTooltips(),
       signatureHelp(),
       serverDiagnostics(),

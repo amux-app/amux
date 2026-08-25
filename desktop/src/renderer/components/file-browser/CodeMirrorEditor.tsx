@@ -69,6 +69,8 @@ interface CreateEditorStateOptions {
   onLanguageIntelligenceRequest: () => void;
   readOnly: boolean;
   readOnlyCompartment: Compartment;
+  relativePath: string;
+  rootPath: string;
   searchCompartment: Compartment;
   wordWrap: boolean;
   wordWrapCompartment: Compartment;
@@ -100,6 +102,8 @@ function createEditorState({
   onLanguageIntelligenceRequest,
   readOnly,
   readOnlyCompartment,
+  relativePath,
+  rootPath,
   searchCompartment,
   wordWrap,
   wordWrapCompartment,
@@ -112,7 +116,7 @@ function createEditorState({
       lintCompartment.of([]),
       gitGutterCompartment.of([]),
       lspCompartment.of([]),
-      completionCompartment.of(getFileEditorCompletionExtension(fileName)),
+      completionCompartment.of(getFileEditorCompletionExtension(fileName, rootPath, relativePath)),
       wordWrapCompartment.of(getFileEditorWordWrapExtension(wordWrap)),
       searchCompartment.of(getFileEditorSearchExtension(highlightQuery)),
       readOnlyCompartment.of(getFileEditorReadOnlyExtension(readOnly)),
@@ -344,6 +348,8 @@ export function CodeMirrorEditor({
         onLanguageIntelligenceRequest: startLanguageIntelligence,
         readOnly,
         readOnlyCompartment: readOnlyCompartmentRef.current,
+        relativePath,
+        rootPath,
         searchCompartment: searchCompartmentRef.current,
         wordWrap,
         wordWrapCompartment: wordWrapCompartmentRef.current,
@@ -385,7 +391,7 @@ export function CodeMirrorEditor({
     const requestedFileKey = fileKey;
     view.dispatch({
       effects: completionCompartmentRef.current.reconfigure(
-        enableCompletion ? getFileEditorCompletionExtension(fileName) : [],
+        enableCompletion ? getFileEditorCompletionExtension(fileName, rootPath, relativePath) : [],
       ),
     });
     void loadFileEditorLanguageExtension(fileName).then((language) => {
@@ -400,7 +406,7 @@ export function CodeMirrorEditor({
     }).catch((error: unknown) => {
       rendererLog.warn(CODE_MIRROR_LOG_SCOPE, 'Grammar load failed', { error, fileKey, fileName });
     });
-  }, [enableCompletion, fileKey, fileName]);
+  }, [enableCompletion, fileKey, fileName, relativePath, rootPath]);
 
   useEffect(() => {
     const view = viewRef.current;

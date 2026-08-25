@@ -1,15 +1,24 @@
 import {
+  acceptCompletion,
   autocompletion,
   closeBrackets,
   closeBracketsKeymap,
-  completionKeymap,
+  closeCompletion,
   completeAnyWord,
+  moveCompletionSelection,
+  pickedCompletion,
   snippetCompletion,
+  startCompletion,
   type Completion,
   type CompletionResult,
   type CompletionSource,
 } from '@codemirror/autocomplete';
-import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
+import {
+  defaultKeymap,
+  history,
+  historyKeymap,
+  indentWithTab,
+} from '@codemirror/commands';
 import {
   bracketMatching,
   foldGutter,
@@ -25,7 +34,7 @@ import {
   search,
   searchKeymap,
 } from '@codemirror/search';
-import { EditorState, type Extension } from '@codemirror/state';
+import { EditorState, Prec, Transaction, type Extension } from '@codemirror/state';
 import { tags } from '@lezer/highlight';
 import { indentationMarkers } from '@replit/codemirror-indentation-markers';
 import type { Diagnostic } from '@codemirror/lint';
@@ -41,10 +50,12 @@ import {
   MatchDecorator,
   rectangularSelection,
   ViewPlugin,
+  type Command,
   type DecorationSet,
   type ViewUpdate,
 } from '@codemirror/view';
 import { isBinaryFileName } from '../../../shared/filePolicy';
+import { createPathCompletionSource } from './pathCompletion';
 
 const MIN_SEARCH_QUERY_LENGTH = 2;
 const MAX_DOCUMENT_COMPLETION_SIZE = 150_000;
@@ -52,11 +63,53 @@ const MAX_DOCUMENT_COMPLETION_SIZE = 150_000;
 const BASE_COMPLETION_RE = /[\w-]*/;
 const MARKDOWN_COMPLETION_RE = /[>#*`~\w-]*/;
 const TEST_FILE_PATTERN = /(^|[/\\])__tests__([/\\]|$)|\.(spec|test)\.[^.]+$/;
+const IGNORE_FILE_NAMES = new Set([
+  '.dockerignore',
+  '.eslintignore',
+  '.gitignore',
+  '.npmignore',
+  '.prettierignore',
+  '.stylelintignore',
+]);
 
 const SEARCH_MATCH_MARK = Decoration.mark({ class: 'aumx-file-editor-search-match' });
+
+const acceptCompletionIfDocumentChanges: Command = (view) => {
+  const before = view.state.doc;
+  if (!acceptCompletion(view)) return false;
+  return !view.state.doc.eq(before);
+};
+
+const acceptCompletionOrIndent: Command = (view) => (
+  acceptCompletion(view) || indentWithTab.run?.(view) || false
+);
+
+const FILE_EDITOR_COMPLETION_KEYMAP = Prec.high(keymap.of([
+  { key: 'Ctrl-Space', run: startCompletion },
+  { mac: 'Alt-`', run: startCompletion },
+  { mac: 'Alt-i', run: startCompletion },
+  { key: 'Escape', run: closeCompletion },
+  { key: 'ArrowDown', run: moveCompletionSelection(true) },
+  { key: 'ArrowUp', run: moveCompletionSelection(false) },
+  { key: 'PageDown', run: moveCompletionSelection(true, 'page') },
+  { key: 'PageUp', run: moveCompletionSelection(false, 'page') },
+  { key: 'Enter', run: acceptCompletionIfDocumentChanges },
+  { key: 'Tab', run: acceptCompletionOrIndent },
+]));
+
+const suppressNoopCompletionHistory = EditorState.transactionExtender.of((transaction) => {
+  if (
+    !transaction.annotation(pickedCompletion)
+    || !transaction.newDoc.eq(transaction.startState.doc)
+  ) return null;
+
+  return { annotations: Transaction.addToHistory.of(false) };
+});
+
 export type FileEditorLanguageKind =
   | 'css'
   | 'dockerfile'
+  | 'gitignore'
   | 'html'
   | 'javascript'
   | 'json'
@@ -301,6 +354,7 @@ const TOML_KEYWORDS = ['false', 'true'].map((label) => createCompletion(label, '
 const KEYWORD_COMPLETIONS: Record<FileEditorLanguageKind, readonly Completion[]> = {
   css: CSS_PROPERTY_KEYWORDS,
   dockerfile: DOCKERFILE_KEYWORDS,
+  gitignore: [],
   html: HTML_TAG_KEYWORDS,
   javascript: JAVASCRIPT_KEYWORDS,
   json: JSON_LIKE_KEYWORDS,
@@ -433,6 +487,9 @@ export function isBinaryFile(fileName: string): boolean {
 
 export function getFileEditorLanguageKind(fileName: string): FileEditorLanguageKind {
   const normalizedFileName = getBaseFileName(fileName);
+  if (IGNORE_FILE_NAMES.has(normalizedFileName)) {
+    return 'gitignore';
+  }
   if (normalizedFileName === 'dockerfile' || normalizedFileName.startsWith('dockerfile.')) {
     return 'dockerfile';
   }
@@ -505,6 +562,31 @@ export function createFileKeywordCompletionSource(fileName: string): CompletionS
   return createKeywordCompletionSource(getLanguageKeywordCompletions(fileName, languageKind), matchExpression);
 }
 
+export function getFileEditorCompletionSources(
+  fileName: string,
+  rootPath?: string,
+  relativePath?: string,
+): CompletionSource[] {
+  const languageKind = getFileEditorLanguageKind(fileName);
+  if (languageKind === 'gitignore') {
+    return rootPath && relativePath ? [createPathCompletionSource(rootPath, relativePath)] : [];
+  }
+  if (languageKind === 'javascript') {
+    return isTestFile(fileName)
+      ? [createKeywordCompletionSource(JAVASCRIPT_TEST_KEYWORDS, BASE_COMPLETION_RE)]
+      : [];
+  }
+  if (languageKind === 'css' || languageKind === 'html') {
+    return [];
+  }
+  if (languageKind === 'markdown') {
+    return [createFileKeywordCompletionSource(fileName), documentWordCompletionSource];
+  }
+  return languageKind === 'plaintext'
+    ? [documentWordCompletionSource]
+    : [createFileKeywordCompletionSource(fileName), documentWordCompletionSource];
+}
+
 export function getFileEditorBaseExtensions(
   onDocumentChange: () => void,
   lineSeparator = '\n',
@@ -541,8 +623,8 @@ export function getFileEditorBaseExtensions(
         onDocumentChange();
       }
     }),
+    FILE_EDITOR_COMPLETION_KEYMAP,
     keymap.of([
-      ...completionKeymap,
       ...foldKeymap,
       ...searchKeymap,
       indentWithTab,
@@ -553,15 +635,25 @@ export function getFileEditorBaseExtensions(
   ];
 }
 
-export function getFileEditorCompletionExtension(fileName: string): Extension {
-  return autocompletion({
-    activateOnTyping: true,
-    activateOnTypingDelay: 80,
-    closeOnBlur: true,
-    icons: false,
-    maxRenderedOptions: 12,
-    override: [createFileKeywordCompletionSource(fileName), documentWordCompletionSource],
-  });
+export function getFileEditorCompletionExtension(
+  fileName: string,
+  rootPath?: string,
+  relativePath?: string,
+): Extension {
+  const amuxSources = getFileEditorCompletionSources(fileName, rootPath, relativePath);
+  return [
+    suppressNoopCompletionHistory,
+    autocompletion({
+      activateOnTyping: true,
+      activateOnTypingDelay: 80,
+      closeOnBlur: true,
+      defaultKeymap: false,
+      icons: true,
+      maxRenderedOptions: 12,
+      activateOnCompletion: (completion) => completion.type === 'folder',
+    }),
+    EditorState.languageData.of(() => amuxSources.map((autocomplete) => ({ autocomplete }))),
+  ];
 }
 
 function getGrammarKey(fileName: string): GrammarKey {
@@ -593,6 +685,8 @@ function createGrammarPromise(key: GrammarKey): Promise<Extension> {
       return import('@codemirror/lang-json').then(({ json }) => json());
     case 'markdown':
       return import('@codemirror/lang-markdown').then(({ markdown }) => markdown());
+    case 'gitignore':
+      return Promise.resolve([]);
     case 'dockerfile':
     case 'shell':
       return import('@codemirror/legacy-modes/mode/shell')
