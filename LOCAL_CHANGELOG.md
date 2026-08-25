@@ -16,12 +16,12 @@ The optional live review E2E/manual handoff was attempted with installed agent C
 ### Validation
 
 ```
-# Working directory: /Users/i056926/projects/dmux/desktop
+# Working directory: desktop/
 $ pnpm exec vitest run --config vitest.config.ts --no-file-parallelism __tests__/services/review-workflow.test.ts __tests__/services/review-action.test.ts __tests__/services/review-prompt.test.ts __tests__/services/review-snapshot.test.ts __tests__/services/review-pane-guards.test.ts __tests__/services/fix-handoff.test.ts __tests__/hooks/use-review-controls.test.tsx __tests__/components/review-navigation-button.test.tsx
 Test Files  8 passed (8)
 Tests  136 passed (136)
 
-# Working directory: /Users/i056926/projects/dmux/desktop
+# Working directory: desktop/
 $ pnpm exec vitest run --config vitest.config.ts --no-file-parallelism __tests__/services/review-prompt.test.ts __tests__/components/send-fixes-confirm-dialog.test.tsx __tests__/services/review-workflow.test.ts
 Test Files  3 passed (3)
 Tests  29 passed (29)
@@ -30,7 +30,7 @@ $ pnpm exec vitest run --config vitest.config.ts --no-file-parallelism __tests__
 Test Files  5 passed (5)
 Tests  102 passed (102)
 
-# Working directory: /Users/i056926/projects/dmux
+# Working directory: repository root
 $ pnpm exec vitest run --config vitest.config.ts --no-file-parallelism __tests__/utils/persistedStateValidation.test.ts
 Test Files  1 passed (1)
 Tests  11 passed (11)
@@ -38,18 +38,18 @@ Tests  11 passed (11)
 $ pnpm typecheck
 Passed: root TypeScript check.
 
-# Working directory: /Users/i056926/projects/dmux/desktop
+# Working directory: desktop/
 $ pnpm typecheck
 Passed: desktop main and renderer TypeScript checks.
 
-# Working directory: /Users/i056926/projects/dmux
+# Working directory: repository root
 $ pnpm lint:ci
 Passed: ESLint with --max-warnings 0.
 
 $ git diff --check
 Passed: no whitespace errors.
 
-# Working directory: /Users/i056926/projects/dmux (nested in pnpm release:verify)
+# Working directory: repository root (nested in pnpm release:verify)
 $ pnpm run test
 Test Files  129 passed | 1 skipped (130)
 Tests  1097 passed | 2 skipped (1099)
@@ -57,7 +57,7 @@ Tests  1097 passed | 2 skipped (1099)
 $ pnpm release:verify
 Passed: exit 0. Audit, static checks, root tests, desktop typecheck/build/unit tests, feature/stable/UI/update E2E, smoke, and x64/arm64 package verification all passed. Desktop release verification reported 354 passed files, 22 skipped files, 3623 passed tests, and 167 skipped tests; package ASARs were clean and arm64 launch/LSP checks passed.
 
-# Working directory: /Users/i056926/projects/dmux/desktop
+# Working directory: desktop/
 $ MUXBASE_E2E=1 MUXBASE_E2E_LIVE_AGENTS=1 MUXBASE_E2E_ALLOW_STORE_COERCE=1 pnpm exec vitest run --config vitest.config.ts --no-file-parallelism __tests__/e2e/review-agent.e2e.test.ts
 Not a release-gate pass: the first temporary canonical-activity attempt passed isolated review launch/rubric verification, then timed out waiting for the live reviewer to reach backend idle; the temporary test shim was reverted. The original harness attempt also failed because it pins legacy agentStatus while the production gate reads PaneActivity.
 ```
