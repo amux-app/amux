@@ -18,6 +18,7 @@ describe('CI workflow contracts', () => {
     const checkIndex = workflow.indexOf('- name: Enforce minimum tmux version');
     const buildIndex = workflow.indexOf('- name: Build desktop application');
     const smokeIndex = workflow.indexOf('run: pnpm --filter muxbase-desktop test:smoke');
+    const visualArtifactIndex = workflow.indexOf('- name: Upload visual regression failures');
     const cleanupIndex = workflow.indexOf('- name: Tear down isolated tmux server');
 
     expect(qualitySteps.map((step) => step.name)).toEqual([
@@ -42,7 +43,13 @@ describe('CI workflow contracts', () => {
     expect(checkIndex).toBeGreaterThan(startIndex);
     expect(buildIndex).toBeGreaterThan(checkIndex);
     expect(smokeIndex).toBeGreaterThan(buildIndex);
+    expect(visualArtifactIndex).toBeGreaterThan(smokeIndex);
     expect(cleanupIndex).toBeGreaterThan(smokeIndex);
+    expect(macSteps.find((step) => step.name === 'Upload visual regression failures')).toMatchObject({
+      uses: expect.stringMatching(/^actions\/upload-artifact@[a-f0-9]{40}$/),
+    });
+    expect(workflow.slice(visualArtifactIndex, cleanupIndex)).toContain('if: failure()');
+    expect(workflow.slice(visualArtifactIndex, cleanupIndex)).toContain('desktop/out/visual-regression/*.png');
     expect(workflow.slice(cleanupIndex)).toContain('if: always()');
     expect(workflow).not.toMatch(/new-session[^\n]*-s muxbase-/);
   });

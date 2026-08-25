@@ -23,6 +23,7 @@ describe('GitHub Actions upstream versions', () => {
   it.each([
     ['actions/checkout', '3d3c42e5aac5ba805825da76410c181273ba90b1', 'v7.0.1'],
     ['actions/setup-node', '820762786026740c76f36085b0efc47a31fe5020', 'v7.0.0'],
+    ['actions/upload-artifact', 'b7c566a772e6b6bfb58ed0dc250532a479d7789f', 'v6.0.0'],
     ['pnpm/action-setup', '0977fd99725f1db4007ccb2928dbb4e90d06cc86', 'v6.0.10'],
     ['googleapis/release-please-action', '45996ed1f6d02564a971a2fa1b5860e934307cf7', 'v5.0.0'],
     ['github/codeql-action/init', 'db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28', 'v4.37.8'],
