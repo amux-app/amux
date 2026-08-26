@@ -4,12 +4,6 @@ All notable changes to this project will be documented in this file.
 
 This project uses release-please to update the changelog from Conventional Commit history.
 
-## MuxBase clean-break rename
-
-- Renamed the application, packages, runtime identifiers, filesystem namespace, Electron API, and release artifacts to MuxBase.
-- Fresh installations use `.muxbase`, `muxbase.config.json`, `~/.muxbase/settings.json`, `muxbase-*` tmux resources, and `MUXBASE_*` environment variables.
-- This is an intentional clean break: old application data is neither migrated nor modified.
-
 ## [0.1.0](https://github.com/amux-app/amux/compare/v0.0.1...v0.1.0) (2026-08-24)
 
 
@@ -20,9 +14,4 @@ This project uses release-please to update the changelog from Conventional Commi
 ## 0.0.1
 
 - Prepare Amux for its first public release.
-- When the application is hidden, terminal output remains available in tmux
-  copy mode. On return, Amux restores the current terminal frame but does not
-  import output produced while hidden into xterm's local scrollback.
-- Claude screen-reader mode is detected from live startup output. If that
-  output appears while its terminal view is detached, restart the Claude pane
-  to restore the intended mouse and native-scrollback behavior.
+
