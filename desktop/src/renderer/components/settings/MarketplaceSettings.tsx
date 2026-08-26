@@ -1,12 +1,18 @@
-import type { DetectedPlugin, InstalledPlugin, MarketplaceInstallMode } from 'muxbase/core';
+import type {
+  MarketplaceInstallIntent,
+  MarketplaceInstallRequest,
+  MarketplacePreviewRequest,
+  MarketplaceRequestIdentity,
+} from '../../../shared/ipc-types';
+import type { DetectedPlugin, InstalledPlugin } from 'muxbase/core';
 import { Plus, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useMarketplaceBootstrap } from '../../hooks/useMarketplaceBootstrap';
 import { cn } from '../../lib/cn';
 import { useMarketplaceStore, type MarketplaceFilter } from '../../stores/marketplace.store';
+import { MarketplacePluginCard } from './MarketplacePluginCard';
 import { SourcesRow, type KnownSource } from './MarketplaceSourceControls';
 import { Spinner } from '../shared/Spinner';
-import { MarketplacePluginCard } from './MarketplacePluginCard';
 import knownSourcesData from './known-sources.json';
 
 const FILTER_TABS: { id: MarketplaceFilter; label: string }[] = [
@@ -51,19 +57,20 @@ export function MarketplaceSettings() {
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingSource, setUpdatingSource] = useState<string | null>(null);
   const [addingUrl, setAddingUrl] = useState<string | null>(null);
-
   const sources = useMarketplaceStore((s) => s.sources);
   const installedPlugins = useMarketplaceStore((s) => s.installedPlugins);
   const browsedPlugins = useMarketplaceStore((s) => s.browsedPlugins);
   const isLoading = useMarketplaceStore((s) => s.isLoading);
-  const installingPlugin = useMarketplaceStore((s) => s.installingPlugin);
+  const activeInstall = useMarketplaceStore((s) => s.installInFlight);
   const error = useMarketplaceStore((s) => s.error);
   const filter = useMarketplaceStore((s) => s.activeFilter);
   const setFilter = useMarketplaceStore((s) => s.setActiveFilter);
   const addSource = useMarketplaceStore((s) => s.addSource);
   const removeSource = useMarketplaceStore((s) => s.removeSource);
   const updateSource = useMarketplaceStore((s) => s.updateSource);
+  const claimInstall = useMarketplaceStore((s) => s.claimInstall);
   const previewPlugin = useMarketplaceStore((s) => s.previewPlugin);
+  const releaseInstall = useMarketplaceStore((s) => s.releaseInstall);
   const installPlugin = useMarketplaceStore((s) => s.installPlugin);
   const uninstallPlugin = useMarketplaceStore((s) => s.uninstallPlugin);
   const clearError = useMarketplaceStore((s) => s.clearError);
@@ -112,38 +119,44 @@ export function MarketplaceSettings() {
   const handleInstall = async (
     pluginId: string,
     sourceUrl: string,
-    mode: MarketplaceInstallMode,
-    selectedSkills: string[],
-    selectedMcpServers: string[],
-    selectedAgents: string[],
+    intent: MarketplaceInstallIntent,
   ): Promise<boolean> => {
-    const response = await previewPlugin(pluginId, sourceUrl, mode, selectedSkills, selectedMcpServers, selectedAgents);
-    if (!response.success || !response.preview) return false;
-    if (response.preview.introducesExecutableBehavior) {
-      const effects = response.preview.agents.flatMap((entry) => entry.artifacts.map((item) => {
-        const detail = item.detail ? ` — ${item.detail}` : '';
-        return `${entry.agent}: ${item.name} → ${item.destinationPaths.join(', ')}${detail}`;
-      }));
-      const environment = response.preview.environmentVariableNames.length > 0
-        ? `\nEnvironment variable names: ${response.preview.environmentVariableNames.join(', ')}`
-        : '';
-      const generated = response.preview.generatedFiles.length > 0
-        ? `\nGenerated files: ${response.preview.generatedFiles.join(', ')}`
-        : '';
-      const confirmed = window.confirm(
-        `This installation adds executable agent behavior. Review these effects before continuing:\n\n${effects.join('\n')}${environment}${generated}`,
-      );
-      if (!confirmed) return false;
-    }
-    return installPlugin(
+    const identity: MarketplaceRequestIdentity = {
       pluginId,
       sourceUrl,
-      mode,
-      selectedSkills,
-      selectedMcpServers,
-      selectedAgents,
-      response.preview.digest,
-    );
+    };
+    if (!claimInstall(identity)) return false;
+    try {
+      const previewRequest: MarketplacePreviewRequest = {
+        ...identity,
+        ...intent,
+      };
+      const response = await previewPlugin(previewRequest);
+      if (!response.success || !response.preview) return false;
+      if (response.preview.introducesExecutableBehavior) {
+        const effects = response.preview.agents.flatMap((entry) => entry.artifacts.map((item) => {
+          const detail = item.detail ? ` — ${item.detail}` : '';
+          return `${entry.agent}: ${item.name} → ${item.destinationPaths.join(', ')}${detail}`;
+        }));
+        const environment = response.preview.environmentVariableNames.length > 0
+          ? `\nEnvironment variable names: ${response.preview.environmentVariableNames.join(', ')}`
+          : '';
+        const generated = response.preview.generatedFiles.length > 0
+          ? `\nGenerated files: ${response.preview.generatedFiles.join(', ')}`
+          : '';
+        const confirmed = window.confirm(
+          `This installation adds executable agent behavior. Review these effects before continuing:\n\n${effects.join('\n')}${environment}${generated}`,
+        );
+        if (!confirmed) return false;
+      }
+      const installRequest: MarketplaceInstallRequest = {
+        ...previewRequest,
+        previewDigest: response.preview.digest,
+      };
+      return installPlugin(installRequest);
+    } finally {
+      releaseInstall(identity);
+    }
   };
 
   return (
@@ -245,7 +258,7 @@ export function MarketplaceSettings() {
                     title="Installed"
                     entries={installedEntries}
                     installedPlugins={installedPlugins}
-                    installingPlugin={installingPlugin}
+                    activeInstall={activeInstall}
                     onInstall={handleInstall}
                     onUninstall={uninstallPlugin}
                   />
@@ -255,7 +268,7 @@ export function MarketplaceSettings() {
                     title="Available"
                     entries={availableEntries}
                     installedPlugins={installedPlugins}
-                    installingPlugin={installingPlugin}
+                    activeInstall={activeInstall}
                     onInstall={handleInstall}
                     onUninstall={uninstallPlugin}
                   />
@@ -310,12 +323,12 @@ interface PluginGroupProps {
   title: string;
   entries: Array<{ plugin: DetectedPlugin; source: { url: string } }>;
   installedPlugins: InstalledPlugin[];
-  installingPlugin: string | null;
-  onInstall: (pluginId: string, sourceUrl: string, mode: MarketplaceInstallMode, selectedSkills: string[], selectedMcpServers: string[], selectedAgents: string[]) => Promise<boolean>;
+  activeInstall: MarketplaceRequestIdentity | null;
+  onInstall: (pluginId: string, sourceUrl: string, intent: MarketplaceInstallIntent) => Promise<boolean>;
   onUninstall: (pluginId: string, sourceUrl: string) => Promise<void>;
 }
 
-function PluginGroup({ title, entries, installedPlugins, installingPlugin, onInstall, onUninstall }: PluginGroupProps) {
+function PluginGroup({ title, entries, installedPlugins, activeInstall, onInstall, onUninstall }: PluginGroupProps) {
   return (
     <div>
       <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)] mb-2.5">
@@ -331,8 +344,9 @@ function PluginGroup({ title, entries, installedPlugins, installingPlugin, onIns
               key={`${source.url}::${plugin.id}`}
               plugin={plugin}
               installed={installed}
-              installing={installingPlugin === plugin.id}
-              onInstall={(mode, skills, mcps, agts) => onInstall(plugin.id, source.url, mode, skills, mcps, agts)}
+              installing={activeInstall?.pluginId === plugin.id && activeInstall.sourceUrl === source.url}
+              installDisabled={activeInstall !== null}
+              onInstall={(intent) => onInstall(plugin.id, source.url, intent)}
               onUninstall={() => onUninstall(plugin.id, source.url)}
             />
           );

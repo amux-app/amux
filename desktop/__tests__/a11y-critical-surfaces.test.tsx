@@ -366,6 +366,7 @@ describe('accessibility of critical surfaces', () => {
       browsedPlugins: {},
       error: null,
       installedPlugins: [],
+      installInFlight: null,
       installingPlugin: null,
       isLoading: false,
       sources: [],

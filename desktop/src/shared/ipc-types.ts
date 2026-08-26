@@ -3,7 +3,6 @@ import type {
   AgentCapability,
   SettingsScope,
   AgentName,
-  MarketplaceInstallMode,
 } from 'muxbase/core';
 import type { TerminalAlternateScreenMode } from './terminal-scroll-protocol.js';
 import type { TerminalThemePreference } from './theme-mode.js';
@@ -1135,14 +1134,26 @@ export interface MarketplaceBrowseResponse {
   error?: string;
 }
 
-export interface MarketplacePreviewRequest {
+export type MarketplaceInstallIntent =
+  | {
+      mode: 'selected';
+      selectedSkills: string[];
+      selectedMcpServers: string[];
+      selectedAgents: string[];
+    }
+  | {
+      mode: 'full';
+      selectedSkills?: never;
+      selectedMcpServers?: never;
+      selectedAgents?: never;
+    };
+
+export interface MarketplaceRequestIdentity {
   pluginId: string;
   sourceUrl: string;
-  mode?: MarketplaceInstallMode;
-  selectedSkills?: string[];
-  selectedMcpServers?: string[];
-  selectedAgents?: string[];
 }
+
+export type MarketplacePreviewRequest = MarketplaceRequestIdentity & MarketplaceInstallIntent;
 
 export interface MarketplacePreviewResponse {
   success: boolean;
@@ -1152,15 +1163,9 @@ export interface MarketplacePreviewResponse {
   affectedPaths?: string[];
 }
 
-export interface MarketplaceInstallRequest {
-  pluginId: string;
-  sourceUrl: string;
+export type MarketplaceInstallRequest = MarketplaceRequestIdentity & MarketplaceInstallIntent & {
   previewDigest: string;
-  mode?: MarketplaceInstallMode;
-  selectedSkills?: string[];
-  selectedMcpServers?: string[];
-  selectedAgents?: string[];
-}
+};
 
 export interface MarketplaceInstallResponse {
   success: boolean;

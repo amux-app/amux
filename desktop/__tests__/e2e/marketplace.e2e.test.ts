@@ -194,12 +194,12 @@ describe.runIf(process.env.MUXBASE_E2E === '1' && process.env.MUXBASE_E2E_FIXTUR
         const pluginId = browseResult.plugins[0].id;
         const previewResult = await page.evaluate(
           (payload) => (window as any).muxbase.invoke('marketplace:preview', payload),
-          { pluginId, sourceUrl: url },
+          { mode: 'full', pluginId, sourceUrl: url },
         );
         expect(previewResult.success, `preview failed for ${key}: ${previewResult.error}`).toBe(true);
         const installResult = await page.evaluate(
           (payload) => (window as any).muxbase.invoke('marketplace:install', payload),
-          { pluginId, sourceUrl: url, previewDigest: previewResult.preview.digest },
+          { mode: 'full', pluginId, sourceUrl: url, previewDigest: previewResult.preview.digest },
         );
         expect(installResult.success, `install failed for ${key}: ${installResult.error}`).toBe(true);
 

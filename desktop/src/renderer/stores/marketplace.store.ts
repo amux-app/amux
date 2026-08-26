@@ -2,10 +2,14 @@ import type {
   DetectedPlugin,
   InstalledPlugin,
   MarketplaceErrorCode,
-  MarketplaceInstallMode,
   MarketplaceSource,
 } from 'muxbase/core';
 import { create } from 'zustand';
+import type {
+  MarketplaceInstallRequest,
+  MarketplacePreviewRequest,
+  MarketplaceRequestIdentity,
+} from '../../shared/ipc-types';
 import * as marketplaceApi from '../api/marketplace.api';
 
 const toErrorMessage = (e: unknown): string =>
@@ -52,6 +56,7 @@ interface MarketplaceState {
   installedPlugins: InstalledPlugin[];
   browsedPlugins: Record<string, DetectedPlugin[]>;
   isLoading: boolean;
+  installInFlight: MarketplaceRequestIdentity | null;
   installingPlugin: string | null;
   error: string | null;
   activeFilter: MarketplaceFilter;
@@ -63,8 +68,10 @@ interface MarketplaceActions {
   removeSource: (url: string) => Promise<void>;
   updateSource: (url: string) => Promise<void>;
   browseSource: (sourceUrl: string) => Promise<void>;
-  installPlugin: (pluginId: string, sourceUrl: string, mode?: MarketplaceInstallMode, selectedSkills?: string[], selectedMcpServers?: string[], selectedAgents?: string[], previewDigest?: string) => Promise<boolean>;
-  previewPlugin: (pluginId: string, sourceUrl: string, mode?: MarketplaceInstallMode, selectedSkills?: string[], selectedMcpServers?: string[], selectedAgents?: string[]) => Promise<Awaited<ReturnType<typeof marketplaceApi.previewPlugin>>>;
+  claimInstall: (identity: MarketplaceRequestIdentity) => boolean;
+  installPlugin: (request: MarketplaceInstallRequest) => Promise<boolean>;
+  previewPlugin: (request: MarketplacePreviewRequest) => Promise<Awaited<ReturnType<typeof marketplaceApi.previewPlugin>>>;
+  releaseInstall: (identity: MarketplaceRequestIdentity) => void;
   uninstallPlugin: (pluginId: string, sourceUrl: string) => Promise<void>;
   loadInstalled: () => Promise<void>;
   clearError: () => void;
@@ -76,6 +83,7 @@ export const useMarketplaceStore = create<MarketplaceState & MarketplaceActions>
   installedPlugins: [],
   browsedPlugins: {},
   isLoading: false,
+  installInFlight: null,
   installingPlugin: null,
   error: null,
   activeFilter: 'all',
@@ -152,10 +160,20 @@ export const useMarketplaceStore = create<MarketplaceState & MarketplaceActions>
     }
   },
 
-  installPlugin: async (pluginId, sourceUrl, mode = 'selected', selectedSkills, selectedMcpServers, selectedAgents, previewDigest) => {
-    set({ installingPlugin: pluginId, error: null });
+  claimInstall: (identity) => {
+    let claimed = false;
+    set((state) => {
+      if (state.installInFlight) return state;
+      claimed = true;
+      return { installInFlight: { ...identity } };
+    });
+    return claimed;
+  },
+
+  installPlugin: async (request) => {
+    set({ installingPlugin: request.pluginId, error: null });
     try {
-      const response = await marketplaceApi.installPlugin(pluginId, sourceUrl, mode, selectedSkills, selectedMcpServers, selectedAgents, previewDigest);
+      const response = await marketplaceApi.installPlugin(request);
       if (response.success) {
         await get().loadInstalled();
         return true;
@@ -170,9 +188,9 @@ export const useMarketplaceStore = create<MarketplaceState & MarketplaceActions>
     }
   },
 
-  previewPlugin: async (pluginId, sourceUrl, mode = 'selected', selectedSkills, selectedMcpServers, selectedAgents) => {
+  previewPlugin: async (request) => {
     try {
-      const response = await marketplaceApi.previewPlugin(pluginId, sourceUrl, mode, selectedSkills, selectedMcpServers, selectedAgents);
+      const response = await marketplaceApi.previewPlugin(request);
       if (!response.success) {
         set({ error: marketplaceFailureMessage(response, 'Failed to preview plugin installation') });
       }
@@ -182,6 +200,16 @@ export const useMarketplaceStore = create<MarketplaceState & MarketplaceActions>
       set({ error: message });
       return { success: false, error: message };
     }
+  },
+
+  releaseInstall: (identity) => {
+    set((state) => {
+      const active = state.installInFlight;
+      if (!active || active.pluginId !== identity.pluginId || active.sourceUrl !== identity.sourceUrl) {
+        return state;
+      }
+      return { installInFlight: null };
+    });
   },
 
   uninstallPlugin: async (pluginId, sourceUrl) => {
