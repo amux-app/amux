@@ -1,9 +1,25 @@
-import type { DetectedPlugin, InstalledPlugin, MarketplaceInstallMode, MarketplaceSource } from 'muxbase/core';
+import type {
+  DetectedPlugin,
+  InstalledPlugin,
+  MarketplaceErrorCode,
+  MarketplaceInstallMode,
+  MarketplaceSource,
+} from 'muxbase/core';
 import { create } from 'zustand';
 import * as marketplaceApi from '../api/marketplace.api';
 
 const toErrorMessage = (e: unknown): string =>
   e instanceof Error ? e.message : String(e);
+
+function marketplaceFailureMessage(
+  response: { error?: string; errorCode?: MarketplaceErrorCode },
+  fallback: string,
+): string {
+  const detail = response.error ?? fallback;
+  return response.errorCode === 'INVALID_SOURCE_TREE'
+    ? `Marketplace source is invalid or unsafe: ${detail}`
+    : detail;
+}
 
 /** Sidebar tree + Settings filter tabs share this — one id per DetectedPlugin artifact bucket. */
 export type MarketplaceFilter = 'all' | 'skills' | 'agents' | 'hooks' | 'mcp' | 'plugins';
@@ -144,7 +160,7 @@ export const useMarketplaceStore = create<MarketplaceState & MarketplaceActions>
         await get().loadInstalled();
         return true;
       }
-      set({ error: response.error ?? 'Failed to install plugin' });
+      set({ error: marketplaceFailureMessage(response, 'Failed to install plugin') });
       return false;
     } catch (error) {
       set({ error: toErrorMessage(error) });
@@ -156,7 +172,11 @@ export const useMarketplaceStore = create<MarketplaceState & MarketplaceActions>
 
   previewPlugin: async (pluginId, sourceUrl, mode = 'selected', selectedSkills, selectedMcpServers, selectedAgents) => {
     try {
-      return await marketplaceApi.previewPlugin(pluginId, sourceUrl, mode, selectedSkills, selectedMcpServers, selectedAgents);
+      const response = await marketplaceApi.previewPlugin(pluginId, sourceUrl, mode, selectedSkills, selectedMcpServers, selectedAgents);
+      if (!response.success) {
+        set({ error: marketplaceFailureMessage(response, 'Failed to preview plugin installation') });
+      }
+      return response;
     } catch (error) {
       const message = toErrorMessage(error);
       set({ error: message });

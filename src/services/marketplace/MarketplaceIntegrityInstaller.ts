@@ -420,7 +420,7 @@ export class MarketplaceIntegrityInstaller {
         }
 
         for (const skill of filtered.skills) {
-          const stagedPath = stagedSkills.installForAgent(skill, agent);
+          const stagedPath = stagedSkills.installForAgent(skill, agent, nativeConfig?.clonePath);
           this.addCandidate(candidates, homeDir, planningHome, agent, stagedPath, 'directory');
           if (!installPath) installPath = stagedPath;
         }

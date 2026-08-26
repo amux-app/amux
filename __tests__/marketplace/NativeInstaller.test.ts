@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const { materializeMarketplaceSourceTree } = vi.hoisted(() => ({
+  materializeMarketplaceSourceTree: vi.fn(),
+}));
+
 vi.mock('fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('fs')>();
   return {
@@ -8,13 +12,16 @@ vi.mock('fs', async (importOriginal) => {
     readFileSync: vi.fn(),
     writeFileSync: vi.fn(),
     mkdirSync: vi.fn(),
-    cpSync: vi.fn(),
     rmSync: vi.fn(),
     readdirSync: vi.fn(() => []),
   };
 });
 
-import { existsSync, readFileSync, writeFileSync, cpSync, rmSync } from 'fs';
+vi.mock('../../src/services/marketplace/MarketplaceSourceTree.js', () => ({
+  materializeMarketplaceSourceTree,
+}));
+
+import { existsSync, readFileSync, writeFileSync, rmSync } from 'fs';
 import { NativeInstaller } from '../../src/services/marketplace/NativeInstaller.js';
 
 describe('NativeInstaller', () => {
@@ -81,17 +88,17 @@ describe('NativeInstaller', () => {
       }, 'claude');
 
       // Should seed marketplace clone
-      expect(cpSync).toHaveBeenCalledWith(
+      expect(materializeMarketplaceSourceTree).toHaveBeenCalledWith(
         '/tmp/clones/my-marketplace',
         expect.stringContaining('marketplaces/my-marketplace'),
-        { recursive: true },
+        '/tmp/clones/my-marketplace',
       );
 
       // Should seed plugin cache
-      expect(cpSync).toHaveBeenCalledWith(
+      expect(materializeMarketplaceSourceTree).toHaveBeenCalledWith(
         '/tmp/clones/my-marketplace/plugins/my-plugin',
         expect.stringContaining('cache/my-marketplace/my-plugin/2.0.0'),
-        { recursive: true },
+        '/tmp/clones/my-marketplace',
       );
 
       // Should write installed_plugins.json
@@ -191,7 +198,7 @@ describe('NativeInstaller', () => {
         pluginVersion: '1.0.0',
       }, 'claude');
 
-      const cacheCpCalls = (cpSync as ReturnType<typeof vi.fn>).mock.calls.filter(
+      const cacheCpCalls = materializeMarketplaceSourceTree.mock.calls.filter(
         (c) => typeof c[1] === 'string' && (c[1] as string).includes('cache/my-marketplace/my-plugin'),
       );
       expect(cacheCpCalls.length).toBe(1);

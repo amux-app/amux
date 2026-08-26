@@ -1148,6 +1148,8 @@ export interface MarketplacePreviewResponse {
   success: boolean;
   preview?: import('muxbase/core').MarketplaceInstallPreview;
   error?: string;
+  errorCode?: import('muxbase/core').MarketplaceErrorCode;
+  affectedPaths?: string[];
 }
 
 export interface MarketplaceInstallRequest {
@@ -1164,7 +1166,7 @@ export interface MarketplaceInstallResponse {
   success: boolean;
   result?: import('muxbase/core').InstallResult;
   error?: string;
-  errorCode?: 'DESTINATION_CONFLICT' | 'ARTIFACT_MODIFIED' | 'CONCURRENT_MODIFICATION' | 'TRANSACTION_RECOVERED' | 'ROLLBACK_FAILED';
+  errorCode?: import('muxbase/core').MarketplaceErrorCode;
   affectedPaths?: string[];
 }
 

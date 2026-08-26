@@ -12,32 +12,10 @@ import {
   writeFileSync,
 } from 'node:fs';
 import path from 'node:path';
+import { MarketplaceIntegrityError } from './MarketplaceErrors.js';
 
-export type MarketplaceIntegrityErrorCode =
-  | 'ARTIFACT_MODIFIED'
-  | 'CONCURRENT_MODIFICATION'
-  | 'DESTINATION_CONFLICT'
-  | 'ROLLBACK_FAILED'
-  | 'TRANSACTION_RECOVERED';
-
-export class MarketplaceIntegrityError extends Error {
-  readonly affectedPaths?: string[];
-  readonly code: MarketplaceIntegrityErrorCode;
-  readonly artifactPath?: string;
-
-  constructor(
-    code: MarketplaceIntegrityErrorCode,
-    message: string,
-    artifactPath?: string,
-    affectedPaths?: string[],
-  ) {
-    super(`${code}: ${message}`);
-    this.name = 'MarketplaceIntegrityError';
-    this.affectedPaths = affectedPaths;
-    this.code = code;
-    this.artifactPath = artifactPath;
-  }
-}
+export { MarketplaceIntegrityError } from './MarketplaceErrors.js';
+export type { MarketplaceIntegrityErrorCode } from './MarketplaceErrors.js';
 
 export interface MarketplaceMutation {
   path: string;

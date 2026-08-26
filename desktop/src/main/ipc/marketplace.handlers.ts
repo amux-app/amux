@@ -1,15 +1,16 @@
 import {
+  assertSafeCloneTarget,
   deriveCloneDirName,
   FormatDetector,
   getAvailableAgents,
   getAgentsWithCapability,
-  assertSafeCloneTarget,
   GitOperations,
+  isMarketplaceErrorCode,
   MarketplaceInstaller,
   MarketplaceIntegrityError,
   MarketplaceIntegrityInstaller,
-  MarketplaceTransaction,
   MarketplaceRegistry,
+  MarketplaceTransaction,
   validateSourceUrl,
   type DetectedPlugin,
   type InstallSelection,
@@ -49,6 +50,28 @@ const CLONES_DIR = path.join(os.homedir(), '.muxbase', 'marketplaces');
 let registryInstance: MarketplaceRegistry | null = null;
 let recoveryFailure: Error | null = null;
 let recoverySucceeded = false;
+
+function structuredMarketplaceError(error: unknown): {
+  affectedPaths?: string[];
+  errorCode?: MarketplaceInstallResponse['errorCode'];
+} {
+  if (typeof error !== 'object' || error === null || !('code' in error)) return {};
+  const code = error.code;
+  if (!isMarketplaceErrorCode(code)) return {};
+
+  const affectedPaths = 'affectedPaths' in error && Array.isArray(error.affectedPaths)
+    ? error.affectedPaths.filter((entry): entry is string => typeof entry === 'string')
+    : [];
+  const artifactPath = 'artifactPath' in error && typeof error.artifactPath === 'string'
+    ? error.artifactPath
+    : undefined;
+  return {
+    errorCode: code,
+    ...(affectedPaths.length > 0
+      ? { affectedPaths }
+      : artifactPath ? { affectedPaths: [artifactPath] } : {}),
+  };
+}
 
 function marketplaceJournalDir(): string {
   return path.join(app.getPath('userData'), 'marketplace-transactions');
@@ -276,7 +299,11 @@ export function registerMarketplaceHandlers(): void {
       return { success: true, preview };
     } catch (error) {
       log.error('ipc:marketplace', 'Failed to preview plugin installation', error);
-      return { success: false, error: formatError(error) };
+      return {
+        success: false,
+        error: formatError(error),
+        ...structuredMarketplaceError(error),
+      };
     }
   });
 
@@ -326,19 +353,12 @@ export function registerMarketplaceHandlers(): void {
       return { success: true, result };
     } catch (error) {
       log.error('ipc:marketplace', 'Failed to install plugin', error);
-      const integrityError = error as {
-        affectedPaths?: string[];
-        artifactPath?: string;
-        code?: MarketplaceInstallResponse['errorCode'];
-      };
-      if (integrityError.code === 'ROLLBACK_FAILED' && error instanceof Error) recoveryFailure = error;
+      const structuredError = structuredMarketplaceError(error);
+      if (structuredError.errorCode === 'ROLLBACK_FAILED' && error instanceof Error) recoveryFailure = error;
       return {
         success: false,
         error: formatError(error),
-        ...(integrityError.code ? { errorCode: integrityError.code } : {}),
-        ...(integrityError.affectedPaths?.length
-          ? { affectedPaths: integrityError.affectedPaths }
-          : integrityError.artifactPath ? { affectedPaths: [integrityError.artifactPath] } : {}),
+        ...structuredError,
       };
     }
   });
@@ -400,19 +420,12 @@ export function registerMarketplaceHandlers(): void {
       return { success: true, preservedArtifacts: uninstallResult.preservedArtifacts };
     } catch (error) {
       log.error('ipc:marketplace', 'Failed to uninstall plugin', error);
-      const integrityError = error as {
-        affectedPaths?: string[];
-        artifactPath?: string;
-        code?: MarketplaceInstallResponse['errorCode'];
-      };
-      if (integrityError.code === 'ROLLBACK_FAILED' && error instanceof Error) recoveryFailure = error;
+      const structuredError = structuredMarketplaceError(error);
+      if (structuredError.errorCode === 'ROLLBACK_FAILED' && error instanceof Error) recoveryFailure = error;
       return {
         success: false,
         error: formatError(error),
-        ...(integrityError.code ? { errorCode: integrityError.code } : {}),
-        ...(integrityError.affectedPaths?.length
-          ? { affectedPaths: integrityError.affectedPaths }
-          : integrityError.artifactPath ? { affectedPaths: [integrityError.artifactPath] } : {}),
+        ...structuredError,
       };
     }
   });

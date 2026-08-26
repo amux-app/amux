@@ -1,5 +1,172 @@
 # Local Changelog
 
+## Structure marketplace source failures and unify traversal policy
+
+- **Date/time:** 2026-08-26 06:54 UTC (completion)
+- **Impact:** Medium — extends the marketplace IPC error contract and renderer failure behavior, and consolidates security-sensitive artifact traversal without changing accepted source or destination semantics.
+- **What:** Marketplace source-containment failures now carry the stable `INVALID_SOURCE_TREE` code and affected source path through preview/install IPC. Preview failures populate the visible marketplace error state instead of being silently dropped. Preview hashing and pre-install validation now share one traversal implementation; callers with a clone containment root may materialize safe internal links, while core callers without one retain strict symlink rejection.
+- **Why:** Review feedback correctly identified that source-policy failures were indistinguishable from transient filesystem failures and that two recursive walkers could drift. Deeper verification found the UI issue was stronger than reported: failed preview responses were returned to the component but never written to visible error state.
+- **How:** Added a central marketplace error contract and guarded code predicate, introduced `MarketplaceSourceTreeError`, propagated recognized structured failures through all marketplace mutation handlers, categorized invalid sources in the renderer store, and made the shared source-tree collector accept an optional containment root. Removed the duplicate strict collector and blanket assertion from `MarketplaceInstaller`.
+
+### Risk, compatibility, and deferred work
+
+Existing integrity error codes and messages are unchanged. Generic Node filesystem codes such as `ENOENT` are not admitted into the typed IPC error contract. Direct `muxbase/core` callers that omit a trusted containment root still reject every symlink exactly as before; desktop callers still accept only relative, resolvable links canonically contained by their registered clone. The synchronous hashing/materialization cost is valid and remains explicitly deferred: an adversarial 50-entry acyclic symlink graph expanded to 196,607 logical entries locally, using about 359 MiB and 12.6 seconds, so bounded/off-main-process ingestion should be a dedicated performance and resource-policy change rather than folded into this error-contract cleanup.
+
+### Validation
+
+```text
+# RED: structured source error and visible preview-failure regressions
+$ pnpm exec vitest run __tests__/marketplace/nativeMarketplaceContainment.test.ts --no-file-parallelism
+Test Files 1 failed; Tests 1 failed, 8 passed. The policy error had no code or artifact path.
+$ cd desktop && pnpm exec vitest run __tests__/main/marketplace-handlers.test.ts __tests__/stores/marketplace.store.test.ts --no-file-parallelism
+Test Files 2 failed; Tests 2 failed, 17 passed. Preview IPC omitted structured details and the renderer error remained null.
+
+# Focused GREEN
+$ pnpm exec vitest run __tests__/marketplace/nativeMarketplaceContainment.test.ts __tests__/marketplace/MarketplaceInstaller.test.ts --no-file-parallelism
+Test Files 2 passed; Tests 30 passed.
+$ cd desktop && pnpm exec vitest run __tests__/main/marketplace-handlers.test.ts __tests__/stores/marketplace.store.test.ts --no-file-parallelism
+Test Files 2 passed; Tests 19 passed.
+
+# Marketplace, complete desktop, static, and build gates
+$ pnpm exec vitest run __tests__/marketplace --no-file-parallelism
+Test Files 15 passed; Tests 153 passed.
+$ pnpm test
+Test Files 129 passed, 1 skipped; Tests 1108 passed, 2 skipped.
+$ cd desktop && pnpm test -- --run
+Test Files 354 passed, 22 skipped; Tests 3625 passed, 168 skipped.
+$ pnpm run verify:static
+Passed: brand guard, internal-reference gate, version alignment, TypeScript, zero-warning ESLint, and Knip.
+$ pnpm build && pnpm --dir desktop build
+Passed: core TypeScript build and Electron main, preload, and renderer production build.
+
+# Hermetic feature E2E
+$ cd desktop && pnpm test:e2e:features
+Marketplace: 2 passed; duel: 3 passed; Pi: 1 passed. The real IPC full-install symlink flow remained green.
+```
+
+## Fix full marketplace installs for safe internal symlinks
+
+- **Date/time:** 2026-08-25 20:34 UTC (completion)
+- **Impact:** High — changes security-sensitive native marketplace source handling, preview digests, transactional installation output, and ownership tracking without changing IPC or persisted schemas.
+- **What:** Full installation now succeeds for marketplaces such as `wshobson/agents` that contain safe relative symlinks inside the cloned repository. Native marketplace copies materialize those links as ordinary files or directories, so installed and transaction-staged trees remain symlink-free.
+- **Why:** Selecting every plugin item switches to native `full` mode. Claude full-mode preview recursively inspected the entire marketplace clone and rejected the source-level `CLAUDE.md -> AGENTS.md` alias before installation, even though the link was relative and resolved inside the clone. Selected/direct installation worked because it never copied that whole tree.
+- **How:** Added one shared native-tree walker used by both preview hashing and native materialization. It resolves relative links against the canonical clone, retains their alias path in the preview graph, copies resolved content without links, detects directory cycles, and removes any partially materialized destination on failure. The existing direct-artifact and transaction-wide symlink rejection remains unchanged.
+
+### Risk and compatibility
+
+Only recursively copied native marketplace trees accept links, and only when the link target is relative, resolvable, and canonically contained by the source clone. Absolute, escaping, broken, cyclic, and special-file cases still fail closed. Selected skills and local MCP artifacts keep their stricter no-symlink policy, and `MarketplaceTransaction` still rejects every symlink; no destination can gain a symlink through this change. Preview and installation use the same traversal semantics, executable file modes remain preserved, and no IPC, registry, ownership-manifest, or configuration schema changed.
+
+### Validation
+
+```text
+# RED: focused regression before implementation
+$ pnpm vitest run __tests__/marketplace/nativeMarketplaceContainment.test.ts __tests__/marketplace/MarketplaceIntegrityInstaller.test.ts --no-file-parallelism
+Failed as expected: 6 failed, 20 passed. Safe internal preview and transactional full install reproduced the reported rejection; unsafe-link assertions exposed the blanket error path.
+
+# Focused GREEN and core build
+$ pnpm vitest run __tests__/marketplace/nativeMarketplaceContainment.test.ts __tests__/marketplace/MarketplaceIntegrityInstaller.test.ts __tests__/marketplace/NativeInstaller.test.ts --no-file-parallelism
+Test Files 3 passed; Tests 42 passed.
+$ pnpm build
+Passed: hook documentation generation and TypeScript build.
+
+# Marketplace and IPC regression suites
+$ pnpm vitest run __tests__/marketplace --no-file-parallelism
+Test Files 15 passed; Tests 148 passed.
+$ cd desktop && pnpm vitest run --config vitest.config.ts --no-file-parallelism __tests__/main/marketplace-handlers.test.ts
+Test Files 1 passed; Tests 9 passed.
+
+# Static and build verification
+$ pnpm run verify:static
+Passed: brand guard, internal-reference gate, version alignment, TypeScript, zero-warning ESLint, and Knip.
+$ cd desktop && pnpm typecheck
+Passed: core build plus desktop main and renderer TypeScript checks.
+$ cd desktop && pnpm build
+Passed: Electron main, preload, and renderer production build.
+
+# Hermetic Electron full-install regression
+$ cd desktop && MUXBASE_E2E=1 MUXBASE_E2E_FAKE_AGENTS=1 MUXBASE_E2E_ALLOW_STORE_COERCE=1 pnpm exec node ../scripts/run-desktop-e2e.mjs --files __tests__/e2e/marketplace-hermetic.e2e.test.ts -- pnpm exec vitest run --config vitest.config.ts --no-file-parallelism
+Test Files 1 passed; Tests 2 passed. Full preview/install/materialization/ownership/uninstall passed through real IPC.
+
+# Complete suites
+$ pnpm test
+Passed: complete core suite, exit 0.
+$ cd desktop && pnpm test
+Test Files 354 passed, 22 skipped; Tests 3623 passed, 168 skipped.
+
+# Production-shaped source verification
+Fresh `wshobson/agents` commit d82998e7df393c671ede2387a8435075f0b633f5 retained its tracked `CLAUDE.md` symlink. Full preview succeeded; Claude, Codex, and OpenCode all installed with `full` status; 49 artifacts were ownership-tracked; installed `CLAUDE.md` was a regular file matching `AGENTS.md`.
+```
+
+### Review closeout correction
+
+- **Date/time:** 2026-08-25 20:47 UTC (completion)
+- **Impact:** Medium — aligns the exported core installer with the production transactional installer and its preview contract.
+- **What/why:** A commit-level review found that `MarketplaceInstaller.install()` still reapplied the legacy blanket symlink rejection after its preview had accepted a safe native-tree link. The desktop transaction path was correct, but direct consumers of the exported `muxbase/core` API could still reproduce the original full-install failure.
+- **How:** Native preview artifacts are now revalidated with the same containment-aware walker used for preview and materialization. Non-native skills, agents, hooks, MCP scripts, and JS plugins retain the strict no-symlink validation. A focused public-API regression proves preview and install agree for a safe internal alias.
+- **Risk/compatibility:** No API, IPC, persistence, or destination behavior changed. Unsafe native links still fail closed, direct artifacts remain stricter, and the second pre-install source validation remains in place.
+
+```text
+# RED: exported installer regression before the correction
+$ pnpm vitest run __tests__/marketplace/MarketplaceInstaller.test.ts --no-file-parallelism
+Test Files 1 failed; Tests 1 failed, 18 passed. The accepted native link was rejected by the legacy pre-install assertion.
+
+# Focused GREEN
+$ pnpm vitest run __tests__/marketplace/MarketplaceInstaller.test.ts __tests__/marketplace/nativeMarketplaceContainment.test.ts __tests__/marketplace/MarketplaceIntegrityInstaller.test.ts __tests__/marketplace/NativeInstaller.test.ts --no-file-parallelism
+Test Files 4 passed; Tests 61 passed.
+
+# Marketplace regression suite and static quality gates
+$ pnpm vitest run __tests__/marketplace --no-file-parallelism
+Test Files 15 passed; Tests 149 passed.
+$ pnpm run verify:static
+Passed: brand guard, internal-reference gate, version alignment, TypeScript, zero-warning ESLint, and Knip.
+$ pnpm build
+Passed: hook documentation generation and TypeScript production build.
+
+# Read-only closeout review with an isolated Codex home
+$ CODEX_HOME=<isolated> codex review --uncommitted -c 'sandbox_mode="read-only"' -c 'approval_policy="never"'
+Clean: no actionable findings; the reviewer confirmed native containment validation remains aligned while non-native artifacts retain strict rejection.
+```
+
+### Triple-check artifact containment follow-up
+
+- **Date/time:** 2026-08-25 21:12 UTC (completion)
+- **Impact:** High — extends the security-sensitive source-containment policy to directly installed marketplace artifacts and changes how skill trees are staged.
+- **What:** Full and selected installs now accept relative symlinks inside skills, agents, hooks, local MCP sources, and JS plugin artifacts when their canonical targets remain inside the marketplace clone. Skill links are materialized as regular files or directories before transaction staging; escaping, absolute, broken, cyclic, and special-file links still fail closed.
+- **Why:** Triple-checking review feedback reproduced a residual full-install failure when a skill directory contained a safe internal alias. Preview rejected the source, and a direct integrity call could preserve the link into its temporary planning tree before transaction validation rejected it.
+- **How:** Renamed the native-only helper to `MarketplaceSourceTree` and reused its canonical walker for every preview and pre-install source check. `SkillTranslator` materializes contained source trees into an isolated temporary directory before copying them to its target. Local MCP discovery now distinguishes genuinely absent future script arguments from broken links. The IPC E2E fixture contains both repository-root and skill-local aliases.
+- **Risk/compatibility:** The optional `SkillTranslator` containment argument is backward compatible; callers without a trusted clone root retain the old strict behavior. Installed and transaction-staged destinations remain symlink-free. No IPC, registry, ownership, or persistence schema changed.
+- **Deferred/rejected feedback:** The suggested planning-home error code was not added because production install always rebuilds the source preview first and reports the source path before planning. Full-clone hashing cost and the long confirmation dialog are valid pre-existing product concerns but are not correctness regressions and require separate UX/performance design. Feature E2E remains nightly by the repository's explicit PR-versus-release coverage policy.
+
+```text
+# RED: skill-level containment regressions before implementation
+$ pnpm vitest run __tests__/marketplace/MarketplaceIntegrityInstaller.test.ts --no-file-parallelism
+Test Files 1 failed; Tests 2 failed, 18 passed. Safe contained skill alias was rejected and the escaping case used the blanket error.
+
+# RED: broken local MCP link before fail-closed correction
+$ pnpm vitest run __tests__/marketplace/MarketplaceInstaller.test.ts --no-file-parallelism
+Test Files 1 failed; Tests 1 failed, 20 passed. The broken link was incorrectly treated as an absent future script.
+
+# Focused and marketplace regression suites
+$ pnpm vitest run __tests__/marketplace/MarketplaceIntegrityInstaller.test.ts __tests__/marketplace/MarketplaceInstaller.test.ts __tests__/marketplace/SkillTranslator.test.ts __tests__/marketplace/NativeInstaller.test.ts __tests__/marketplace/nativeMarketplaceContainment.test.ts --no-file-parallelism
+Test Files 5 passed; Tests 69 passed.
+$ pnpm vitest run __tests__/marketplace --no-file-parallelism
+Test Files 15 passed; Tests 153 passed.
+
+# Complete core, static, build, and real IPC validation
+$ pnpm test
+Test Files 129 passed, 1 skipped; Tests 1108 passed, 2 skipped.
+$ pnpm run verify:static
+Passed: brand guard, internal-reference gate, version alignment, TypeScript, zero-warning ESLint, and Knip.
+$ pnpm build && pnpm --dir desktop build
+Passed: core TypeScript build and Electron main, preload, and renderer production build.
+$ MUXBASE_E2E=1 MUXBASE_E2E_FAKE_AGENTS=1 MUXBASE_E2E_ALLOW_STORE_COERCE=1 pnpm --dir desktop exec node ../scripts/run-desktop-e2e.mjs --files __tests__/e2e/marketplace-hermetic.e2e.test.ts -- pnpm exec vitest run --config vitest.config.ts --no-file-parallelism
+Test Files 1 passed; Tests 2 passed. Selected and full installs materialized skill-local and repository-root aliases through real IPC and uninstalled cleanly.
+
+# Isolated read-only closeout review
+$ CODEX_HOME=<isolated> codex review --uncommitted -c 'sandbox_mode="read-only"' -c 'approval_policy="never"'
+Clean: no actionable correctness regression identified. The review-side test attempt was blocked by the read-only sandbox; the commands above were run separately and passed.
+```
+
 ## Harden the pane-to-pane review workflow
 
 - **Date/time:** 2026-08-25 19:55 UTC (completion)
