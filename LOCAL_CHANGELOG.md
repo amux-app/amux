@@ -1,5 +1,49 @@
 # Local Changelog
 
+## Structure marketplace source failures and unify traversal policy
+
+- **Date/time:** 2026-08-26 06:54 UTC (completion)
+- **Impact:** Medium — extends the marketplace IPC error contract and renderer failure behavior, and consolidates security-sensitive artifact traversal without changing accepted source or destination semantics.
+- **What:** Marketplace source-containment failures now carry the stable `INVALID_SOURCE_TREE` code and affected source path through preview/install IPC. Preview failures populate the visible marketplace error state instead of being silently dropped. Preview hashing and pre-install validation now share one traversal implementation; callers with a clone containment root may materialize safe internal links, while core callers without one retain strict symlink rejection.
+- **Why:** Review feedback correctly identified that source-policy failures were indistinguishable from transient filesystem failures and that two recursive walkers could drift. Deeper verification found the UI issue was stronger than reported: failed preview responses were returned to the component but never written to visible error state.
+- **How:** Added a central marketplace error contract and guarded code predicate, introduced `MarketplaceSourceTreeError`, propagated recognized structured failures through all marketplace mutation handlers, categorized invalid sources in the renderer store, and made the shared source-tree collector accept an optional containment root. Removed the duplicate strict collector and blanket assertion from `MarketplaceInstaller`.
+
+### Risk, compatibility, and deferred work
+
+Existing integrity error codes and messages are unchanged. Generic Node filesystem codes such as `ENOENT` are not admitted into the typed IPC error contract. Direct `muxbase/core` callers that omit a trusted containment root still reject every symlink exactly as before; desktop callers still accept only relative, resolvable links canonically contained by their registered clone. The synchronous hashing/materialization cost is valid and remains explicitly deferred: an adversarial 50-entry acyclic symlink graph expanded to 196,607 logical entries locally, using about 359 MiB and 12.6 seconds, so bounded/off-main-process ingestion should be a dedicated performance and resource-policy change rather than folded into this error-contract cleanup.
+
+### Validation
+
+```text
+# RED: structured source error and visible preview-failure regressions
+$ pnpm exec vitest run __tests__/marketplace/nativeMarketplaceContainment.test.ts --no-file-parallelism
+Test Files 1 failed; Tests 1 failed, 8 passed. The policy error had no code or artifact path.
+$ cd desktop && pnpm exec vitest run __tests__/main/marketplace-handlers.test.ts __tests__/stores/marketplace.store.test.ts --no-file-parallelism
+Test Files 2 failed; Tests 2 failed, 17 passed. Preview IPC omitted structured details and the renderer error remained null.
+
+# Focused GREEN
+$ pnpm exec vitest run __tests__/marketplace/nativeMarketplaceContainment.test.ts __tests__/marketplace/MarketplaceInstaller.test.ts --no-file-parallelism
+Test Files 2 passed; Tests 30 passed.
+$ cd desktop && pnpm exec vitest run __tests__/main/marketplace-handlers.test.ts __tests__/stores/marketplace.store.test.ts --no-file-parallelism
+Test Files 2 passed; Tests 19 passed.
+
+# Marketplace, complete desktop, static, and build gates
+$ pnpm exec vitest run __tests__/marketplace --no-file-parallelism
+Test Files 15 passed; Tests 153 passed.
+$ pnpm test
+Test Files 129 passed, 1 skipped; Tests 1108 passed, 2 skipped.
+$ cd desktop && pnpm test -- --run
+Test Files 354 passed, 22 skipped; Tests 3625 passed, 168 skipped.
+$ pnpm run verify:static
+Passed: brand guard, internal-reference gate, version alignment, TypeScript, zero-warning ESLint, and Knip.
+$ pnpm build && pnpm --dir desktop build
+Passed: core TypeScript build and Electron main, preload, and renderer production build.
+
+# Hermetic feature E2E
+$ cd desktop && pnpm test:e2e:features
+Marketplace: 2 passed; duel: 3 passed; Pi: 1 passed. The real IPC full-install symlink flow remained green.
+```
+
 ## Fix full marketplace installs for safe internal symlinks
 
 - **Date/time:** 2026-08-25 20:34 UTC (completion)

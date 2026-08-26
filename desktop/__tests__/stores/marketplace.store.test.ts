@@ -61,6 +61,20 @@ describe('marketplace store preview/install coordination', () => {
     expect(marketplaceApi.installPlugin).not.toHaveBeenCalled();
   });
 
+  it('categorizes an invalid marketplace source in the visible error state', async () => {
+    vi.mocked(marketplaceApi.previewPlugin).mockResolvedValue({
+      success: false,
+      error: 'Marketplace artifact symlink escapes source tree',
+      errorCode: 'INVALID_SOURCE_TREE',
+    });
+
+    await useMarketplaceStore.getState().previewPlugin('plugin', 'https://example.test/source.git');
+
+    expect(useMarketplaceStore.getState().error).toBe(
+      'Marketplace source is invalid or unsafe: Marketplace artifact symlink escapes source tree',
+    );
+  });
+
   it('keeps registry state and the source when uninstall fails', async () => {
     const sourceUrl = 'https://example.test/source.git';
     useMarketplaceStore.setState({

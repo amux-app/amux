@@ -3,7 +3,12 @@ export { GitOperations } from './GitOperations.js';
 export { HookTranslator } from './HookTranslator.js';
 export { MarketplaceInstaller } from './MarketplaceInstaller.js';
 export { MarketplaceRegistry } from './MarketplaceRegistry.js';
-export { MarketplaceIntegrityError, MarketplaceTransaction, digestPath } from './MarketplaceTransaction.js';
+export {
+  isMarketplaceErrorCode,
+  MarketplaceIntegrityError,
+  MarketplaceSourceTreeError,
+} from './MarketplaceErrors.js';
+export { MarketplaceTransaction, digestPath } from './MarketplaceTransaction.js';
 export { MarketplaceIntegrityInstaller } from './MarketplaceIntegrityInstaller.js';
 export { McpTranslator } from './McpTranslator.js';
 export { SkillTranslator } from './SkillTranslator.js';
@@ -28,6 +33,11 @@ export type {
   SkillEntry,
   TranslationResult,
 } from './types.js';
+export type {
+  MarketplaceErrorCode,
+  MarketplaceSourceTreeErrorCode,
+} from './MarketplaceErrors.js';
+export type { MarketplaceIntegrityErrorCode } from './MarketplaceTransaction.js';
 export type { NativeMarketplaceConfig } from './NativeInstaller.js';
 export type { InstallSelection, MarketplaceInstallMode, MarketplaceSourceSnapshot } from './MarketplaceInstaller.js';
 export type {

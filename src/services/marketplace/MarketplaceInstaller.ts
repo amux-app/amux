@@ -1,7 +1,7 @@
+import { createHash } from 'crypto';
+import { copyFileSync, existsSync, lstatSync, mkdirSync, readdirSync, rmSync } from 'fs';
 import os from 'os';
 import path from 'path';
-import { copyFileSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'fs';
-import { createHash } from 'crypto';
 import type { AgentName } from '../../utils/agentLaunch.js';
 import { AgentTranslator } from './AgentTranslator.js';
 import { HookTranslator } from './HookTranslator.js';
@@ -47,46 +47,12 @@ function stableValue(value: unknown): unknown {
   );
 }
 
-function contentHash(filePath: string): string {
-  return createHash('sha256').update(readFileSync(filePath)).digest('hex');
-}
-
 function formatArtifactEntries(entries: MarketplaceSourceTreeEntry[]): string[] {
   return entries.map((entry) => [
     entry.entryType,
     entry.relativePath,
     entry.contentHash ?? '',
   ].join(':'));
-}
-
-function collectArtifactEntries(rootPath: string, relativePath = '.'): MarketplaceSourceTreeEntry[] {
-  const stat = lstatSync(rootPath);
-  if (stat.isSymbolicLink()) throw new Error(`Marketplace artifact symlinks are not allowed: ${rootPath}`);
-  if (!stat.isDirectory() && !stat.isFile()) {
-    throw new Error(`Unsupported marketplace artifact type: ${rootPath}`);
-  }
-  if (!stat.isDirectory()) {
-    return [{
-      contentHash: contentHash(rootPath),
-      entryType: 'file',
-      relativePath,
-    }];
-  }
-
-  const entries: MarketplaceSourceTreeEntry[] = [{ entryType: 'directory', relativePath }];
-  return readdirSync(rootPath, { withFileTypes: true })
-    .sort((left, right) => left.name.localeCompare(right.name))
-    .reduce(
-      (collected, entry) => collected.concat(collectArtifactEntries(
-        path.join(rootPath, entry.name),
-        relativePath === '.' ? entry.name : path.join(relativePath, entry.name),
-      )),
-      entries,
-    );
-}
-
-function assertNoSymlinks(paths: string[]): void {
-  for (const sourcePath of paths) collectArtifactEntries(sourcePath);
 }
 
 function isPathWithin(rootPath: string, candidatePath: string): boolean {
@@ -176,7 +142,7 @@ function artifact(
 ): MarketplacePreviewArtifact {
   const entries = sourcePaths.flatMap((sourcePath) => containmentRoot
     ? collectMarketplaceSourceTreeEntries(sourcePath, containmentRoot)
-    : collectArtifactEntries(sourcePath));
+    : collectMarketplaceSourceTreeEntries(sourcePath));
   return {
     contentHashes: formatArtifactEntries(entries),
     destinationPaths,
@@ -371,7 +337,7 @@ export class MarketplaceInstaller {
           if (nativeConfig?.clonePath) {
             collectMarketplaceSourceTreeEntries(sourcePath, nativeConfig.clonePath);
           } else {
-            assertNoSymlinks([sourcePath]);
+            collectMarketplaceSourceTreeEntries(sourcePath);
           }
         }
       }

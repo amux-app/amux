@@ -81,6 +81,14 @@ vi.mock('muxbase/core', () => ({
     ensureClone: ensureCloneMock,
     pull: pullMock,
   })),
+  isMarketplaceErrorCode: vi.fn((value: unknown) => [
+    'ARTIFACT_MODIFIED',
+    'CONCURRENT_MODIFICATION',
+    'DESTINATION_CONFLICT',
+    'INVALID_SOURCE_TREE',
+    'ROLLBACK_FAILED',
+    'TRANSACTION_RECOVERED',
+  ].includes(String(value))),
   assertSafeCloneTarget: vi.fn(),
   deriveCloneDirName: vi.fn(() => 'marketplace'),
   getAgentsWithCapability: vi.fn((agents: unknown[]) => agents),
@@ -214,6 +222,23 @@ describe('marketplace IPC preview/install coordination', () => {
       expect.objectContaining({ ownershipManifest: undefined, prepareRegistryMutation: expect.any(Function) }),
     );
     expect(addInstalledMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns structured source validation details when preview rejects the source tree', async () => {
+    previewMock.mockImplementationOnce(() => {
+      throw Object.assign(new Error('Marketplace artifact symlink escapes source tree'), {
+        artifactPath: '/tmp/marketplace/escaping-link',
+        code: 'INVALID_SOURCE_TREE',
+      });
+    });
+
+    const result = await getHandler(IPC.MARKETPLACE_PREVIEW)(undefined, request);
+
+    expect(result).toMatchObject({
+      affectedPaths: ['/tmp/marketplace/escaping-link'],
+      errorCode: 'INVALID_SOURCE_TREE',
+      success: false,
+    });
   });
 
   it('blocks later registry actions after a transaction rollback failure', async () => {

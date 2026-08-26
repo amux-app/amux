@@ -10,6 +10,7 @@ import {
   rmSync,
 } from 'fs';
 import path from 'path';
+import { MarketplaceSourceTreeError } from './MarketplaceErrors.js';
 
 export interface MarketplaceSourceTreeEntry {
   contentHash?: string;
@@ -31,26 +32,41 @@ function isPathWithin(rootPath: string, candidatePath: string): boolean {
 function walkMarketplaceSourceTree(
   sourcePath: string,
   relativePath: string,
-  containmentRoot: string,
+  containmentRoot: string | undefined,
   activeDirectories: Set<string>,
   visitor: MarketplaceSourceTreeVisitor,
   symlinkPath?: string,
 ): void {
   const sourceStat = lstatSync(sourcePath);
   if (sourceStat.isSymbolicLink()) {
+    if (!containmentRoot) {
+      throw new MarketplaceSourceTreeError(
+        `Marketplace artifact symlinks are not allowed: ${sourcePath}`,
+        sourcePath,
+      );
+    }
     const linkTarget = readlinkSync(sourcePath);
     if (path.isAbsolute(linkTarget)) {
-      throw new Error(`Marketplace artifact has an absolute symlink target: ${sourcePath}`);
+      throw new MarketplaceSourceTreeError(
+        `Marketplace artifact has an absolute symlink target: ${sourcePath}`,
+        sourcePath,
+      );
     }
 
     let resolvedPath: string;
     try {
       resolvedPath = realpathSync(sourcePath);
     } catch {
-      throw new Error(`Marketplace artifact has a broken or cyclic symlink: ${sourcePath}`);
+      throw new MarketplaceSourceTreeError(
+        `Marketplace artifact has a broken or cyclic symlink: ${sourcePath}`,
+        sourcePath,
+      );
     }
     if (!isPathWithin(containmentRoot, resolvedPath)) {
-      throw new Error(`Marketplace artifact symlink escapes source tree: ${sourcePath}`);
+      throw new MarketplaceSourceTreeError(
+        `Marketplace artifact symlink escapes source tree: ${sourcePath}`,
+        sourcePath,
+      );
     }
     walkMarketplaceSourceTree(
       resolvedPath,
@@ -68,12 +84,16 @@ function walkMarketplaceSourceTree(
     return;
   }
   if (!sourceStat.isDirectory()) {
-    throw new Error(`Unsupported marketplace artifact type: ${sourcePath}`);
+    throw new MarketplaceSourceTreeError(`Unsupported marketplace artifact type: ${sourcePath}`, sourcePath);
   }
 
   const canonicalDirectory = realpathSync(sourcePath);
   if (activeDirectories.has(canonicalDirectory)) {
-    throw new Error(`Marketplace artifact contains a symlink cycle: ${symlinkPath ?? sourcePath}`);
+    const artifactPath = symlinkPath ?? sourcePath;
+    throw new MarketplaceSourceTreeError(
+      `Marketplace artifact contains a symlink cycle: ${artifactPath}`,
+      artifactPath,
+    );
   }
 
   activeDirectories.add(canonicalDirectory);
@@ -95,28 +115,39 @@ function walkMarketplaceSourceTree(
 
 function visitMarketplaceSourceTree(
   sourcePath: string,
-  containmentRoot: string,
+  containmentRoot: string | undefined,
   visitor: MarketplaceSourceTreeVisitor,
 ): void {
-  const canonicalContainmentRoot = realpathSync(containmentRoot);
-  let canonicalSourcePath: string;
-  try {
-    canonicalSourcePath = realpathSync(sourcePath);
-  } catch {
-    let isSymlink = false;
-    try { isSymlink = lstatSync(sourcePath).isSymbolicLink(); } catch { /* missing source */ }
-    if (isSymlink) throw new Error(`Marketplace artifact has a broken or cyclic symlink: ${sourcePath}`);
-    throw new Error(`Marketplace artifact source cannot be resolved: ${sourcePath}`);
-  }
-  if (!isPathWithin(canonicalContainmentRoot, canonicalSourcePath)) {
-    throw new Error(`Marketplace artifact source is outside the marketplace source: ${sourcePath}`);
+  let canonicalContainmentRoot: string | undefined;
+  if (containmentRoot) {
+    canonicalContainmentRoot = realpathSync(containmentRoot);
+    let canonicalSourcePath: string;
+    try {
+      canonicalSourcePath = realpathSync(sourcePath);
+    } catch {
+      let isSymlink = false;
+      try { isSymlink = lstatSync(sourcePath).isSymbolicLink(); } catch { /* missing source */ }
+      if (isSymlink) {
+        throw new MarketplaceSourceTreeError(
+          `Marketplace artifact has a broken or cyclic symlink: ${sourcePath}`,
+          sourcePath,
+        );
+      }
+      throw new Error(`Marketplace artifact source cannot be resolved: ${sourcePath}`);
+    }
+    if (!isPathWithin(canonicalContainmentRoot, canonicalSourcePath)) {
+      throw new MarketplaceSourceTreeError(
+        `Marketplace artifact source is outside the marketplace source: ${sourcePath}`,
+        sourcePath,
+      );
+    }
   }
   walkMarketplaceSourceTree(sourcePath, '.', canonicalContainmentRoot, new Set(), visitor);
 }
 
 export function collectMarketplaceSourceTreeEntries(
   sourcePath: string,
-  containmentRoot: string,
+  containmentRoot?: string,
 ): MarketplaceSourceTreeEntry[] {
   const entries: MarketplaceSourceTreeEntry[] = [];
   visitMarketplaceSourceTree(sourcePath, containmentRoot, {

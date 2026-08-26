@@ -75,11 +75,16 @@ describe('native marketplace preview containment', () => {
     writeFileSync(path.join(outside, 'secret.js'), 'secret');
     symlinkSync(path.relative(root, outside), path.join(root, 'linked-directory'), 'dir');
 
-    expect(() => new MarketplaceInstaller().preview(
-      plugin,
-      ['claude'],
-      nativeConfig(root),
-    )).toThrow('escapes source tree');
+    try {
+      new MarketplaceInstaller().preview(plugin, ['claude'], nativeConfig(root));
+      throw new Error('Expected preview to reject the escaping symlink');
+    } catch (error) {
+      expect(error).toMatchObject({
+        artifactPath: path.join(root, 'linked-directory'),
+        code: 'INVALID_SOURCE_TREE',
+        message: expect.stringContaining('escapes source tree'),
+      });
+    }
   });
 
   it('cleans a partially materialized native tree when a later symlink escapes', () => {
