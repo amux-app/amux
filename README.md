@@ -45,7 +45,7 @@ MuxBase gives you one window for the whole workflow. Watch agents run in project
 
 MuxBase supports macOS 13 or newer on Apple silicon and Intel Macs.
 
-### Homebrew
+### Homebrew **(wip)**
 
 For published releases, Homebrew is the recommended installation path:
 
