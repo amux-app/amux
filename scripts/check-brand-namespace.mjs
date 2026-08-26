@@ -8,7 +8,7 @@ const OLD_NAMESPACE_TOKENS = [
   ['a', 'm', 'u', 'x'].join(''),
   ['d', 'm', 'u', 'x'].join(''),
 ];
-const HISTORICAL_PATHS = new Set(['CHANGELOG.md', 'LOCAL_CHANGELOG.md']);
+const HISTORICAL_PATHS = new Set(['CHANGELOG.md']);
 const SCRIPT_ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 
 function parseRootArgument(argv) {

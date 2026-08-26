@@ -45,11 +45,10 @@ describe('brand namespace guard', () => {
     expect(result.stdout).toContain('src/current.txt');
   });
 
-  it('allows explicitly historical matches only in changelog files', () => {
+  it('allows explicitly historical matches only in the public changelog', () => {
     const oldName = ['a', 'm', 'u', 'x'].join('');
     const root = createGitFixture({
       'CHANGELOG.md': `Historical ${oldName} release\n`,
-      'LOCAL_CHANGELOG.md': `Historical ${oldName} note\n`,
     });
 
     const result = spawnSync(process.execPath, [scriptPath, '--root', root], {
@@ -57,6 +56,6 @@ describe('brand namespace guard', () => {
     });
 
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain('allowlisted historical matches: 2');
+    expect(result.stdout).toContain('allowlisted historical matches: 1');
   });
 });
