@@ -87,6 +87,45 @@ describe('native marketplace preview containment', () => {
     }
   });
 
+  it('keeps selected-all preview scoped to selected artifacts while full preview validates the native tree', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'muxbase-native-preview-'));
+    const outside = mkdtempSync(path.join(tmpdir(), 'muxbase-native-outside-'));
+    const skillDir = path.join(root, 'skills', 'safe-skill');
+    mkdirSync(skillDir, { recursive: true });
+    writeFileSync(path.join(skillDir, 'SKILL.md'), '# Safe skill\n');
+    writeFileSync(path.join(outside, 'secret.js'), 'secret');
+    symlinkSync(path.relative(root, outside), path.join(root, 'unrelated-link'), 'dir');
+
+    const selectedPlugin: DetectedPlugin = {
+      ...plugin,
+      skills: [{ name: 'safe-skill', path: path.join(skillDir, 'SKILL.md') }],
+    };
+    const config = nativeConfig(root);
+
+    const selectedPreview = new MarketplaceInstaller().preview(
+      selectedPlugin,
+      ['claude'],
+      config,
+      { skills: ['safe-skill'], mcpServers: [], agents: [] },
+      { headSha: 'head-1', sourceUrl: config.marketplaceUrl },
+      'selected',
+    );
+    expect(selectedPreview.mode).toBe('selected');
+    expect(selectedPreview.agents[0]?.artifacts.some((artifact) => artifact.name.startsWith('native:'))).toBe(false);
+
+    expect(() => new MarketplaceInstaller().preview(
+      selectedPlugin,
+      ['claude'],
+      config,
+      undefined,
+      { headSha: 'head-1', sourceUrl: config.marketplaceUrl },
+      'full',
+    )).toThrow(expect.objectContaining({
+      artifactPath: path.join(root, 'unrelated-link'),
+      code: 'INVALID_SOURCE_TREE',
+    }));
+  });
+
   it('cleans a partially materialized native tree when a later symlink escapes', () => {
     const root = mkdtempSync(path.join(tmpdir(), 'muxbase-native-preview-'));
     const outside = mkdtempSync(path.join(tmpdir(), 'muxbase-native-outside-'));

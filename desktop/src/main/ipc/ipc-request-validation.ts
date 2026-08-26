@@ -23,7 +23,6 @@ const terminalScrollDirectionSchema = z.enum(['down', 'up']);
 const terminalAlternateScreenModeSchema = z.enum(['arrow-keys', 'opencode']);
 const sidebarOrganizeSchema = z.enum(['project', 'flat']);
 const sidebarSortSchema = z.enum(['priority', 'updated', 'manual']);
-const marketplaceInstallModeSchema = z.enum(['full', 'selected']);
 
 // Model + effort: defense-in-depth on top of shQuote at the launch layer. The
 // regex rejects shell metacharacters (`;`, `|`, backtick, `$`, spaces, newlines)
@@ -122,6 +121,36 @@ const positiveIntegerValue = z.number().int().positive();
 const terminalColsValue = z.number().int().min(2).max(1000);
 const terminalRowsValue = z.number().int().min(2).max(500);
 const stringArray = z.array(stringValue);
+
+const marketplaceRequestIdentityShape = {
+  pluginId: stringValue,
+  sourceUrl: stringValue,
+};
+const marketplaceSelectedIntentShape = {
+  mode: z.literal('selected'),
+  selectedSkills: z.array(stringValue),
+  selectedMcpServers: z.array(stringValue),
+  selectedAgents: z.array(stringValue),
+};
+const marketplaceFullIntentShape = {
+  mode: z.literal('full'),
+};
+const marketplacePreviewRequestSchema = z.discriminatedUnion('mode', [
+  z.object({ ...marketplaceRequestIdentityShape, ...marketplaceSelectedIntentShape }).strict(),
+  z.object({ ...marketplaceRequestIdentityShape, ...marketplaceFullIntentShape }).strict(),
+]);
+const marketplaceInstallRequestSchema = z.discriminatedUnion('mode', [
+  z.object({
+    ...marketplaceRequestIdentityShape,
+    ...marketplaceSelectedIntentShape,
+    previewDigest: stringValue,
+  }).strict(),
+  z.object({
+    ...marketplaceRequestIdentityShape,
+    ...marketplaceFullIntentShape,
+    previewDigest: stringValue,
+  }).strict(),
+]);
 
 function oneArg(schema: z.ZodType<unknown>): IpcArgsSchema {
   return z.tuple([schema]);
@@ -509,23 +538,8 @@ const ipcRequestSchemas = {
   [IPC.MARKETPLACE_BROWSE]: oneArg(z.object({
     sourceUrl: stringValue,
   }).strict()),
-  [IPC.MARKETPLACE_PREVIEW]: oneArg(z.object({
-    pluginId: stringValue,
-    sourceUrl: stringValue,
-    mode: marketplaceInstallModeSchema.optional(),
-    selectedSkills: z.array(stringValue).optional(),
-    selectedMcpServers: z.array(stringValue).optional(),
-    selectedAgents: z.array(stringValue).optional(),
-  }).strict()),
-  [IPC.MARKETPLACE_INSTALL]: oneArg(z.object({
-    pluginId: stringValue,
-    sourceUrl: stringValue,
-    previewDigest: stringValue,
-    mode: marketplaceInstallModeSchema.optional(),
-    selectedSkills: z.array(stringValue).optional(),
-    selectedMcpServers: z.array(stringValue).optional(),
-    selectedAgents: z.array(stringValue).optional(),
-  }).strict()),
+  [IPC.MARKETPLACE_PREVIEW]: oneArg(marketplacePreviewRequestSchema),
+  [IPC.MARKETPLACE_INSTALL]: oneArg(marketplaceInstallRequestSchema),
   [IPC.MARKETPLACE_UNINSTALL]: oneArg(z.object({
     pluginId: stringValue,
     sourceUrl: stringValue,

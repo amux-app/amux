@@ -141,15 +141,14 @@ function getSelection(request: MarketplacePreviewRequest | MarketplaceInstallReq
   mode: MarketplaceInstallMode;
   selection?: InstallSelection;
 } {
-  const hasAnySelection = Array.isArray(request.selectedSkills)
-    || Array.isArray(request.selectedMcpServers)
-    || Array.isArray(request.selectedAgents);
-  const mode = request.mode ?? (hasAnySelection ? 'selected' : 'full');
+  if (request.mode === 'full') return { mode: 'full' };
   return {
-    mode,
-    ...(mode === 'selected'
-      ? { selection: { skills: request.selectedSkills, mcpServers: request.selectedMcpServers, agents: request.selectedAgents } }
-      : {}),
+    mode: 'selected',
+    selection: {
+      skills: request.selectedSkills,
+      mcpServers: request.selectedMcpServers,
+      agents: request.selectedAgents,
+    },
   };
 }
 

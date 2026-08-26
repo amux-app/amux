@@ -1,8 +1,10 @@
-import type { InstalledPlugin, MarketplaceInstallMode, MarketplaceSource } from 'muxbase/core';
+import type { InstalledPlugin, MarketplaceSource } from 'muxbase/core';
 import { IPC } from '../../shared/ipc-channels';
 import type {
   MarketplaceBrowseResponse,
+  MarketplaceInstallRequest,
   MarketplaceInstallResponse,
+  MarketplacePreviewRequest,
   MarketplacePreviewResponse,
   MarketplaceSourceAddResponse,
   MarketplaceUninstallResponse,
@@ -29,42 +31,12 @@ export function browseSource(sourceUrl: string): Promise<MarketplaceBrowseRespon
   return invoke<MarketplaceBrowseResponse>(IPC.MARKETPLACE_BROWSE, { sourceUrl });
 }
 
-export function installPlugin(
-  pluginId: string,
-  sourceUrl: string,
-  mode: MarketplaceInstallMode = 'selected',
-  selectedSkills?: string[],
-  selectedMcpServers?: string[],
-  selectedAgents?: string[],
-  previewDigest?: string,
-): Promise<MarketplaceInstallResponse> {
-  return invoke<MarketplaceInstallResponse>(IPC.MARKETPLACE_INSTALL, {
-    pluginId,
-    sourceUrl,
-    mode,
-    previewDigest: previewDigest ?? '',
-    ...(Array.isArray(selectedSkills) ? { selectedSkills } : {}),
-    ...(Array.isArray(selectedMcpServers) ? { selectedMcpServers } : {}),
-    ...(Array.isArray(selectedAgents) ? { selectedAgents } : {}),
-  });
+export function installPlugin(request: MarketplaceInstallRequest): Promise<MarketplaceInstallResponse> {
+  return invoke<MarketplaceInstallResponse>(IPC.MARKETPLACE_INSTALL, request);
 }
 
-export function previewPlugin(
-  pluginId: string,
-  sourceUrl: string,
-  mode: MarketplaceInstallMode = 'selected',
-  selectedSkills?: string[],
-  selectedMcpServers?: string[],
-  selectedAgents?: string[],
-): Promise<MarketplacePreviewResponse> {
-  return invoke<MarketplacePreviewResponse>(IPC.MARKETPLACE_PREVIEW, {
-    pluginId,
-    sourceUrl,
-    mode,
-    ...(Array.isArray(selectedSkills) ? { selectedSkills } : {}),
-    ...(Array.isArray(selectedMcpServers) ? { selectedMcpServers } : {}),
-    ...(Array.isArray(selectedAgents) ? { selectedAgents } : {}),
-  });
+export function previewPlugin(request: MarketplacePreviewRequest): Promise<MarketplacePreviewResponse> {
+  return invoke<MarketplacePreviewResponse>(IPC.MARKETPLACE_PREVIEW, request);
 }
 
 export function uninstallPlugin(pluginId: string, sourceUrl: string): Promise<MarketplaceUninstallResponse> {

@@ -22,6 +22,7 @@ describe('marketplace store preview/install coordination', () => {
       installedPlugins: [],
       browsedPlugins: {},
       isLoading: false,
+      installInFlight: null,
       installingPlugin: null,
       error: null,
     });
@@ -32,30 +33,38 @@ describe('marketplace store preview/install coordination', () => {
     vi.mocked(marketplaceApi.installPlugin).mockResolvedValue({ success: true, result: {} as never });
 
     await expect(useMarketplaceStore.getState().installPlugin(
-      'plugin',
-      'https://example.test/source.git',
-      'selected',
-      ['skill'],
-      [],
-      ['agent'],
-      'digest-1',
+      {
+        mode: 'selected',
+        pluginId: 'plugin',
+        previewDigest: 'digest-1',
+        selectedAgents: ['agent'],
+        selectedMcpServers: [],
+        selectedSkills: ['skill'],
+        sourceUrl: 'https://example.test/source.git',
+      },
     )).resolves.toBe(true);
 
     expect(marketplaceApi.installPlugin).toHaveBeenCalledWith(
-      'plugin',
-      'https://example.test/source.git',
-      'selected',
-      ['skill'],
-      [],
-      ['agent'],
-      'digest-1',
+      {
+        mode: 'selected',
+        pluginId: 'plugin',
+        previewDigest: 'digest-1',
+        selectedAgents: ['agent'],
+        selectedMcpServers: [],
+        selectedSkills: ['skill'],
+        sourceUrl: 'https://example.test/source.git',
+      },
     );
   });
 
   it('surfaces a preview failure without attempting install', async () => {
     vi.mocked(marketplaceApi.previewPlugin).mockResolvedValue({ success: false, error: 'source changed' });
 
-    const response = await useMarketplaceStore.getState().previewPlugin('plugin', 'https://example.test/source.git');
+    const response = await useMarketplaceStore.getState().previewPlugin({
+      mode: 'full',
+      pluginId: 'plugin',
+      sourceUrl: 'https://example.test/source.git',
+    });
 
     expect(response).toEqual({ success: false, error: 'source changed' });
     expect(marketplaceApi.installPlugin).not.toHaveBeenCalled();
@@ -68,7 +77,11 @@ describe('marketplace store preview/install coordination', () => {
       errorCode: 'INVALID_SOURCE_TREE',
     });
 
-    await useMarketplaceStore.getState().previewPlugin('plugin', 'https://example.test/source.git');
+    await useMarketplaceStore.getState().previewPlugin({
+      mode: 'full',
+      pluginId: 'plugin',
+      sourceUrl: 'https://example.test/source.git',
+    });
 
     expect(useMarketplaceStore.getState().error).toBe(
       'Marketplace source is invalid or unsafe: Marketplace artifact symlink escapes source tree',
@@ -160,7 +173,12 @@ describe('marketplace store preview/install coordination', () => {
         release = resolve;
       }),
     );
-    const promise = useMarketplaceStore.getState().installPlugin('plugin', 'url');
+    const promise = useMarketplaceStore.getState().installPlugin({
+      mode: 'full',
+      pluginId: 'plugin',
+      previewDigest: 'digest-1',
+      sourceUrl: 'url',
+    });
     expect(useMarketplaceStore.getState().installingPlugin).toBe('plugin');
     release({ error: 'install failed', success: false });
     await expect(promise).resolves.toBe(false);
@@ -180,7 +198,12 @@ describe('marketplace store preview/install coordination', () => {
       error: 'conflict',
       success: false,
     });
-    await expect(useMarketplaceStore.getState().installPlugin('plugin', 'url')).resolves.toBe(false);
+    await expect(useMarketplaceStore.getState().installPlugin({
+      mode: 'full',
+      pluginId: 'plugin',
+      previewDigest: 'digest-1',
+      sourceUrl: 'url',
+    })).resolves.toBe(false);
     expect(useMarketplaceStore.getState().installedPlugins).toEqual([installed]);
   });
 });

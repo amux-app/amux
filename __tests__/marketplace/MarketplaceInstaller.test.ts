@@ -217,6 +217,82 @@ describe('MarketplaceInstaller', () => {
     expect(mockMcpInstall).not.toHaveBeenCalled();
   });
 
+  it('installs a fully selected npx-based server directly without native registration', async () => {
+    const { NativeInstaller } = await import('../../src/services/marketplace/NativeInstaller.js');
+    const { McpTranslator } = await import('../../src/services/marketplace/McpTranslator.js');
+    const mockNativeInstall = vi.fn().mockReturnValue('/path/to/native');
+    const mockMcpInstall = vi.fn().mockReturnValue('/path/to/mcp');
+    (NativeInstaller as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+      supportsNative: vi.fn((agent: string, format?: string) => agent === 'claude' && (!format || format === 'claude-marketplace')),
+      install: mockNativeInstall,
+      uninstall: vi.fn(),
+      getNativeCopyOperations: vi.fn(() => []),
+      getNativeConfigurationPaths: vi.fn(() => []),
+    }));
+    (McpTranslator as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+      installForAgent: mockMcpInstall,
+      uninstallForAgent: vi.fn(),
+    }));
+
+    const plugin: DetectedPlugin = {
+      id: 'test-plugin',
+      name: 'Test Plugin',
+      skills: [],
+      agents: [],
+      hooks: [],
+      mcpServers: [{ name: 'my-mcp', command: 'npx', args: ['-y', '@my/mcp-server'] }],
+      jsPlugins: [],
+    };
+    const nativeConfig = {
+      marketplaceUrl: 'https://example.com/repo.git',
+      marketplaceName: 'test-mp',
+      pluginId: 'test-plugin',
+      sourceFormat: 'claude-marketplace' as const,
+    };
+
+    await new MarketplaceInstaller().install(
+      plugin,
+      ['claude'],
+      nativeConfig,
+      { skills: [], mcpServers: ['my-mcp'], agents: [] },
+      undefined,
+      undefined,
+      'selected',
+    );
+
+    expect(mockNativeInstall).not.toHaveBeenCalled();
+    expect(mockMcpInstall).toHaveBeenCalledWith(plugin.mcpServers[0], 'claude');
+  });
+
+  it('keeps hooks and JavaScript plugins in selected previews', () => {
+    const jsPluginPath = '/tmp/marketplace-plugin.js';
+    writeFileSync(jsPluginPath, 'export default {};\n');
+    const plugin: DetectedPlugin = {
+      id: 'test-plugin',
+      name: 'Test Plugin',
+      skills: [{ name: 'my-skill', path: '/tmp/skills/my-skill/SKILL.md' }],
+      agents: [],
+      hooks: [{ event: 'post_merge', command: 'run-tool' }],
+      mcpServers: [],
+      jsPlugins: [{ name: 'plugin-script', path: jsPluginPath }],
+    };
+
+    const preview = new MarketplaceInstaller().preview(
+      plugin,
+      ['opencode'],
+      undefined,
+      { skills: ['my-skill'], mcpServers: [], agents: [] },
+      { headSha: 'head-1', sourceUrl: 'https://example.test/repo.git' },
+      'selected',
+    );
+
+    expect(preview.agents[0]?.artifacts.map((artifact) => artifact.name)).toEqual([
+      'skill:my-skill',
+      'hooks',
+      'plugin:plugin-script',
+    ]);
+  });
+
   it('uses direct install for all agents when no nativeConfig', async () => {
     const installer = new MarketplaceInstaller();
     const plugin: DetectedPlugin = {

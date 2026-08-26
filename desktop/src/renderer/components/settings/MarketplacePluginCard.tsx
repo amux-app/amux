@@ -1,15 +1,17 @@
-import type { DetectedPlugin, InstalledPlugin, MarketplaceInstallMode } from 'muxbase/core';
+import type { MarketplaceInstallIntent } from '../../../shared/ipc-types';
+import type { DetectedPlugin, InstalledPlugin } from 'muxbase/core';
 import { ChevronDown, ChevronUp, Download, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '../../lib/cn';
-import { Spinner } from '../shared/Spinner';
 import { AgentBrandIcon, isBrandedAgentName } from '../shared/agent-brand-icons';
+import { Spinner } from '../shared/Spinner';
 
 interface MarketplacePluginCardProps {
   plugin: DetectedPlugin;
   installed?: InstalledPlugin;
   installing: boolean;
-  onInstall: (mode: MarketplaceInstallMode, selectedSkills: string[], selectedMcpServers: string[], selectedAgents: string[]) => void;
+  installDisabled: boolean;
+  onInstall: (intent: MarketplaceInstallIntent) => void;
   onUninstall: () => void;
 }
 
@@ -109,6 +111,7 @@ function SelectionGroup({
         <button
           type="button"
           onClick={() => onToggleAll(!allSelected)}
+          aria-label={`${allSelected ? 'Deselect all' : 'Select all'} ${title.toLowerCase()}`}
           className="text-[9px] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
         >
           {allSelected ? 'Deselect all' : 'Select all'}
@@ -133,6 +136,7 @@ export function MarketplacePluginCard({
   plugin,
   installed,
   installing,
+  installDisabled,
   onInstall,
   onUninstall,
 }: MarketplacePluginCardProps) {
@@ -161,7 +165,6 @@ export function MarketplacePluginCard({
   const selectedCount = skills.selected.size + mcps.selected.size + agents.selected.size;
   const totalCount = skillNames.length + mcpNames.length + agentNames.length;
   const nothingSelected = selectedCount === 0;
-  const installMode: MarketplaceInstallMode = totalCount > 0 && selectedCount < totalCount ? 'selected' : 'full';
 
   return (
     <div className={cn(
@@ -233,6 +236,7 @@ export function MarketplacePluginCard({
               <button
                 type="button"
                 onClick={() => setExpanded((v) => !v)}
+                disabled={installDisabled}
                 className={cn(
                   'flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-lg border transition-colors',
                   expanded
@@ -246,8 +250,8 @@ export function MarketplacePluginCard({
             ) : hasAutoInstallOnly ? (
               <button
                 type="button"
-                onClick={() => onInstall('full', [], [], [])}
-                disabled={installing}
+                onClick={() => onInstall({ mode: 'full' })}
+                disabled={installDisabled}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-lg bg-[var(--accent)] text-[var(--bg)] hover:opacity-90 disabled:opacity-50 transition-opacity"
               >
                 {installing ? <Spinner /> : <Download size={12} />}
@@ -322,12 +326,30 @@ export function MarketplacePluginCard({
             </span>
             <button
               type="button"
-              onClick={() => onInstall(installMode, Array.from(skills.selected), Array.from(mcps.selected), Array.from(agents.selected))}
-              disabled={installing || nothingSelected}
+              onClick={() => onInstall({
+                mode: 'selected',
+                selectedSkills: skillNames.filter((name) => skills.selected.has(name)),
+                selectedMcpServers: mcpNames.filter((name) => mcps.selected.has(name)),
+                selectedAgents: agentNames.filter((name) => agents.selected.has(name)),
+              })}
+              disabled={installDisabled || nothingSelected}
               className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-lg bg-[var(--accent)] text-[var(--bg)] hover:opacity-90 disabled:opacity-40 transition-opacity"
             >
               {installing ? <Spinner /> : <Download size={12} />}
-              Install{selectedCount > 0 && selectedCount < totalCount ? ` (${selectedCount})` : ''}
+              Install selected{selectedCount > 0 ? ` (${selectedCount})` : ''}
+            </button>
+          </div>
+          <div className="flex items-center justify-between gap-3 border-t border-[var(--border)] pt-3">
+            <span className="text-[10px] text-[var(--text-muted)]">
+              Uses native agent registration when available and may add capabilities beyond the selected items.
+            </span>
+            <button
+              type="button"
+              onClick={() => onInstall({ mode: 'full' })}
+              disabled={installDisabled}
+              className="shrink-0 px-2.5 py-1.5 text-[10px] font-medium rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--divider-strong)] disabled:opacity-40 transition-colors"
+            >
+              Install full plugin
             </button>
           </div>
         </div>

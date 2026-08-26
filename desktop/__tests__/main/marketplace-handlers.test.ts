@@ -222,6 +222,73 @@ describe('marketplace IPC preview/install coordination', () => {
       expect.objectContaining({ ownershipManifest: undefined, prepareRegistryMutation: expect.any(Function) }),
     );
     expect(addInstalledMock).toHaveBeenCalledTimes(1);
+    expect(prepareAddInstalledMock).toHaveBeenCalledWith(expect.objectContaining({
+      selectedArtifacts: expect.objectContaining({
+        agentNames: [],
+        mcpServers: [],
+        skills: ['skill-one'],
+        usedNativeRegistration: false,
+      }),
+    }));
+  });
+
+  it('does not authorize a full install with a selected-mode preview digest', async () => {
+    previewMock.mockImplementation((plugin, _agents, _nativeConfig, selection, identity, mode) => ({
+      digest: `digest:${mode}:${JSON.stringify(selection)}:${identity.headSha}`,
+      sourceHeadSha: identity.headSha,
+      introducesExecutableBehavior: false,
+      agents: [],
+      environmentVariableNames: [],
+      generatedFiles: [],
+    }));
+
+    const selectedPreview = await getHandler(IPC.MARKETPLACE_PREVIEW)(undefined, request);
+    expect(selectedPreview).toMatchObject({ success: true });
+    if (!('preview' in selectedPreview) || !selectedPreview.preview) throw new Error('Missing selected preview');
+
+    const result = await getHandler(IPC.MARKETPLACE_INSTALL)(undefined, {
+      mode: 'full',
+      pluginId: request.pluginId,
+      sourceUrl: request.sourceUrl,
+      previewDigest: selectedPreview.preview.digest,
+    });
+
+    expect(result).toEqual({ success: false, error: 'Marketplace source changed; review the installation again' });
+    expect(integrityInstallMock).not.toHaveBeenCalled();
+    expect(addInstalledMock).not.toHaveBeenCalled();
+  });
+
+  it('propagates explicit full intent to native install and registry state', async () => {
+    const fullRequest = {
+      mode: 'full' as const,
+      pluginId: request.pluginId,
+      sourceUrl: request.sourceUrl,
+    };
+    const preview = await getHandler(IPC.MARKETPLACE_PREVIEW)(undefined, fullRequest);
+    expect(preview).toMatchObject({ success: true, preview: { digest: 'digest:head-1' } });
+
+    const result = await getHandler(IPC.MARKETPLACE_INSTALL)(undefined, {
+      ...fullRequest,
+      previewDigest: 'digest:head-1',
+    });
+
+    expect(result).toMatchObject({ success: true });
+    expect(integrityInstallMock).toHaveBeenCalledWith(
+      expect.anything(),
+      ['claude'],
+      expect.objectContaining({ pluginId: 'plugin-one' }),
+      undefined,
+      'full',
+      expect.anything(),
+    );
+    expect(prepareAddInstalledMock).toHaveBeenCalledWith(expect.objectContaining({
+      selectedArtifacts: expect.objectContaining({
+        agentNames: [],
+        mcpServers: [],
+        skills: ['skill-one'],
+        usedNativeRegistration: true,
+      }),
+    }));
   });
 
   it('returns structured source validation details when preview rejects the source tree', async () => {
@@ -351,8 +418,9 @@ describe('marketplace IPC preview/install coordination', () => {
     expect(addInstalledMock).not.toHaveBeenCalled();
   });
 
-  it('normalizes a mode-less request without selection arrays to full mode', async () => {
+  it('propagates explicit full intent without selection data', async () => {
     const preview = await getHandler(IPC.MARKETPLACE_PREVIEW)(undefined, {
+      mode: 'full',
       sourceUrl: request.sourceUrl,
       pluginId: request.pluginId,
     });

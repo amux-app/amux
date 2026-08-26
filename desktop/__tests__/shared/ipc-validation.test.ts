@@ -44,6 +44,78 @@ describe('ipc request validation', () => {
     expect(() => validateIpcInvokeArgs(IPC.PANE_CREATE, [{ prompt: '', type: 'shell' }])).not.toThrow();
   });
 
+  it.each([IPC.MARKETPLACE_PREVIEW, IPC.MARKETPLACE_INSTALL])(
+    'enforces the explicit marketplace intent contract for %s',
+    (channel) => {
+      const installFields = channel === IPC.MARKETPLACE_INSTALL ? { previewDigest: 'digest-1' } : {};
+      const identity = { pluginId: 'plugin', sourceUrl: 'https://example.test/source.git' };
+
+      const validRequests = [
+        {
+          ...identity,
+          ...installFields,
+          mode: 'selected',
+          selectedAgents: [],
+          selectedMcpServers: [],
+          selectedSkills: ['skill'],
+        },
+        {
+          ...identity,
+          ...installFields,
+          mode: 'selected',
+          selectedAgents: [],
+          selectedMcpServers: [],
+          selectedSkills: [],
+        },
+        {
+          ...identity,
+          ...installFields,
+          mode: 'full',
+        },
+      ];
+      for (const request of validRequests) {
+        expect(() => validateIpcInvokeArgs(channel, [request])).not.toThrow();
+      }
+
+      const invalidRequests = [
+        {
+          ...identity,
+          ...installFields,
+          mode: 'selected',
+          selectedAgents: [],
+          selectedSkills: [],
+        },
+        {
+          ...identity,
+          ...installFields,
+          mode: 'full',
+          selectedSkills: [],
+        },
+        {
+          ...identity,
+          ...installFields,
+          selectedAgents: [],
+          selectedMcpServers: [],
+          selectedSkills: [],
+        },
+        {
+          ...identity,
+          ...installFields,
+          mode: 'unknown',
+        },
+        {
+          ...identity,
+          ...installFields,
+          mode: 'full',
+          unexpected: true,
+        },
+      ];
+      for (const request of invalidRequests) {
+        expect(() => validateIpcInvokeArgs(channel, [request])).toThrow(/Invalid IPC payload/);
+      }
+    },
+  );
+
   it('accepts Pi at launch, duel, kanban, and session-list boundaries', () => {
     expect(() => validateIpcInvokeArgs(IPC.PANE_CREATE, [{
       agent: 'pi',
