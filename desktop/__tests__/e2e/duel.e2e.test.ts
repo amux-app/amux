@@ -15,12 +15,14 @@ import {
   getSystemCheck,
   pollUntil,
 } from './e2e-helpers';
+import { validateAppliedContentSize } from './window-size-policy';
 
 const ROOT = resolve(__dirname, '..', '..');
 const MAIN_ENTRY = resolve(ROOT, 'out', 'main', 'index.js');
 const DUEL_PROMPT = 'List the files in this repo';
 const DUEL_CREATION_TIMEOUT = 40_000;
 const DIALOG_TIMEOUT = 8_000;
+const MINIMUM_DUEL_CONTENT_HEIGHT = 600;
 
 interface UiStoreState {
   viewMode: string;
@@ -79,17 +81,15 @@ async function setAppContentSize(
     win.setContentSize(requestedSize.width, requestedSize.height);
     return win.getContentSize();
   }, size);
-  if (!actual || actual[0] !== size.width || actual[1] !== size.height) {
-    throw new Error(
-      `Unable to resize Electron content to ${size.width}x${size.height}; `
-      + `received ${actual ? `${actual[0]}x${actual[1]}` : 'no application window'}`,
-    );
-  }
+  // Hosted macOS runners cap window height to the available display work area.
+  // Duel breakpoints depend on exact width; a clamped height remains valid only
+  // while it preserves the app's minimum supported content height.
+  const appliedSize = validateAppliedContentSize(size, actual, MINIMUM_DUEL_CONTENT_HEIGHT);
   await page.waitForFunction(
-    (requestedSize) => (
-      window.innerWidth === requestedSize.width && window.innerHeight === requestedSize.height
+    (expectedSize) => (
+      window.innerWidth === expectedSize.width && window.innerHeight === expectedSize.height
     ),
-    size,
+    appliedSize,
   );
   await page.evaluate(() => new Promise<void>((resolveFrame) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolveFrame()));
