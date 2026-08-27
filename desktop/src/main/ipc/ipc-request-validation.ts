@@ -151,6 +151,24 @@ const marketplaceInstallRequestSchema = z.discriminatedUnion('mode', [
     previewDigest: stringValue,
   }).strict(),
 ]);
+// Marketplace artifact names become filesystem path components (skill dirs, `<pluginId>__<name>.md`
+// agent files) or config keys. Reject path separators, traversal, absolute paths, and leading dots
+// at the IPC boundary so a hostile renderer can't drive a translator into deleting arbitrary paths.
+// Defense-in-depth: the translators re-validate + verify containment before any fs write/delete.
+const artifactNameSchema = z.string().min(1).max(200).superRefine((value, ctx) => {
+  const unsafe =
+    value.trim() !== value ||
+    value.length === 0 ||
+    value.startsWith('.') ||
+    value.includes('/') ||
+    value.includes('\\') ||
+    value.includes('..') ||
+    // eslint-disable-next-line no-control-regex
+    /[<>:"|?*\x00-\x1f]/.test(value);
+  if (unsafe) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid artifact name' });
+  }
+});
 
 function oneArg(schema: z.ZodType<unknown>): IpcArgsSchema {
   return z.tuple([schema]);
@@ -545,6 +563,34 @@ const ipcRequestSchemas = {
     sourceUrl: stringValue,
   }).strict()),
   [IPC.MARKETPLACE_INSTALLED_LIST]: noArgs,
+  [IPC.MARKETPLACE_CHECK_UPDATES]: noArgs,
+  [IPC.MARKETPLACE_SCAN_INSTALLED]: noArgs,
+  [IPC.MARKETPLACE_UNINSTALL_ITEM]: oneArg(z.object({
+    type: z.enum(['skill', 'mcpServer', 'agent', 'hook']),
+    name: artifactNameSchema,
+    agents: z.array(z.enum(['claude', 'codex', 'opencode'])),
+    pluginId: artifactNameSchema.optional(),
+    sourceUrl: stringValue.optional(),
+  }).strict()),
+  [IPC.MARKETPLACE_INSTALL_ITEM]: oneArg(z.object({
+    type: z.enum(['skill', 'mcpServer', 'agent', 'hook']),
+    name: artifactNameSchema,
+    agents: z.array(z.enum(['claude', 'codex', 'opencode'])),
+    pluginId: artifactNameSchema,
+    sourceUrl: stringValue,
+  }).strict()),
+  [IPC.MARKETPLACE_ACK_UPDATES]: oneArg(z.object({
+    entries: z.array(z.object({
+      sourceUrl: stringValue,
+      snapshot: z.record(stringValue, z.object({
+        skills: z.record(stringValue, stringValue),
+        mcpServers: z.record(stringValue, stringValue),
+        agents: z.record(stringValue, stringValue),
+        jsPlugins: z.record(stringValue, stringValue),
+        hookEvents: z.record(stringValue, stringValue),
+      })),
+    })),
+  }).strict()),
 } satisfies Record<IpcChannel, IpcArgsSchema>;
 
 export function validateIpcInvokeArgs(channel: string, args: unknown[]): unknown[] {

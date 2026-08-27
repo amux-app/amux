@@ -157,44 +157,68 @@ interface SourcesRowProps {
   updatingSource: string | null;
   addingUrl: string | null;
   addedUrls: Set<string>;
+  selectedSources: Set<string>;
   onAdd: (url: string) => void;
   onUpdate: (url: string) => void;
   onRemove: (url: string) => void;
+  onToggle: (url: string) => void;
 }
 
 export function SourcesRow({
-  sources, knownSources, updatingSource, addingUrl, addedUrls, onAdd, onUpdate, onRemove,
+  sources, knownSources, updatingSource, addingUrl, addedUrls, selectedSources, onAdd, onUpdate, onRemove, onToggle,
 }: SourcesRowProps) {
   return (
     <div className="flex items-start gap-2 flex-wrap">
-      {sources.map((source) => (
-        <div
-          key={source.url}
-          className="group flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[11px] text-[var(--text-secondary)]"
-        >
-          <span className="font-medium">{source.name}</span>
-          {source.headSha && (
-            <span className="font-mono text-[10px] text-[var(--text-muted)]">{source.headSha.slice(0, 7)}</span>
-          )}
-          <button
-            type="button"
-            onClick={() => onUpdate(source.url)}
-            disabled={updatingSource === source.url}
-            className="p-0.5 rounded-full text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors disabled:opacity-40"
-            title="Sync"
+      {sources.map((source) => {
+        const active = selectedSources.has(source.url);
+        return (
+          <div
+            key={source.url}
+            className={cn(
+              'group flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full border text-[11px] transition-colors',
+              active
+                ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
+                : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)]',
+            )}
           >
-            <RefreshCw size={10} className={updatingSource === source.url ? 'animate-spin' : ''} />
-          </button>
-          <button
-            type="button"
-            onClick={() => onRemove(source.url)}
-            className="p-0.5 rounded-full text-[var(--text-muted)] hover:text-[var(--error)] transition-colors"
-            title="Remove"
-          >
-            <X size={10} />
-          </button>
-        </div>
-      ))}
+            <button
+              type="button"
+              onClick={() => onToggle(source.url)}
+              className="font-medium leading-none"
+            >
+              {source.name}
+            </button>
+            {source.headSha && (
+              <span className={cn('font-mono text-[10px]', active ? 'text-[var(--accent)]/70' : 'text-[var(--text-muted)]')}>
+                {source.headSha.slice(0, 7)}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => onUpdate(source.url)}
+              disabled={updatingSource === source.url}
+              className={cn(
+                'p-0.5 rounded-full transition-colors disabled:opacity-40',
+                active ? 'text-[var(--accent)]/70 hover:text-[var(--accent)]' : 'text-[var(--text-muted)] hover:text-[var(--accent)]',
+              )}
+              title="Sync"
+            >
+              <RefreshCw size={10} className={updatingSource === source.url ? 'animate-spin' : ''} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onRemove(source.url)}
+              className={cn(
+                'p-0.5 rounded-full transition-colors',
+                active ? 'text-[var(--accent)]/70 hover:text-[var(--error)]' : 'text-[var(--text-muted)] hover:text-[var(--error)]',
+              )}
+              title="Remove"
+            >
+              <X size={10} />
+            </button>
+          </div>
+        );
+      })}
       <AddSourceDropdown knownSources={knownSources} addedUrls={addedUrls} addingUrl={addingUrl} onAdd={onAdd} />
     </div>
   );

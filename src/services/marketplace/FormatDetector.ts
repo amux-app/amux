@@ -290,15 +290,23 @@ export class FormatDetector {
       const hooksFile = path.join(dir, 'hooks.json');
       if (!existsSync(hooksFile)) return [];
       const data = JSON.parse(readFileSync(hooksFile, 'utf-8'));
+      // Support both bare { EventName: [...] } and wrapped { hooks: { EventName: [...] } }
+      const map = (data.hooks && typeof data.hooks === 'object' && !Array.isArray(data.hooks))
+        ? data.hooks
+        : data;
       const entries: HookEntry[] = [];
-      for (const [event, hooks] of Object.entries(data)) {
-        for (const hook of hooks as Array<{ match?: { tool?: string }; run?: { cmd?: string } }>) {
-          entries.push({
-            event,
-            command: hook.run?.cmd,
-            matcher: hook.match?.tool,
-            sourceFormat: 'claude',
-          });
+      for (const [event, hooks] of Object.entries(map)) {
+        for (const hook of hooks as Array<Record<string, unknown>>) {
+          // Native Claude format: { matcher?: string, hooks: [{ command }] }
+          // Legacy marketplace format: { match?: { tool }, run?: { cmd } }
+          const nativeHooks = Array.isArray(hook.hooks) ? hook.hooks as Array<{ command?: string }> : null;
+          const command = nativeHooks
+            ? nativeHooks.find((h) => h.command)?.command
+            : (hook.run as { cmd?: string } | undefined)?.cmd;
+          const matcher = nativeHooks
+            ? (typeof hook.matcher === 'string' ? hook.matcher : undefined)
+            : (hook.match as { tool?: string } | undefined)?.tool;
+          entries.push({ event, command, matcher, sourceFormat: 'claude' });
         }
       }
       return entries;

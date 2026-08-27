@@ -17,19 +17,50 @@ export interface MarketplaceSource {
   detectedFormat: MarketplaceFormat | null;
   headSha: string | null;
   lastUpdated: string | null;
+  // Snapshot of item names seen the last time this source was checked, used to
+  // detect newly added items on subsequent checks. Absent means never checked.
+  lastSeenArtifacts?: SourceArtifactSnapshot;
 }
 
-export interface AgentInstallInfo {
-  status: InstallStatus;
-  path: string;
-  skipped?: string[];
+// Keys of a plugin id → the items it exposed, per item type, each mapping an item
+// name to a content hash. Grouping by plugin id keeps the diff stable when unrelated
+// plugins in the same source change. A changed hash for a same-named item means the
+// item was updated (not merely present). Legacy snapshots stored string[] (names only)
+// and are migrated on the next check — see UpdateDiff.normalizeSnapshotEntry.
+export interface SourceArtifactSnapshot {
+  [pluginId: string]: {
+    skills: Record<string, string>;
+    mcpServers: Record<string, string>;
+    agents: Record<string, string>;
+    jsPlugins: Record<string, string>;
+    hookEvents: Record<string, string>;
+  };
+}
+
+export interface NewArtifact {
+  type: 'skill' | 'mcpServer' | 'agent' | 'jsPlugin' | 'hook';
+  name: string;
+  description?: string;
+  // 'new' = not present in the previous snapshot; 'updated' = present but content changed.
+  changeType: 'new' | 'updated';
+  // ISO timestamp of when the item changed. diffAgainstSnapshot stamps the detection
+  // time; callers may overwrite it with the file's real commit date.
+  changedAt: string;
+}
+
+export interface SourceUpdate {
+  sourceUrl: string;
+  sourceName: string;
+  pluginId: string;
+  pluginName: string;
+  newArtifacts: NewArtifact[];
 }
 
 export interface InstalledPlugin {
   pluginId: string;
   sourceUrl: string;
   installedAt: string;
-  agents: Partial<Record<AgentName, AgentInstallInfo>>;
+  agents: Partial<Record<AgentName, AgentInstallResult>>;
   selectedArtifacts?: {
     skills: string[];
     mcpServers: string[];
@@ -122,9 +153,14 @@ export interface JsPluginEntry {
   path: string;
 }
 
+export interface AgentInstallResult {
+  status: InstallStatus;
+  skipped: string[];
+}
+
 export interface InstallResult {
   pluginId: string;
-  agents: Partial<Record<AgentName, AgentInstallInfo>>;
+  agents: Partial<Record<AgentName, AgentInstallResult>>;
 }
 
 export interface MarketplacePreviewArtifact {

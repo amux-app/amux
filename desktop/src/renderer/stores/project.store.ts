@@ -106,5 +106,13 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set, get) 
       };
     });
     await get().loadProjects();
+
+    // Check connected marketplace sources for newly added items on deliberate project
+    // entry (this is only called from the workspace picker / explicit switches, never
+    // from the launch-time session restore — so the popup won't appear on app launch).
+    // Lazy import avoids a circular dependency between the two stores.
+    void import('./marketplace-updates.store').then(({ useMarketplaceUpdatesStore }) => {
+      void useMarketplaceUpdatesStore.getState().check();
+    });
   },
 }));

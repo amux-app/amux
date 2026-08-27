@@ -308,12 +308,14 @@ export { TMUX_LAYOUT_APPLY_DELAY, TMUX_SPLIT_DELAY, TMUX_SHELL_READY_DELAY } fro
 
 // Marketplace
 export {
+  AgentTranslator,
   assertSafeCloneTarget,
   canonicalizeSourceUrl,
   deriveCloneDirName,
   FormatDetector,
   GitOperations,
   HookTranslator,
+  InstalledScanner,
   isBlockedHost,
   isMarketplaceErrorCode,
   isPrivateIp,
@@ -326,10 +328,11 @@ export {
   digestPath,
   McpTranslator,
   SkillTranslator,
+  buildSnapshot,
+  diffAgainstSnapshot,
   validateSourceUrl,
 } from './services/marketplace/index.js';
 export type {
-  AgentInstallInfo,
   DetectedPlugin,
   HookEntry,
   InstallResult,
@@ -338,6 +341,8 @@ export type {
   MarketplacePreviewArtifact,
   InstallStatus,
   InstalledPlugin,
+  InstalledItem,
+  InstalledItemType,
   JsPluginEntry,
   AgentEntry,
   MarketplaceFormat,
@@ -345,6 +350,7 @@ export type {
   MarketplaceSource,
   McpServerEntry,
   NativeMarketplaceConfig,
+  NewArtifact,
   InstallSelection,
   MarketplaceInstallMode,
   MarketplaceErrorCode,
@@ -355,5 +361,7 @@ export type {
   MarketplaceTransactionalResult,
   MarketplaceTransactionalUninstallResult,
   SkillEntry,
+  SourceArtifactSnapshot,
+  SourceUpdate,
   TranslationResult,
 } from './services/marketplace/index.js';

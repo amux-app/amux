@@ -208,7 +208,7 @@ export function SettingsView() {
         </nav>
 
         {/* Content area */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto [scrollbar-gutter:stable]">
           <div className="mx-auto w-full max-w-[860px] px-8 py-6">
             {loadError && !electronSettingsLoaded ? (
               <SettingsLoadError error={loadError} onRetry={loadElectronSettings} />

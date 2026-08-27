@@ -429,6 +429,37 @@ describe('ipc request validation', () => {
       value: true,
     }])).toThrow(/Invalid IPC payload/);
   });
+
+  it('rejects path-traversal artifact names for marketplace item install/uninstall', () => {
+    const base = {
+      type: 'skill' as const,
+      agents: ['claude' as const],
+      pluginId: 'myplugin',
+      sourceUrl: 'https://example.com/repo.git',
+    };
+
+    // valid: an ordinary skill name
+    expect(() => validateIpcInvokeArgs(IPC.MARKETPLACE_UNINSTALL_ITEM, [{
+      ...base, name: 'my-skill',
+    }])).not.toThrow();
+
+    // invalid: traversal, separators, absolute, leading dot
+    for (const name of ['../../.ssh', '..\\..\\evil', '/etc/passwd', '.hidden', 'a/b']) {
+      expect(() => validateIpcInvokeArgs(IPC.MARKETPLACE_UNINSTALL_ITEM, [{
+        ...base, name,
+      }])).toThrow(/Invalid IPC payload/);
+    }
+
+    // invalid: a hostile pluginId component (used to scope the on-disk filename)
+    expect(() => validateIpcInvokeArgs(IPC.MARKETPLACE_UNINSTALL_ITEM, [{
+      ...base, name: 'reviewer', type: 'agent', pluginId: '../..',
+    }])).toThrow(/Invalid IPC payload/);
+
+    // install-item enforces the same name rules
+    expect(() => validateIpcInvokeArgs(IPC.MARKETPLACE_INSTALL_ITEM, [{
+      ...base, name: '../../evil',
+    }])).toThrow(/Invalid IPC payload/);
+  });
 });
 
 describe('IPC_EVENT.TERMINAL_STREAM_MODE_CHANGED payload shape', () => {

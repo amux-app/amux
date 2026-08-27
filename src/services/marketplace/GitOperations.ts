@@ -66,6 +66,23 @@ export class GitOperations {
     return stdout.trim();
   }
 
+  // Committer date (ISO 8601) of the most recent commit that touched `filePath`.
+  // `filePath` may be absolute or relative to the clone. Returns '' when the path
+  // has no commit history (untracked, or a shallow clone that didn't fetch it).
+  async getFileCommitDate(clonePath: string, filePath: string): Promise<string> {
+    const rel = path.isAbsolute(filePath) ? path.relative(clonePath, filePath) : filePath;
+    try {
+      const { stdout } = await execFileAsync(
+        'git',
+        ['log', '-1', '--format=%cI', '--', rel],
+        { cwd: clonePath, timeout: 10000 },
+      );
+      return stdout.trim();
+    } catch {
+      return '';
+    }
+  }
+
   private async originMatches(url: string, clonePath: string): Promise<boolean> {
     const origin = await this.getRemoteOriginUrl(clonePath);
     try {

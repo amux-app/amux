@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'fs';
 import os from 'os';
 import path from 'path';
 import type { AgentName } from '../../utils/agentLaunch.js';
@@ -9,6 +9,14 @@ import { loadJson } from './utils.js';
 // New entries also persist the exact owner to avoid delimiter ambiguity in plugin IDs.
 const SENTINEL_PREFIX = '__marketplace__';
 const OWNER_FIELD = '__marketplaceOwner';
+
+// A hook found on disk. `pluginId` is present only when the entry carries the Amux sentinel
+// (claude/codex) or lives in a `marketplace-<pluginId>.js` file (opencode); such entries are
+// safely uninstallable. Non-sentinel hooks are surfaced read-only (no pluginId).
+export interface ScannedHook {
+  event: string;      // display label: real event for claude/codex, file basename for opencode
+  pluginId?: string;
+}
 
 const EVENT_MAP_TO_OPENCODE: Record<string, string> = {
   PreToolUse: 'tool.execute.before',
@@ -70,12 +78,67 @@ export function isMarketplaceHookOwnedBy(entry: unknown, pluginId: string, event
 export class HookTranslator {
   constructor(private readonly homeDir = os.homedir()) {}
 
+  // Read-only enumeration of hooks on disk for an agent, shared with InstalledScanner.
+  static listInstalled(agent: AgentName): ScannedHook[] {
+    switch (agent) {
+      case 'claude': return HookTranslator.listFromEventMap(path.join(os.homedir(), '.claude', 'settings.json'), 'hooks');
+      case 'codex': return HookTranslator.listFromEventMap(path.join(os.homedir(), '.codex', 'hooks.json'), null);
+      case 'opencode': return HookTranslator.listOpencode();
+      case 'pi': return [];
+    }
+  }
+
+  private static parsePluginId(sentinel: unknown): string | undefined {
+    if (typeof sentinel !== 'string' || !sentinel.startsWith(SENTINEL_PREFIX)) return undefined;
+    // Format: __marketplace__<pluginId>__<event>__<index>
+    const rest = sentinel.slice(SENTINEL_PREFIX.length);
+    const idx = rest.indexOf('__');
+    return idx > 0 ? rest.slice(0, idx) : undefined;
+  }
+
+  private static listFromEventMap(filePath: string, wrapperKey: 'hooks' | null): ScannedHook[] {
+    if (!existsSync(filePath)) return [];
+    const data = loadJson(filePath);
+    const map = (wrapperKey ? data[wrapperKey] : data) as Record<string, unknown> | undefined;
+    if (!map || typeof map !== 'object') return [];
+    const result: ScannedHook[] = [];
+    for (const [event, list] of Object.entries(map)) {
+      if (!Array.isArray(list)) continue;
+      for (const entry of list as Record<string, unknown>[]) {
+        result.push({ event, pluginId: HookTranslator.parsePluginId(entry?.[SENTINEL_PREFIX]) });
+      }
+    }
+    return result;
+  }
+
+  private static listOpencode(): ScannedHook[] {
+    // OpenCode hooks live inside JS plugin files — there's no way to enumerate
+    // individual hook events without executing the file, so we surface nothing here.
+    // The JS plugin file itself is listed as a jsPlugin item by InstalledScanner.
+    return [];
+  }
+
+  private isOurSentinel(value: unknown, pluginId: string): boolean {
+    return typeof value === 'string' && value.startsWith(`${SENTINEL_PREFIX}${pluginId}__`);
+  }
+
   uninstallForAgent(pluginId: string, agent: AgentName): void {
     switch (agent) {
       case 'claude': this.uninstallFromClaude(pluginId); break;
       case 'codex': this.uninstallFromCodex(pluginId); break;
       case 'opencode': this.uninstallFromOpencode(pluginId); break;
       case 'pi': throw new Error('Marketplace hooks are not supported for Pi');
+    }
+  }
+
+  uninstallEventForAgent(pluginId: string, event: string, agent: AgentName): void {
+    switch (agent) {
+      case 'claude': this.uninstallEventFromClaude(pluginId, event); break;
+      case 'codex': this.uninstallEventFromCodex(pluginId, event); break;
+      // OpenCode stores all hooks in one file per plugin; removing one event
+      // requires regenerating the file, which needs the remaining hook definitions.
+      // We don't have those here, so fall back to removing the whole plugin file.
+      case 'opencode': this.uninstallFromOpencode(pluginId); break;
     }
   }
 
@@ -209,6 +272,22 @@ export class HookTranslator {
     writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
   }
 
+  private uninstallEventFromClaude(pluginId: string, event: string): void {
+    const settingsPath = path.join(os.homedir(), '.claude', 'settings.json');
+    if (!existsSync(settingsPath)) return;
+
+    const settings = loadJson(settingsPath);
+    if (!settings['hooks'] || typeof settings['hooks'] !== 'object') return;
+
+    const hooksMap = settings['hooks'] as Record<string, Record<string, unknown>[]>;
+    if (!hooksMap[event]) return;
+    hooksMap[event] = hooksMap[event].filter((h) => !this.isOurSentinel(h[SENTINEL_PREFIX], pluginId));
+    if (hooksMap[event].length === 0) delete hooksMap[event];
+    if (Object.keys(hooksMap).length === 0) delete settings['hooks'];
+
+    writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
+  }
+
   private uninstallFromCodex(pluginId: string): void {
     const hooksPath = path.join(this.homeDir, '.codex', 'hooks.json');
     if (!existsSync(hooksPath)) return;
@@ -219,6 +298,19 @@ export class HookTranslator {
       data[event] = list.filter((hook) => !isMarketplaceHookOwnedBy(hook, pluginId, event));
       if ((data[event] as unknown[]).length === 0) delete data[event];
     }
+
+    writeFileSync(hooksPath, JSON.stringify(data, null, 2), 'utf-8');
+  }
+
+  private uninstallEventFromCodex(pluginId: string, event: string): void {
+    const hooksPath = path.join(os.homedir(), '.codex', 'hooks.json');
+    if (!existsSync(hooksPath)) return;
+
+    const data = loadJson(hooksPath);
+    if (!data[event]) return;
+    const list = data[event] as Record<string, unknown>[];
+    data[event] = list.filter((h) => !this.isOurSentinel(h[SENTINEL_PREFIX], pluginId));
+    if ((data[event] as unknown[]).length === 0) delete data[event];
 
     writeFileSync(hooksPath, JSON.stringify(data, null, 2), 'utf-8');
   }
