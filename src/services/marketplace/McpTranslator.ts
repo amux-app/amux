@@ -12,13 +12,39 @@ const SLOW_NPM_ARG_PATTERNS = ['git+https://', 'git+http://'];
 export class McpTranslator {
   constructor(private readonly homeDir = os.homedir()) {}
 
-  private getAgentConfigPath(agent: AgentName): string {
+  // Single source of truth for per-agent MCP config paths, shared with InstalledScanner.
+  // Callers that inject a home directory (e.g. tests) pass it through; the scanner uses
+  // the real home by default.
+  static configPath(agent: AgentName, homeDir: string = os.homedir()): string {
     switch (agent) {
-      case 'claude': return path.join(this.homeDir, '.claude', 'settings.json');
-      case 'codex': return path.join(this.homeDir, '.codex', 'config.toml');
-      case 'opencode': return path.join(this.homeDir, '.config', 'opencode', 'opencode.json');
+      case 'claude': return path.join(homeDir, '.claude', 'settings.json');
+      case 'codex': return path.join(homeDir, '.codex', 'config.toml');
+      case 'opencode': return path.join(homeDir, '.config', 'opencode', 'opencode.json');
       case 'pi': throw new Error('Marketplace MCP is not supported for Pi');
     }
+  }
+
+  // Enumerate MCP server names configured for an agent on disk.
+  static listServerNames(agent: AgentName): string[] {
+    const configPath = McpTranslator.configPath(agent);
+    if (!existsSync(configPath)) return [];
+    if (agent === 'codex') {
+      const content = readFileSync(configPath, 'utf-8');
+      const names: string[] = [];
+      for (const line of content.split('\n')) {
+        const m = line.trim().match(/^\[mcp_servers\.([^.\]]+)\]$/);
+        if (m) names.push(m[1]);
+      }
+      return names;
+    }
+    const config = loadJson(configPath);
+    const key = agent === 'opencode' ? 'mcp' : 'mcpServers';
+    const map = config[key];
+    return map && typeof map === 'object' ? Object.keys(map as Record<string, unknown>) : [];
+  }
+
+  private getAgentConfigPath(agent: AgentName): string {
+    return McpTranslator.configPath(agent, this.homeDir);
   }
 
   installForAgent(server: McpServerEntry, agent: AgentName): string {

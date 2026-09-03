@@ -487,8 +487,7 @@ export class MarketplaceIntegrityInstaller {
           }
         }
         result.agents[agent] = {
-          path: installPath ? pathInHome(homeDir, relativeToHome(planningHome, installPath)) : '',
-          skipped: skipped.length > 0 ? skipped : undefined,
+          skipped,
           status: skipped.length > 0 ? 'partial' : 'full',
         };
       }

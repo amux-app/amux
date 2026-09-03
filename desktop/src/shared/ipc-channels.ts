@@ -138,6 +138,11 @@ export const IPC = {
   MARKETPLACE_INSTALL: 'marketplace:install',
   MARKETPLACE_UNINSTALL: 'marketplace:uninstall',
   MARKETPLACE_INSTALLED_LIST: 'marketplace:installed-list',
+  MARKETPLACE_CHECK_UPDATES: 'marketplace:check-updates',
+  MARKETPLACE_SCAN_INSTALLED: 'marketplace:scan-installed',
+  MARKETPLACE_UNINSTALL_ITEM: 'marketplace:uninstall-item',
+  MARKETPLACE_INSTALL_ITEM: 'marketplace:install-item',
+  MARKETPLACE_ACK_UPDATES: 'marketplace:ack-updates',
 } as const;
 
 // Synchronous boot reads (ipcRenderer.sendSync ↔ ipcMain.on + event.returnValue)

@@ -8,6 +8,7 @@ import { CommandPalette } from './components/command-palette/CommandPalette';
 import { CreatePaneDialog } from './components/create/CreatePaneDialog';
 import { DecomposeSideSheet } from './components/decompose/DecomposeSideSheet';
 import { AppShell } from './components/layout/AppShell';
+import { MarketplaceUpdatesPopup } from './components/marketplace/MarketplaceUpdatesPopup';
 import { AppUpdateBootstrap } from './components/layout/AppUpdateBootstrap';
 import { UpdateLocationNotice } from './components/layout/UpdateLocationNotice';
 import { ToastContainer } from './components/shared/ToastContainer';
@@ -348,6 +349,7 @@ export default function App() {
           <WorkspacePicker />
           <DecomposeSideSheet />
           <ToastContainer />
+          <MarketplaceUpdatesPopup />
         </>
       )}
     </>

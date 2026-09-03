@@ -27,6 +27,7 @@ export { useKanbanStore } from './kanban.store';
 export { useDecomposeStore } from './decompose.store';
 export { useFileBrowserStore } from './file-browser.store';
 export { useMarketplaceStore } from './marketplace.store';
+export { useMarketplaceUpdatesStore } from './marketplace-updates.store';
 export { usePaneSummaryStore } from './pane-summary.store';
 export {
   useWorkspaceTabsStore,

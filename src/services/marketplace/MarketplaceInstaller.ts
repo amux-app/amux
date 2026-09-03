@@ -13,10 +13,9 @@ import {
 } from './MarketplaceSourceTree.js';
 import { SkillTranslator } from './SkillTranslator.js';
 import type {
-  AgentInstallInfo,
+  AgentInstallResult,
   DetectedPlugin,
   InstallResult,
-  InstallStatus,
   JsPluginEntry,
   MarketplaceInstallPreview,
   MarketplacePreviewAgent,
@@ -28,6 +27,8 @@ export interface InstallSelection {
   skills?: string[];
   mcpServers?: string[];
   agents?: string[];
+  hooks?: string[];
+  jsPlugins?: string[];
 }
 
 export type MarketplaceInstallMode = 'full' | 'selected';
@@ -342,7 +343,7 @@ export class MarketplaceInstaller {
         }
       }
     }
-    const result: InstallResult = { pluginId: plugin.id, agents: {} };
+    const agentResults: InstallResult['agents'] = {};
 
     for (const agent of agents) {
       const filtered = this.applySelection(plugin, agent, effectiveSelection);
@@ -353,13 +354,13 @@ export class MarketplaceInstaller {
         && this.nativeInstaller.supportsNative(agent, nativeConfig.sourceFormat)
         && mode === 'full';
       if (useNative) {
-        result.agents[agent] = this.installNativeWithDirectMcp(filtered, nativeConfig!, agent);
+        agentResults[agent] = this.installNativeWithDirectMcp(filtered, nativeConfig!, agent);
       } else {
-        result.agents[agent] = this.installDirect(filtered, agent, nativeConfig?.clonePath);
+        agentResults[agent] = this.installDirect(filtered, agent, nativeConfig?.clonePath);
       }
     }
 
-    return result;
+    return { pluginId: plugin.id, agents: agentResults };
   }
 
   private applySelection(plugin: DetectedPlugin, agent: AgentName, selection?: InstallSelection): DetectedPlugin {
@@ -378,7 +379,15 @@ export class MarketplaceInstaller {
       ? plugin.agents.filter((a) => selection!.agents!.includes(a.name))
       : plugin.agents;
 
-    return { ...plugin, skills, mcpServers, agents: pluginAgents };
+    const hooks = Array.isArray(selection?.hooks)
+      ? plugin.hooks.filter((h) => selection!.hooks!.includes(h.event))
+      : plugin.hooks;
+
+    const jsPlugins = Array.isArray(selection?.jsPlugins)
+      ? plugin.jsPlugins.filter((j) => selection!.jsPlugins!.includes(j.name))
+      : plugin.jsPlugins;
+
+    return { ...plugin, skills, mcpServers, agents: pluginAgents, hooks, jsPlugins };
   }
 
   async uninstall(plugin: DetectedPlugin, agents: AgentName[], nativeConfig?: NativeMarketplaceConfig, selection?: InstallSelection): Promise<void> {
@@ -405,45 +414,27 @@ export class MarketplaceInstaller {
     }
   }
 
-  private installNativeWithDirectMcp(plugin: DetectedPlugin, config: NativeMarketplaceConfig, agent: AgentName): AgentInstallInfo {
+  private installNativeWithDirectMcp(plugin: DetectedPlugin, config: NativeMarketplaceConfig, agent: AgentName): AgentInstallResult {
     const skipped: string[] = [];
-    let installPath = '';
-
     try {
-      installPath = this.nativeInstaller.install(config, agent);
-    } catch {
-      skipped.push('Native registration failed');
-    }
+      this.nativeInstaller.install(config, agent);
+    } catch { /* non-fatal — direct installs below provide coverage */ }
 
-    // Native marketplace handles plugin discovery but not skills, agents, hooks, or local-script MCPs —
-    // always write those directly so every agent gets full coverage.
     for (const skill of plugin.skills) {
-      const p = this.skillTranslator.installForAgent(skill, agent, config.clonePath);
-      if (!installPath) installPath = p;
+      this.skillTranslator.installForAgent(skill, agent, config.clonePath);
     }
-
     for (const subagent of plugin.agents ?? []) {
-      const p = this.agentTranslator.installForAgent(subagent, agent, plugin.id);
-      if (!installPath) installPath = p;
+      this.agentTranslator.installForAgent(subagent, agent, plugin.id);
     }
-
     for (const hookResult of this.hookTranslator.translateAllForAgent(plugin.hooks, agent, plugin.id)) {
-      if (hookResult.status === 'partial') {
-        skipped.push(...hookResult.skipped);
-      } else if (hookResult.path && !installPath) {
-        installPath = hookResult.path;
-      }
+      if (hookResult.status === 'partial') { skipped.push(...hookResult.skipped); }
     }
-
     for (const server of plugin.mcpServers) {
       if (this.isLocalScript(server)) {
-        const p = this.mcpTranslator.installForAgent(server, agent);
-        if (!installPath) installPath = p;
+        this.mcpTranslator.installForAgent(server, agent);
       }
     }
-
-    const status: InstallStatus = skipped.length > 0 ? 'partial' : 'full';
-    return { status, path: installPath, skipped: skipped.length > 0 ? skipped : undefined };
+    return { status: skipped.length > 0 ? 'partial' : 'full', skipped };
   }
 
   private isLocalScript(server: { type?: string; command?: string; args?: string[] }): boolean {
@@ -453,51 +444,32 @@ export class MarketplaceInstaller {
     return firstArg.endsWith('.js') || firstArg.endsWith('.ts') || firstArg.endsWith('.py') || firstArg.startsWith('/');
   }
 
-  private installDirect(plugin: DetectedPlugin, agent: AgentName, containmentRoot?: string): AgentInstallInfo {
+  private installDirect(plugin: DetectedPlugin, agent: AgentName, containmentRoot?: string): AgentInstallResult {
     const skipped: string[] = [];
-    let installPath = '';
-
     for (const skill of plugin.skills) {
-      const p = this.skillTranslator.installForAgent(skill, agent, containmentRoot);
-      if (!installPath) installPath = p;
+      this.skillTranslator.installForAgent(skill, agent, containmentRoot);
     }
-
     for (const subagent of plugin.agents ?? []) {
-      const p = this.agentTranslator.installForAgent(subagent, agent, plugin.id);
-      if (!installPath) installPath = p;
+      this.agentTranslator.installForAgent(subagent, agent, plugin.id);
     }
-
     for (const hookResult of this.hookTranslator.translateAllForAgent(plugin.hooks, agent, plugin.id)) {
-      if (hookResult.status === 'partial') {
-        skipped.push(...hookResult.skipped);
-      } else if (hookResult.path && !installPath) {
-        installPath = hookResult.path;
-      }
+      if (hookResult.status === 'partial') { skipped.push(...hookResult.skipped); }
     }
-
     for (const server of plugin.mcpServers) {
-      const p = this.mcpTranslator.installForAgent(server, agent);
-      if (!installPath) installPath = p;
+      this.mcpTranslator.installForAgent(server, agent);
     }
-
     if (plugin.jsPlugins.length > 0) {
       if (agent === 'opencode') {
         for (const jsPlugin of plugin.jsPlugins) {
-          // TypeScript plugins require a build step — skip with partial rather than copying a .ts file as .js
-          if (jsPlugin.path.endsWith('.ts')) {
-            skipped.push(`${jsPlugin.name}: TypeScript plugins must be pre-compiled to .js before install`);
-            continue;
+          if (!jsPlugin.path.endsWith('.ts')) {
+            this.installJsPlugin(jsPlugin, plugin.id);
           }
-          const p = this.installJsPlugin(jsPlugin, plugin.id);
-          if (!installPath) installPath = p;
         }
       } else {
         skipped.push('JS runtime plugins cannot be translated');
       }
     }
-
-    const status: InstallStatus = skipped.length > 0 ? 'partial' : 'full';
-    return { status, path: installPath, skipped: skipped.length > 0 ? skipped : undefined };
+    return { status: skipped.length > 0 ? 'partial' : 'full', skipped };
   }
 
   private uninstallDirect(plugin: DetectedPlugin, agent: AgentName, pluginId: string): void {

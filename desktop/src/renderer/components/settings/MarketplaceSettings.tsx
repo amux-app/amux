@@ -4,16 +4,21 @@ import type {
   MarketplacePreviewRequest,
   MarketplaceRequestIdentity,
 } from '../../../shared/ipc-types';
-import type { DetectedPlugin, InstalledPlugin } from 'muxbase/core';
+import type { AgentName, DetectedPlugin, InstalledItem, InstalledPlugin } from 'muxbase/core';
 import { Plus, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useMarketplaceBootstrap } from '../../hooks/useMarketplaceBootstrap';
+import { useEffect, useMemo, useState } from 'react';
 import { cn } from '../../lib/cn';
 import { useMarketplaceStore, type MarketplaceFilter } from '../../stores/marketplace.store';
 import { MarketplacePluginCard } from './MarketplacePluginCard';
 import { SourcesRow, type KnownSource } from './MarketplaceSourceControls';
 import { Spinner } from '../shared/Spinner';
+import { MarketplaceInstalledList } from './MarketplaceInstalledList';
+import { MarketplaceUpdatesSection } from './MarketplaceUpdatesSection';
 import knownSourcesData from './known-sources.json';
+import { IPC } from '../../../shared/ipc-channels';
+import { invoke } from '../../api/ipc';
+
+type ViewMode = 'installed' | 'browse';
 
 const FILTER_TABS: { id: MarketplaceFilter; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -55,10 +60,15 @@ function pluginMatchesSearch(plugin: DetectedPlugin, query: string): boolean {
 
 export function MarketplaceSettings() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [view, setView] = useState<ViewMode>('browse');
   const [updatingSource, setUpdatingSource] = useState<string | null>(null);
   const [addingUrl, setAddingUrl] = useState<string | null>(null);
+  const [availableAgents, setAvailableAgents] = useState<AgentName[]>([]);
+  const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
+
   const sources = useMarketplaceStore((s) => s.sources);
   const installedPlugins = useMarketplaceStore((s) => s.installedPlugins);
+  const installedItems = useMarketplaceStore((s) => s.installedItems);
   const browsedPlugins = useMarketplaceStore((s) => s.browsedPlugins);
   const isLoading = useMarketplaceStore((s) => s.isLoading);
   const activeInstall = useMarketplaceStore((s) => s.installInFlight);
@@ -73,9 +83,47 @@ export function MarketplaceSettings() {
   const releaseInstall = useMarketplaceStore((s) => s.releaseInstall);
   const installPlugin = useMarketplaceStore((s) => s.installPlugin);
   const uninstallPlugin = useMarketplaceStore((s) => s.uninstallPlugin);
+  const loadSources = useMarketplaceStore((s) => s.loadSources);
+  const browseSource = useMarketplaceStore((s) => s.browseSource);
+  const loadInstalled = useMarketplaceStore((s) => s.loadInstalled);
+  const scanInstalled = useMarketplaceStore((s) => s.scanInstalled);
+  const uninstallItemFromAgents = useMarketplaceStore((s) => s.uninstallItemFromAgents);
+  const installItemOnAgents = useMarketplaceStore((s) => s.installItemOnAgents);
   const clearError = useMarketplaceStore((s) => s.clearError);
 
-  useMarketplaceBootstrap();
+  const handleUninstallItem = async (item: InstalledItem, agents: AgentName[]) => {
+    await uninstallItemFromAgents(item, agents);
+  };
+
+  useEffect(() => {
+    loadSources();
+    loadInstalled();
+    scanInstalled();
+    // Best-effort agent-list enrichment for the Installed view; tolerate a missing IPC bridge.
+    try {
+      invoke<AgentName[]>(IPC.AGENT_LIST).then(setAvailableAgents).catch(() => {});
+    } catch {
+      // No preload bridge (e.g. in isolated component tests) — leave agents empty.
+    }
+  }, [loadSources, loadInstalled, scanInstalled]);
+
+  // Re-scan when window regains focus so external changes (CLI removals) appear immediately.
+  useEffect(() => {
+    const onFocus = () => { scanInstalled(); loadInstalled(); };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [scanInstalled, loadInstalled]);
+
+  useEffect(() => {
+    for (const source of sources) {
+      if (!(source.url in browsedPlugins)) browseSource(source.url);
+    }
+    // Also browse any source referenced by installed items but not yet in browsedPlugins
+    // (happens when the user opens directly to the Installed tab before visiting Browse).
+    for (const item of installedItems) {
+      if (item.sourceUrl && !(item.sourceUrl in browsedPlugins)) browseSource(item.sourceUrl);
+    }
+  }, [sources, installedItems]);
 
   const addedUrls = useMemo(() => new Set(sources.map((s) => s.url)), [sources]);
 
@@ -89,13 +137,12 @@ export function MarketplaceSettings() {
     return [...withContent, ...empty];
   }, [sources, browsedPlugins]);
 
-  const filteredEntries = useMemo(() => allEntries.filter(({ plugin }) =>
-    pluginMatchesFilter(plugin, filter) && pluginMatchesSearch(plugin, searchQuery),
-  ), [allEntries, filter, searchQuery]);
+  const filteredEntries = useMemo(() => allEntries.filter(({ plugin, source }) =>
+    pluginMatchesFilter(plugin, filter)
+    && pluginMatchesSearch(plugin, searchQuery)
+    && (selectedSources.size === 0 || selectedSources.has(source.url)),
+  ), [allEntries, filter, searchQuery, selectedSources]);
 
-  const installedEntries = filteredEntries.filter(({ plugin, source }) =>
-    installedPlugins.some((i) => i.pluginId === plugin.id && i.sourceUrl === source.url),
-  );
   const availableEntries = filteredEntries.filter(({ plugin, source }) =>
     !installedPlugins.some((i) => i.pluginId === plugin.id && i.sourceUrl === source.url),
   );
@@ -105,6 +152,16 @@ export function MarketplaceSettings() {
     setAddingUrl(url);
     await addSource(url);
     setAddingUrl(null);
+    setSelectedSources((prev) => new Set([...prev, url]));
+  };
+
+  const handleToggleSource = (url: string) => {
+    setSelectedSources((prev) => {
+      const next = new Set(prev);
+      if (next.has(url)) next.delete(url);
+      else next.add(url);
+      return next;
+    });
   };
 
   const handleUpdateSource = async (url: string) => {
@@ -121,16 +178,10 @@ export function MarketplaceSettings() {
     sourceUrl: string,
     intent: MarketplaceInstallIntent,
   ): Promise<boolean> => {
-    const identity: MarketplaceRequestIdentity = {
-      pluginId,
-      sourceUrl,
-    };
+    const identity: MarketplaceRequestIdentity = { pluginId, sourceUrl };
     if (!claimInstall(identity)) return false;
     try {
-      const previewRequest: MarketplacePreviewRequest = {
-        ...identity,
-        ...intent,
-      };
+      const previewRequest: MarketplacePreviewRequest = { ...identity, ...intent };
       const response = await previewPlugin(previewRequest);
       if (!response.success || !response.preview) return false;
       if (response.preview.introducesExecutableBehavior) {
@@ -168,6 +219,7 @@ export function MarketplaceSettings() {
           <button
             type="button"
             onClick={clearError}
+            aria-label="Dismiss error"
             className="shrink-0 p-0.5 rounded text-[var(--error)]/70 hover:text-[var(--error)] transition-colors"
           >
             <X size={13} />
@@ -175,109 +227,147 @@ export function MarketplaceSettings() {
         </div>
       )}
 
-      {/* Sources row */}
-      <section>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.12em]">Sources</h3>
-        </div>
-        {isLoading ? (
-          <div className="flex items-center gap-2">
-            <Spinner />
-            <span className="text-[11px] text-[var(--text-muted)]">Loading…</span>
-          </div>
-        ) : (
-          <SourcesRow
-            sources={sources}
-            knownSources={KNOWN_SOURCES}
-            updatingSource={updatingSource}
-            addingUrl={addingUrl}
-            addedUrls={addedUrls}
-            onAdd={handleAddSource}
-            onUpdate={handleUpdateSource}
-            onRemove={removeSource}
-          />
-        )}
-      </section>
+      {/* Updates */}
+      <MarketplaceUpdatesSection />
 
-      {/* Plugins section */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.12em]">
-            Plugins
-            {hasAnyPlugin && (
-              <span className="ml-2 font-normal normal-case tracking-normal">
-                {filteredEntries.length} of {allEntries.length}
-              </span>
+      {/* View toggle */}
+      <div className="inline-flex gap-1 p-0.5 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
+        {(['browse', 'installed'] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => setView(v)}
+            className={cn(
+              'px-3 py-1 rounded-md text-[11px] font-medium capitalize transition-colors',
+              view === v
+                ? 'bg-[var(--accent)] text-[var(--bg)]'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
             )}
-          </h3>
-        </div>
+          >
+            {v}
+            {v === 'installed' && installedItems.length > 0 && (
+              <span className="ml-1.5 tabular-nums opacity-70">{installedItems.length}</span>
+            )}
+          </button>
+        ))}
+      </div>
 
-        {sources.length === 0 ? (
-          <EmptyState onAdd={handleAddSource} addedUrls={addedUrls} addingUrl={addingUrl} />
-        ) : isLoadingPlugins && !hasAnyPlugin ? (
-          <div className="flex flex-col items-center gap-2 py-10 text-[var(--text-muted)]">
-            <Spinner />
-            <span className="text-[11px]">Fetching plugins from sources…</span>
-          </div>
-        ) : (
-          <>
-            {/* Search + filter */}
-            <div className="space-y-2 mb-4">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search plugins, skills, MCP servers…"
-                className="w-full px-3 py-2 text-xs bg-[var(--surface)] border border-[var(--border)] rounded-lg text-[var(--text)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-              />
-              <div className="flex gap-1.5 flex-wrap">
-                {FILTER_TABS.map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setFilter(tab.id)}
-                    className={cn(
-                      'px-2.5 py-1 rounded-full text-[10px] font-medium transition-colors',
-                      filter === tab.id
-                        ? 'bg-[var(--accent)] text-[var(--bg)]'
-                        : 'bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] border border-[var(--border)]',
-                    )}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+      {/* Installed view — flat list across all agents */}
+      {view === 'installed' && (
+        <section>
+          <MarketplaceInstalledList
+            items={installedItems}
+            installedPlugins={installedPlugins}
+            allEntries={allEntries}
+            availableAgents={availableAgents}
+            onUninstall={handleUninstallItem}
+            onInstallItem={installItemOnAgents}
+          />
+        </section>
+      )}
+
+      {/* Browse view — sources + available plugins */}
+      {view === 'browse' && (
+        <>
+          {/* Sources row */}
+          <section>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.12em]">Sources</h3>
+            </div>
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <Spinner />
+                <span className="text-[11px] text-[var(--text-muted)]">Loading…</span>
               </div>
+            ) : (
+              <SourcesRow
+                sources={sources}
+                knownSources={KNOWN_SOURCES}
+                updatingSource={updatingSource}
+                addingUrl={addingUrl}
+                addedUrls={addedUrls}
+                selectedSources={selectedSources}
+                onAdd={handleAddSource}
+                onUpdate={handleUpdateSource}
+                onRemove={removeSource}
+                onToggle={handleToggleSource}
+              />
+            )}
+          </section>
+
+          {/* Plugins section */}
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.12em]">
+                Plugins
+                {hasAnyPlugin && (
+                  <span className="ml-2 font-normal normal-case tracking-normal">
+                    {filteredEntries.length} of {allEntries.length}
+                  </span>
+                )}
+              </h3>
             </div>
 
-            {filteredEntries.length === 0 ? (
-              <p className="text-[11px] text-[var(--text-muted)] py-4 text-center">No plugins match your search.</p>
-            ) : (
-              <div className="space-y-5">
-                {installedEntries.length > 0 && (
-                  <PluginGroup
-                    title="Installed"
-                    entries={installedEntries}
-                    installedPlugins={installedPlugins}
-                    activeInstall={activeInstall}
-                    onInstall={handleInstall}
-                    onUninstall={uninstallPlugin}
-                  />
-                )}
-                {availableEntries.length > 0 && (
-                  <PluginGroup
-                    title="Available"
-                    entries={availableEntries}
-                    installedPlugins={installedPlugins}
-                    activeInstall={activeInstall}
-                    onInstall={handleInstall}
-                    onUninstall={uninstallPlugin}
-                  />
-                )}
+            {sources.length === 0 ? (
+              <EmptyState onAdd={handleAddSource} addedUrls={addedUrls} addingUrl={addingUrl} />
+            ) : isLoadingPlugins && !hasAnyPlugin ? (
+              <div className="flex flex-col items-center gap-2 py-10 text-[var(--text-muted)]">
+                <Spinner />
+                <span className="text-[11px]">Fetching plugins from sources…</span>
               </div>
+            ) : (
+              <>
+                {/* Search + filter */}
+                <div className="space-y-2 mb-4">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search plugins, skills, MCP servers…"
+                    className="w-full px-3 py-2 text-xs bg-[var(--surface)] border border-[var(--border)] rounded-lg text-[var(--text)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+                  />
+                  <div className="flex gap-1.5 flex-wrap">
+                    {FILTER_TABS.map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setFilter(tab.id)}
+                        className={cn(
+                          'px-2.5 py-1 rounded-full text-[10px] font-medium transition-colors',
+                          filter === tab.id
+                            ? 'bg-[var(--accent)] text-[var(--bg)]'
+                            : 'bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] border border-[var(--border)]',
+                        )}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {availableEntries.length === 0 ? (
+                  <p className="text-[11px] text-[var(--text-muted)] py-4 text-center">
+                    {filteredEntries.length === 0
+                      ? 'No plugins match your search.'
+                      : 'Everything from your sources is installed. See the Installed tab to manage it.'}
+                  </p>
+                ) : (
+                  <div className="space-y-5">
+                    <PluginGroup
+                      title="Available"
+                      entries={availableEntries}
+                      installedPlugins={installedPlugins}
+                      activeInstall={activeInstall}
+                      onInstall={handleInstall}
+                      onUninstall={uninstallPlugin}
+                    />
+                  </div>
+                )}
+              </>
             )}
-          </>
-        )}
-      </section>
+          </section>
+        </>
+      )}
     </div>
   );
 }

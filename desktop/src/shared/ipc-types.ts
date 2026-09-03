@@ -1140,12 +1140,16 @@ export type MarketplaceInstallIntent =
       selectedSkills: string[];
       selectedMcpServers: string[];
       selectedAgents: string[];
+      selectedHooks?: string[];
+      selectedJsPlugins?: string[];
     }
   | {
       mode: 'full';
       selectedSkills?: never;
       selectedMcpServers?: never;
       selectedAgents?: never;
+      selectedHooks?: never;
+      selectedJsPlugins?: never;
     };
 
 export interface MarketplaceRequestIdentity {
@@ -1187,4 +1191,38 @@ export interface MarketplaceUninstallResponse {
   affectedPaths?: string[];
   /** Owned artifacts retained because their bytes no longer match the manifest. */
   preservedArtifacts?: string[];
+}
+
+export interface MarketplaceCheckUpdatesResponse {
+  updates: import('muxbase/core').SourceUpdate[];
+  // Snapshot per sourceUrl computed during this check — pass back to MARKETPLACE_ACK_UPDATES
+  // once the user has installed or dismissed the updates so the registry can advance.
+  snapshots: Record<string, import('muxbase/core').SourceArtifactSnapshot>;
+  error?: string;
+}
+
+export interface MarketplaceAckUpdatesRequest {
+  // Each entry advances lastSeenArtifacts for one source to the snapshot taken at check time.
+  entries: { sourceUrl: string; snapshot: import('muxbase/core').SourceArtifactSnapshot }[];
+}
+
+export interface MarketplaceScanResponse {
+  items: import('muxbase/core').InstalledItem[];
+  error?: string;
+}
+
+export interface MarketplaceUninstallItemRequest {
+  type: import('muxbase/core').InstalledItemType;
+  name: string;
+  agents: import('muxbase/core').AgentName[];
+  pluginId?: string;
+  sourceUrl?: string;
+}
+
+export interface MarketplaceInstallItemRequest {
+  type: import('muxbase/core').InstalledItemType;
+  name: string;
+  agents: import('muxbase/core').AgentName[];
+  pluginId: string;
+  sourceUrl: string;
 }

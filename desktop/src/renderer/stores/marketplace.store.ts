@@ -1,5 +1,6 @@
 import type {
   DetectedPlugin,
+  InstalledItem,
   InstalledPlugin,
   MarketplaceErrorCode,
   MarketplaceSource,
@@ -54,6 +55,7 @@ export function aggregateMarketplaceCounts(browsedPlugins: Record<string, Detect
 interface MarketplaceState {
   sources: MarketplaceSource[];
   installedPlugins: InstalledPlugin[];
+  installedItems: InstalledItem[];
   browsedPlugins: Record<string, DetectedPlugin[]>;
   isLoading: boolean;
   installInFlight: MarketplaceRequestIdentity | null;
@@ -74,6 +76,9 @@ interface MarketplaceActions {
   releaseInstall: (identity: MarketplaceRequestIdentity) => void;
   uninstallPlugin: (pluginId: string, sourceUrl: string) => Promise<void>;
   loadInstalled: () => Promise<void>;
+  scanInstalled: () => Promise<void>;
+  uninstallItemFromAgents: (item: InstalledItem, agents: InstalledItem['agents']) => Promise<void>;
+  installItemOnAgents: (item: InstalledItem, agents: InstalledItem['agents']) => Promise<void>;
   clearError: () => void;
   setActiveFilter: (filter: MarketplaceFilter) => void;
 }
@@ -81,6 +86,7 @@ interface MarketplaceActions {
 export const useMarketplaceStore = create<MarketplaceState & MarketplaceActions>((set, get) => ({
   sources: [],
   installedPlugins: [],
+  installedItems: [],
   browsedPlugins: {},
   isLoading: false,
   installInFlight: null,
@@ -106,6 +112,9 @@ export const useMarketplaceStore = create<MarketplaceState & MarketplaceActions>
       const response = await marketplaceApi.addSource(url);
       if (response.success && response.source) {
         set((state) => ({ sources: [response.source!, ...state.sources] }));
+        // Re-scan after adding a source so the reconcile pass can attribute any
+        // on-disk items that belong to plugins in the new source.
+        await get().scanInstalled();
         return true;
       }
       set({ error: response.error ?? 'Failed to add source' });
@@ -135,6 +144,7 @@ export const useMarketplaceStore = create<MarketplaceState & MarketplaceActions>
       const response = await marketplaceApi.updateSource(url);
       if (response.success) {
         await get().loadSources();
+        await get().browseSource(url);
       } else {
         set({ error: response.error ?? 'Failed to update source' });
       }
@@ -176,6 +186,7 @@ export const useMarketplaceStore = create<MarketplaceState & MarketplaceActions>
       const response = await marketplaceApi.installPlugin(request);
       if (response.success) {
         await get().loadInstalled();
+        await get().scanInstalled();
         return true;
       }
       set({ error: marketplaceFailureMessage(response, 'Failed to install plugin') });
@@ -249,6 +260,59 @@ export const useMarketplaceStore = create<MarketplaceState & MarketplaceActions>
       set({ installedPlugins: installed });
     } catch (error) {
       set({ error: toErrorMessage(error) });
+    }
+  },
+
+  scanInstalled: async () => {
+    try {
+      const response = await marketplaceApi.scanInstalled();
+      set({ installedItems: response.items });
+      if (response.error) set({ error: response.error });
+      // Reconcile may have written new registry records — reload so installedPlugins is current.
+      await get().loadInstalled();
+    } catch (error) {
+      set({ error: toErrorMessage(error) });
+    }
+  },
+
+  uninstallItemFromAgents: async (item, agents) => {
+    try {
+      const response = await marketplaceApi.uninstallItem({
+        type: item.type,
+        name: item.name,
+        agents,
+        pluginId: item.pluginId,
+        sourceUrl: item.sourceUrl,
+      });
+      if (!response.success) {
+        set({ error: response.error ?? 'Failed to uninstall item' });
+      }
+    } catch (error) {
+      set({ error: toErrorMessage(error) });
+    } finally {
+      await get().loadInstalled();
+      await get().scanInstalled();
+    }
+  },
+
+  installItemOnAgents: async (item, agents) => {
+    if (!item.pluginId || !item.sourceUrl) return;
+    try {
+      const response = await marketplaceApi.installItem({
+        type: item.type,
+        name: item.name,
+        agents,
+        pluginId: item.pluginId,
+        sourceUrl: item.sourceUrl,
+      });
+      if (!response.success) {
+        set({ error: response.error ?? 'Failed to install item' });
+      }
+    } catch (error) {
+      set({ error: toErrorMessage(error) });
+    } finally {
+      await get().loadInstalled();
+      await get().scanInstalled();
     }
   },
 

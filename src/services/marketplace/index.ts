@@ -1,6 +1,8 @@
+export { AgentTranslator } from './AgentTranslator.js';
 export { FormatDetector } from './FormatDetector.js';
 export { GitOperations } from './GitOperations.js';
 export { HookTranslator } from './HookTranslator.js';
+export { InstalledScanner } from './InstalledScanner.js';
 export { MarketplaceInstaller } from './MarketplaceInstaller.js';
 export { MarketplaceRegistry } from './MarketplaceRegistry.js';
 export {
@@ -12,11 +14,12 @@ export { MarketplaceTransaction, digestPath } from './MarketplaceTransaction.js'
 export { MarketplaceIntegrityInstaller } from './MarketplaceIntegrityInstaller.js';
 export { McpTranslator } from './McpTranslator.js';
 export { SkillTranslator } from './SkillTranslator.js';
+export { buildSnapshot, diffAgainstSnapshot } from './UpdateDiff.js';
 export { canonicalizeSourceUrl, deriveCloneDirName } from './sourceIdentity.js';
 export { assertSafeCloneTarget, isBlockedHost, isPrivateIp, validateSourceUrl } from './urlSafety.js';
 export type {
   AgentEntry,
-  AgentInstallInfo,
+  AgentInstallResult,
   DetectedPlugin,
   HookEntry,
   InstallResult,
@@ -30,7 +33,10 @@ export type {
   MarketplaceRegistryData,
   MarketplaceSource,
   McpServerEntry,
+  NewArtifact,
   SkillEntry,
+  SourceArtifactSnapshot,
+  SourceUpdate,
   TranslationResult,
 } from './types.js';
 export type {
@@ -45,3 +51,4 @@ export type {
   MarketplaceTransactionalResult,
   MarketplaceTransactionalUninstallResult,
 } from './MarketplaceIntegrityInstaller.js';
+export type { InstalledItem, InstalledItemType } from './InstalledScanner.js';

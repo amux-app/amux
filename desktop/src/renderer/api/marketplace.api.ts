@@ -1,12 +1,17 @@
 import type { InstalledPlugin, MarketplaceSource } from 'muxbase/core';
 import { IPC } from '../../shared/ipc-channels';
 import type {
+  MarketplaceAckUpdatesRequest,
   MarketplaceBrowseResponse,
+  MarketplaceCheckUpdatesResponse,
+  MarketplaceInstallItemRequest,
   MarketplaceInstallRequest,
   MarketplaceInstallResponse,
   MarketplacePreviewRequest,
   MarketplacePreviewResponse,
+  MarketplaceScanResponse,
   MarketplaceSourceAddResponse,
+  MarketplaceUninstallItemRequest,
   MarketplaceUninstallResponse,
 } from '../../shared/ipc-types';
 import { invoke } from './ipc';
@@ -45,4 +50,24 @@ export function uninstallPlugin(pluginId: string, sourceUrl: string): Promise<Ma
 
 export function listInstalled(): Promise<InstalledPlugin[]> {
   return invoke<InstalledPlugin[]>(IPC.MARKETPLACE_INSTALLED_LIST);
+}
+
+export function checkUpdates(): Promise<MarketplaceCheckUpdatesResponse> {
+  return invoke<MarketplaceCheckUpdatesResponse>(IPC.MARKETPLACE_CHECK_UPDATES);
+}
+
+export function scanInstalled(): Promise<MarketplaceScanResponse> {
+  return invoke<MarketplaceScanResponse>(IPC.MARKETPLACE_SCAN_INSTALLED);
+}
+
+export function uninstallItem(req: MarketplaceUninstallItemRequest): Promise<{ success: boolean; error?: string }> {
+  return invoke<{ success: boolean; error?: string }>(IPC.MARKETPLACE_UNINSTALL_ITEM, req);
+}
+
+export function installItem(req: MarketplaceInstallItemRequest): Promise<{ success: boolean; error?: string }> {
+  return invoke<{ success: boolean; error?: string }>(IPC.MARKETPLACE_INSTALL_ITEM, req);
+}
+
+export function ackUpdates(req: MarketplaceAckUpdatesRequest): Promise<void> {
+  return invoke<void>(IPC.MARKETPLACE_ACK_UPDATES, req);
 }
