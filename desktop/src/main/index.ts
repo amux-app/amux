@@ -35,6 +35,7 @@ import { log } from './services/Logger.js';
 import { PerformanceMonitorService } from './services/PerformanceMonitorService.js';
 import { RendererFileFlushCoordinator } from './services/RendererFileFlushCoordinator.js';
 import { StartupTimeline } from './services/StartupTimeline.js';
+import { recoverTerminalRenderersAfterChildProcessExit } from './services/terminal-renderer-recovery.js';
 import {
   waitForOperationSettlement,
   withStartupTimeout,
@@ -539,6 +540,7 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
       name: details.name,
       exitCode: details.exitCode,
     });
+    recoverTerminalRenderersAfterChildProcessExit(mainWindow, details.type);
   });
 
   applyWindowSettings(mainWindow, settings);
