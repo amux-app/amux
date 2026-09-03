@@ -15,7 +15,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, onTes
 import { makeTerminalPtyViewSessionName } from '../../src/main/services/terminal-pty-session';
 import { SIDEBAR_PANEL_ID } from '../../src/renderer/components/layout/sidebarLayout';
 import { MIN_FLEET_PANE_WIDTH_PX } from '../../src/renderer/hooks/usePanelLayout';
-import { IPC } from '../../src/shared/ipc-channels';
+import { IPC, IPC_EVENT } from '../../src/shared/ipc-channels';
 import type {
   PaneCreateResponse,
   SessionInfoResult,
@@ -1813,6 +1813,44 @@ describe.runIf(process.env.MUXBASE_E2E === '1')('Terminal resilience E2E', () =>
     await waitForVisibleTerminalText(page, pane.id, marker);
 
     await screenshot(page, '06-tab-remount-clean');
+  }, 45_000);
+
+  it('falls back from WebGL after a GPU process exit without reconnecting the terminal', async () => {
+    await showDashboardMode(page, 'fleet');
+    const pane = await createShellPane(page, createdPanes);
+    const marker = 'MUXBASE-GPU-RESET-CLEAN';
+
+    await invoke(page, IPC.PANE_SEND_KEYS, {
+      command: `printf '${marker}\\n'`,
+      paneId: pane.id,
+    });
+    await waitForTmuxContent(pane.paneId, marker);
+    await waitForVisibleTerminalText(page, pane.id, marker);
+    expect(await hasTerminalWebglRenderer(page, pane.id)).toBe(true);
+    const before = await getTerminalSnapshot(page, pane.id);
+    expect(before).not.toBeNull();
+
+    await app.evaluate(({ app: electronApp }) => {
+      electronApp.emit('child-process-gone', {}, {
+        exitCode: 8704,
+        name: 'GPU',
+        reason: 'abnormal-exit',
+        serviceName: 'GPU',
+        type: 'GPU',
+      });
+    });
+
+    await pollUntil(
+      async () => await hasTerminalWebglRenderer(page, pane.id) ? null : true,
+      { interval: 50, label: 'terminal-webgl-fallback', timeout: TERMINAL_TIMEOUT_MS },
+    );
+    await waitForVisibleTerminalText(page, pane.id, marker);
+    const after = await getTerminalSnapshot(page, pane.id);
+    const raster = await getTerminalScreenRaster(page, pane.id);
+
+    expect(after).not.toBeNull();
+    expect(after?.info.attachHistory).toEqual(before?.info.attachHistory);
+    expect(raster.inkPixels).toBeGreaterThan(0);
   }, 45_000);
 
   it('repaints an idle PTY pane after the application window is hidden and shown', async () => {

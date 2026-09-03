@@ -639,6 +639,7 @@ export function useTerminalSession({ pane, terminalVisible = true }: Interactive
     let selectionScrollPump: TerminalSelectionScrollPump | null = null;
     let terminalHardResetTail = '';
     let unsubscribe: (() => void) | null = null;
+    let unsubscribeRendererReset: (() => void) | null = null;
     let unsubscribeStreamMode: (() => void) | null = null;
     let webglAddon: WebglAddon | null = null;
     let webglContextLossDisposer: TerminalDisposable | null = null;
@@ -693,6 +694,7 @@ export function useTerminalSession({ pane, terminalVisible = true }: Interactive
       webglContextLossDisposer?.dispose();
       webglAddon?.dispose();
       unsubscribe?.();
+      unsubscribeRendererReset?.();
       unsubscribeStreamMode?.();
       clearMinBootUnlockTimer();
       if (streamIdRef.current !== null) {
@@ -732,18 +734,24 @@ export function useTerminalSession({ pane, terminalVisible = true }: Interactive
         try {
           const addon = new WebglAddon();
           webglAddon = addon;
-          webglContextLossDisposer = addon.onContextLoss(() => {
+          const fallbackFromWebgl = (reason: 'context-loss' | 'gpu-process-reset'): void => {
             if (webglAddon !== addon) return;
             webglContextLossDisposer?.dispose();
             webglContextLossDisposer = null;
-            addon.dispose();
             webglAddon = null;
+            addon.dispose();
             term.refresh(0, Math.max(0, term.rows - 1));
-            rendererLog.info('terminal', 'WebGL context lost; restored built-in renderer', {
+            rendererLog.info('terminal', 'WebGL renderer reset; restored built-in renderer', {
               paneId: pane.id,
+              reason,
             });
-          });
+          };
+          webglContextLossDisposer = addon.onContextLoss(() => fallbackFromWebgl('context-loss'));
           term.loadAddon(addon);
+          unsubscribeRendererReset = on(
+            IPC_EVENT.TERMINAL_RENDERER_RESET,
+            () => fallbackFromWebgl('gpu-process-reset'),
+          );
         } catch (error) {
           webglContextLossDisposer?.dispose();
           webglContextLossDisposer = null;

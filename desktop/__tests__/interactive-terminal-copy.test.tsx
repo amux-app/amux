@@ -592,6 +592,35 @@ describe('InteractiveTerminal copy behavior', () => {
     expect(terminal.refresh).toHaveBeenCalledWith(0, terminal.rows - 1);
   });
 
+  it('falls back from WebGL when Electron reports a GPU renderer reset', async () => {
+    const terminal = await renderTerminal();
+    const addon = webglAddonMock.instances[0];
+    const resetRenderer = ipcMock.listeners.get(IPC_EVENT.TERMINAL_RENDERER_RESET);
+
+    expect(resetRenderer).toBeDefined();
+    act(() => resetRenderer?.(undefined));
+
+    expect(addon.dispose).toHaveBeenCalledOnce();
+    expect(terminal.refresh).toHaveBeenCalledWith(0, terminal.rows - 1);
+    expect(terminalApiMock.attach).toHaveBeenCalledOnce();
+    expect(terminalApiMock.detach).not.toHaveBeenCalled();
+  });
+
+  it('handles duplicate GPU renderer resets without disposing WebGL twice', async () => {
+    const terminal = await renderTerminal();
+    const addon = webglAddonMock.instances[0];
+    const resetRenderer = ipcMock.listeners.get(IPC_EVENT.TERMINAL_RENDERER_RESET);
+
+    expect(resetRenderer).toBeDefined();
+    act(() => {
+      resetRenderer?.(undefined);
+      resetRenderer?.(undefined);
+    });
+
+    expect(addon.dispose).toHaveBeenCalledOnce();
+    expect(terminal.refresh).toHaveBeenCalledOnce();
+  });
+
   it('moves focus to the selected terminal when another pane still owns xterm focus', async () => {
     const previousTerminalInput = document.createElement('textarea');
     previousTerminalInput.className = 'xterm-helper-textarea';

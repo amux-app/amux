@@ -153,6 +153,7 @@ export const IPC_EVENT = {
   PANE_ACTIVITY_CHANGED: 'event:pane-activity-changed',
   PANE_LIST_CHANGED: 'event:pane-list-changed',
   TERMINAL_DATA: 'event:terminal-data',
+  TERMINAL_RENDERER_RESET: 'event:terminal-renderer-reset',
   TOAST: 'event:toast',
   PROGRESS: 'event:progress',
   AGENT_SESSION_UPDATED: 'event:agent-session-updated',
